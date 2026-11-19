@@ -593,5 +593,31 @@
   "files": [
    "audio/j_round_lose.mp3"
   ]
+ },
+ "c_ringfire": {
+  "kind": "sfx",
+  "prompt": "ring of fire bursting outward from a wizard, roaring whoosh of expanding flames, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 1.2,
+  "group": "sfx",
+  "vol": 0.85,
+  "cd": 0.1,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_ringfire.mp3"
+  ]
+ },
+ "c_burnbody": {
+  "kind": "sfx",
+  "prompt": "wizard body igniting into flames, fiery whoomph then crackling fire aura, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 1.2,
+  "group": "sfx",
+  "vol": 0.8,
+  "cd": 0.1,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_burnbody.mp3"
+  ]
  }
 }

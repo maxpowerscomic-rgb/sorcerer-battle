@@ -25,7 +25,7 @@ const COL = {
 const SP = {
   fireball:  { n: 'Fireball',        el: 'fire',   t: 1.5, range: 160, d: 'Hurls a blazing fireball that sets the target alight.' , tag: 'Burns' },
   icewall:   { n: 'Ice Wall',        el: 'ice',    t: 1.1, range: 130, d: 'Raises a wall of ice between you and the enemy.' , tag: 'Blocks' },
-  zombies:   { n: 'Raise Dead',      el: 'death',  t: 2.4, range: 190, d: 'Three zombies claw out of the ground and hunt the enemy.' , tag: 'Summons' },
+  zombies:   { n: 'Raise Dead',      el: 'death',  t: 2.4, range: 190, d: 'Three zombies burst out of the ground halfway to the enemy and hunt them down.' , tag: 'Summons' },
   lightning: { n: 'Lightning Bolt',  el: 'storm',  t: 1.7, range: 170, d: 'Zaps the closest enemy creature, or the wizard, and stuns it.' , tag: 'Stuns' },
   meteor:    { n: 'Meteor',          el: 'fire',   t: 3.6, range: 230, d: 'A huge meteor lands where the enemy stands. Dodgeable.' , tag: 'Big hit' },
   flies:     { n: 'Fly Swarm',       el: 'swamp',  t: 2.0, range: 180, d: 'A buzzing swarm streams out and chews on the enemy.' , tag: 'Swarms' },
@@ -38,11 +38,13 @@ const SP = {
   beam:      { n: 'Spell Cannon',    el: 'beam',   t: 3.0, range: 210, d: 'Charges up, then fires a sustained beam that burns through anything in its path. Only one per spellbook.', tag: 'Beam' },
   shield:    { n: 'Spell Shield',    el: 'aegis',  t: 1.4, range: 150, d: 'A barrier soaks up incoming spells, holds them, then fires them back. Meteors smash straight through.', tag: 'Absorbs' },
   golem:     { n: 'Stone Golem',     el: 'earth',  t: 2.8, range: 170, d: 'A slow stone golem walks at the enemy, blocking their spells, and stomps when it arrives.', tag: 'Tank' },
-  hourglass: { n: 'Hourglass',       el: 'time',   t: 1.2, range: 140, d: 'A time bubble around you slows enemy spells and creatures to a crawl.', tag: 'Slows' },
+  hourglass: { n: 'Hourglass',       el: 'time',   t: 1.2, range: 140, d: 'A time bubble around you slows every enemy spell and creature inside it, meteors included.', tag: 'Slows' },
+  ringfire:  { n: 'Ring of Fire',    el: 'fire',   t: 2.0, range: 130, d: 'A ring of flame bursts out from you, scorching and shoving back everything it passes.', tag: 'Shoves' },
+  burnbody:  { n: 'Burning Body',    el: 'fire',   t: 1.6, range: 90,  d: 'Your body erupts in flame. Anything that touches you burns, and so do you, a little.', tag: 'Aura' },
   thorns:    { n: 'Thornfield',      el: 'nature', t: 1.8, range: 170, d: 'Seeds sprout into thorny vine patches that root whatever walks in.', tag: 'Roots' },
   storm:     { n: 'Storm Cloud',     el: 'storm',  t: 2.2, range: 190, d: 'A thundercloud follows the enemy and strikes where its shadow falls.', tag: 'Hunts' },
   rift:      { n: 'Rift Portals',    el: 'void',   t: 1.6, range: 170, d: 'Two portals: your spells enter one and come out beside the enemy.', tag: 'Flanks' },
-  totem:     { n: 'Grounding Totem', el: 'earth',  t: 1.2, range: 150, d: 'A copper rod that pulls enemy lightning into itself instead of you.', tag: 'Grounds' },
+  totem:     { n: 'Grounding Totem', el: 'earth',  t: 1.2, range: 150, d: 'A copper rod that pulls enemy lightning, storm strikes, ricochet runes and orb shots into itself.', tag: 'Grounds' },
   blink:     { n: 'Blink',           el: 'arcane', t: 0.8, range: 160, d: 'Teleport away from the biggest threat, leaving an afterimage behind.', tag: 'Escapes' },
   sinkhole:  { n: 'Sinkhole',        el: 'earth',  t: 2.0, range: 180, d: 'A pit opens under the enemy, swallowing creatures and dragging the wizard down.', tag: 'Swallows' },
   gale:      { n: 'Gale',            el: 'aegis',  t: 1.4, range: 150, d: 'One big shove of wind: knocks enemy spells off course and shoves everything back.', tag: 'Deflects' },
@@ -55,7 +57,7 @@ const MAXL = 20;
 const STATS = {
   fireball:  { dmg: [12, 14, 16, 19, 22], burn: [3, 3, 4, 4, 5] },
   icewall:   { hp: [24, 28, 33, 39, 46], dur: [8, 8, 9, 9, 10] },
-  zombies:   { hp: [12, 14, 16, 19, 22], dmg: [4, 5, 5, 6, 7] },
+  zombies:   { hp: [16, 18, 21, 24, 28], dmg: [4, 5, 5, 6, 7] },
   lightning: { dmg: [7, 8, 9, 11, 13], stun: [0.6, 0.6, 0.7, 0.8, 0.9] },
   meteor:    { dmg: [28, 32, 35, 40, 46], radius: [52, 55, 58, 62, 66] },
   flies:     { dps: [4, 5, 5, 6, 7], hp: [10, 12, 14, 16, 18] },
@@ -69,6 +71,8 @@ const STATS = {
   shield:    { cap: [2, 2, 2, 3, 3], power: [100, 105, 110, 115, 120] },
   golem:     { hp: [40, 45, 50, 58, 66], dmg: [8, 9, 10, 12, 14] },
   hourglass: { dur: [3, 3.2, 3.4, 3.7, 4], radius: [70, 72, 74, 78, 82] },
+  ringfire:  { dmg: [12, 13, 15, 17, 20], radius: [165, 170, 176, 184, 195] },
+  burnbody:  { dps: [10, 11, 12, 14, 16], dur: [4.5, 4.5, 5, 5, 5.5] },
   thorns:    { dps: [4, 4, 5, 6, 7], root: [1, 1, 1.1, 1.2, 1.3] },
   storm:     { dmg: [9, 10, 11, 13, 15], dur: [6, 6, 6.5, 6.5, 7] },
   rift:      { dur: [4, 4, 4.5, 4.5, 5] },
@@ -98,6 +102,7 @@ const STAT_LBL_SPELL = {
   totem:   { hp: 'Totem health', dur: 'Lasts (seconds)' }, blink: { dist: 'Blink distance' }, sinkhole: { dps: 'Damage per second', radius: 'Pit radius' }, gale: { push: 'Shove strength', dur: 'Long Gust time (seconds)' },
   golem:   { hp: 'Golem health', dmg: 'Stomp damage' },
   hourglass: { dur: 'Bubble time (seconds)', radius: 'Bubble radius' },
+  ringfire: { dmg: 'Ring damage', radius: 'Ring reach' }, burnbody: { dps: 'Burn damage per second', dur: 'Lasts (seconds)' },
   thorns:  { dps: 'Thorn damage per second', root: 'Root time on wizards (seconds)' },
   storm:   { dmg: 'Strike damage', dur: 'Cloud lifetime (seconds)' },
   rift:    { dur: 'Portal time (seconds)' },
@@ -115,7 +120,7 @@ const COST  = Array.from({ length: MAXL }, (_, l) => l ? Math.round(50 * Math.po
 const UPG = {
   fireball:  [{ id: 'twin', n: 'Twin Fireball', d: 'Every Fireball cast throws 2.' }, { id: 'triple', n: 'Triple Fireball', d: 'Every Fireball cast throws 3.', req: 'twin' }, { id: 'blast', n: 'Exploding Fireball', d: 'Fireballs explode, hitting everything nearby.' }, { id: 'seek', n: 'Seeker Flames', d: 'Fireballs curve to track their target.' }, { id: 'pierce', n: 'Piercing Flame', d: 'Fireballs burn through the first thing they hit.' }, { id: 'inferno', n: 'Inferno Bolt', d: 'Fireballs burn through up to 3 things.', req: 'pierce' }],
   icewall:   [{ id: 'thick', n: 'Thick Ice', d: 'Walls are two layers deep.' }, { id: 'spikes', n: 'Spiked Ice', d: 'Zombies clawing your wall, and wizards walking into it, get hurt.' }, { id: 'mirror', n: 'Mirror Ice', d: 'Fireballs bounce back at whoever threw them.' }, { id: 'frostbite', n: 'Frostbite', d: 'Enemies touching the wall are slowed.' }, { id: 'wide', n: 'Wide Wall', d: '7 ice pillars instead of 5.' }, { id: 'shrapnel', n: 'Shrapnel Ice', d: 'When the wall breaks, its chunks fly outward and hurt enemies.' }],
-  zombies:   [{ id: 'infect', n: 'Infection', d: 'Enemy zombies your zombies kill: 50% chance to rise on your side.' }, { id: 'plague', n: 'Plague', d: 'Infection always works.', req: 'infect' }, { id: 'horde', n: 'Horde', d: 'Raise 5 zombies instead of 3.' }, { id: 'legion', n: 'Legion', d: 'Raise 7 zombies.', req: 'horde' }, { id: 'clawed', n: 'Ice Breakers', d: 'Zombies tear through ice walls more than twice as fast.' }, { id: 'frenzy', n: 'Frenzy', d: 'Zombies move 30% faster.' }, { id: 'undying', n: 'Undying', d: 'Each zombie gets back up once after dying, headless and with half health.' }],
+  zombies:   [{ id: 'bloat', n: 'Bloated Dead', d: 'Zombies burst when they die, splashing acid on everything nearby.' }, { id: 'grip', n: 'Grave Grip', d: 'A zombie that reaches the enemy wizard holds them in place briefly.' }, { id: 'horde', n: 'Horde', d: 'Raise 5 zombies instead of 3.' }, { id: 'legion', n: 'Legion', d: 'Raise 7 zombies.', req: 'horde' }, { id: 'clawed', n: 'Ice Breakers', d: 'Zombies tear through ice walls more than twice as fast.' }, { id: 'frenzy', n: 'Frenzy', d: 'Zombies move 30% faster.' }, { id: 'undying', n: 'Undying', d: 'Each zombie gets back up once after dying, headless and with half health.' }],
   lightning: [{ id: 'fork', n: 'Chain Lightning', d: 'Each bolt jumps on to 2 more targets.' }, { id: 'twinbolt', n: 'Twin Bolts', d: 'Shoot 2 bolts per cast, each at 55% damage.' }, { id: 'tribolt', n: 'Triple Bolts', d: 'Shoot 3 bolts per cast, each at 38% damage.', req: 'twinbolt' }, { id: 'overcharge', n: 'Overcharge', d: 'Stuns last twice as long.' }, { id: 'thunder', n: 'Thunderclap', d: 'Also hits every enemy creature near the target.' }, { id: 'supercharge', n: 'Supercharge', d: '+1 jump, and double damage to creatures.' }],
   meteor:    [{ id: 'shower', n: 'Meteor Shower', d: 'Drops 3 meteors; the extra two hit for half damage.' }, { id: 'colossal', n: 'Colossal Meteor', d: 'Crater is much bigger.' }, { id: 'scorch', n: 'Scorched Earth', d: 'Craters burn for 5 seconds, hurting enemies inside.' }],
   flies:     [{ id: 'bigswarm', n: 'Two Swarms', d: 'Release 2 swarms per cast.' }, { id: 'plague', n: 'Plague Flies', d: 'Bitten enemies cast slower.' }, { id: 'hive', n: 'Hive', d: 'Swarms last twice as long.' }],
@@ -128,8 +133,10 @@ const UPG = {
   beam:      [{ id: 'wide', n: 'Wide Beam', d: 'A much thicker beam that is easier to land.' }, { id: 'overload', n: 'Overload', d: 'Beam hits 25% harder and melts ice walls much faster.' }, { id: 'quick', n: 'Quick Charge', d: 'Charges in 2.4 seconds instead of 3, but the beam is 35% shorter.' }],
   shield:    [{ id: 'longhold', n: 'Long Hold', d: 'Holds absorbed spells 3 seconds instead of 1.5, so you choose a better moment.' }, { id: 'capacity', n: 'Deep Barrier', d: 'Absorbs 2 more spells.' }, { id: 'amplify', n: 'Amplify', d: 'Spells fired back hit 50% harder.' }],
   golem:     [{ id: 'iron', n: 'Iron Skin', d: 'Double health.' }, { id: 'quake', n: 'Quake Stomp', d: 'Stomps hit everything nearby and knock them back.' }, { id: 'toss', n: 'Rock Toss', d: 'Throws a boulder at the enemy every 2 seconds while walking.' }, { id: 'bloom', n: 'Shatter Bloom', d: 'Breaks into 3 pebble golems when destroyed.' }],
-  hourglass: [{ id: 'stasis', n: 'Stasis', d: 'Enemy spells inside stop completely.' }, { id: 'rewind', n: 'Rewind', d: 'Heal back half the health you lost while the bubble was up.' }, { id: 'wide', n: 'Wide Glass', d: 'A much bigger bubble.' }, { id: 'hasten', n: 'Hasten', d: 'You cast faster while inside your bubble.' }],
-  thorns:    [{ id: 'spread', n: 'Spreading Roots', d: 'Patches grow 50% bigger over time.' }, { id: 'lifesap', n: 'Lifesap', d: 'Heal 3 every time something is rooted.' }, { id: 'bramble', n: 'Bramble Wall', d: 'Vines also catch enemy spells flying over them.' }, { id: 'strangle', n: 'Strangle', d: 'Rooted creatures take double thorn damage.' }],
+  hourglass: [{ id: 'stasis', n: 'Stasis', d: 'Enemy spells and creatures inside stop completely.' }, { id: 'rewind', n: 'Rewind', d: 'Heal back half the health you lost while the bubble was up.' }, { id: 'wide', n: 'Wide Glass', d: 'A much bigger bubble.' }, { id: 'hasten', n: 'Hasten', d: 'You cast faster while inside your bubble.' }],
+  ringfire:  [{ id: 'twin', n: 'Double Ring', d: 'A second ring follows half a second later.' }, { id: 'wide', n: 'Inferno Ring', d: 'The ring reaches 40% farther.' }, { id: 'wall', n: 'Wall of Flame', d: 'The ring stops at its edge and keeps burning for 3 seconds.' }, { id: 'blast', n: 'Backdraft', d: 'A much stronger shove that briefly stuns.' }],
+  burnbody:  [{ id: 'heat', n: 'Searing Aura', d: 'The flames reach 50% farther.' }, { id: 'ward', n: 'Heat Shield', d: 'You no longer burn yourself.' }, { id: 'trail', n: 'Firewalk', d: 'Leave burning footprints behind you.' }, { id: 'flare', n: 'Flare Up', d: 'When it ends, you explode in a burst of flame.' }],
+  thorns:    [{ id: 'spread', n: 'Spreading Roots', d: 'Patches grow 50% bigger over time.' }, { id: 'lifesap', n: 'Lifesap', d: 'Heal 3 every time something is rooted.' }, { id: 'bramble', n: 'Bramble Wall', d: 'Vines also catch enemy spells flying over them.' }, { id: 'strangle', n: 'Strangle', d: 'Rooted creatures take double thorn damage.' }, { id: 'creep', n: 'Creeping Vines', d: 'Patches squirm across the arena toward the enemy wizard.' }],
   storm:     [{ id: 'thunder', n: 'Thunderhead', d: 'Bigger strikes that stun.' }, { id: 'hail', n: 'Hailstorm', d: 'The enemy is slowed while under the cloud.' }, { id: 'twin', n: 'Twin Clouds', d: 'Summon 2 clouds.' }, { id: 'static', n: 'Static Link', d: 'Each strike also jumps to a nearby enemy creature.' }],
   rift:      [{ id: 'long', n: 'Long Rift', d: 'Portals last twice as long.' }, { id: 'burn', n: 'Riftburn', d: 'Spells passing through deal 50% more damage.' }, { id: 'oneway', n: 'One-Way', d: 'Enemy spells cannot use your portals.' }, { id: 'collapse', n: 'Collapse', d: 'Portals implode when they close, pulling in and hurting enemies.' }],
   totem:     [{ id: 'coil', n: 'Copper Coil', d: 'Survives the first bolt and grounds 2 per cast.' }, { id: 'lure', n: 'Lure Rod', d: 'Enemy zombies, golems and flies are drawn to attack the totem.' }, { id: 'discharge', n: 'Discharge', d: 'Grounded lightning is fired back at the enemy.' }, { id: 'twin', n: 'Twin Totems', d: 'Plant 2 totems.' }],
@@ -151,7 +158,7 @@ const RANKS = [
 ];
 const MS_STEP = 50;
 /* Extra spells unlock on Rank Road milestones (trophies) */
-const EXTRA_UNLOCKS = [{ k: 'orbs', t: 250 }, { k: 'bubbles', t: 450 }, { k: 'ricochet', t: 750 }, { k: 'archer', t: 1100 }, { k: 'beam', t: 700 }, { k: 'shield', t: 600 }, { k: 'thorns', t: 400 }, { k: 'storm', t: 550 }, { k: 'golem', t: 650 }, { k: 'hourglass', t: 850 }, { k: 'rift', t: 950 }, { k: 'totem', t: 1200 }, { k: 'blink', t: 1350 }, { k: 'sinkhole', t: 1500 }, { k: 'gale', t: 1650 }];
+const EXTRA_UNLOCKS = [{ k: 'orbs', t: 250 }, { k: 'bubbles', t: 450 }, { k: 'ricochet', t: 750 }, { k: 'archer', t: 1100 }, { k: 'beam', t: 700 }, { k: 'shield', t: 600 }, { k: 'thorns', t: 400 }, { k: 'storm', t: 550 }, { k: 'golem', t: 650 }, { k: 'hourglass', t: 850 }, { k: 'rift', t: 950 }, { k: 'totem', t: 1200 }, { k: 'ringfire', t: 800 }, { k: 'burnbody', t: 1000 }, { k: 'blink', t: 1350 }, { k: 'sinkhole', t: 1500 }, { k: 'gale', t: 1650 }];
 /* Spellbook size: copies count as slots. +1 slot at Sorcerer (rank 3) and Archmage (rank 5). */
 const BOOK_BASE = 4, BOOK_SLOT_RANKS = [3, 5];
 const GAME_NAME = ['SORCERER', 'BATTLE']; // working title shown on the logo; swap here
@@ -222,7 +229,7 @@ const EMBLEMS = [
 /* ---------- AI opponent profiles ----------
    fav: weight per spell when the AI picks (default 1). They build toward a plan; they never counter-pick you. */
 const PROFILES = [
-  { id: 'pyro',   n: 'Pyromancer',   fav: { fireball: 6, meteor: 5, beam: 3 },              look: { robe: 'crimson', hat: 'witch', staff: 'oak', beard: 'ginger', skin: 'tan', pet: 'none' } },
+  { id: 'pyro',   n: 'Pyromancer',   fav: { fireball: 6, meteor: 5, ringfire: 4, burnbody: 4, beam: 3 },              look: { robe: 'crimson', hat: 'witch', staff: 'oak', beard: 'ginger', skin: 'tan', pet: 'none' } },
   { id: 'frost',  n: 'Frost Warden', fav: { icewall: 6, lightning: 3, fireball: 2 }, look: { robe: 'frost', hat: 'hood', staff: 'crystal', beard: 'long', skin: 'spirit', pet: 'owl' } },
   { id: 'necro',  n: 'Necromancer',  fav: { zombies: 6, flies: 5, thorns: 4, golem: 3 },                 look: { robe: 'moss', hat: 'hood', staff: 'skull', beard: 'none', skin: 'goblin', pet: 'cat' } },
   { id: 'trick',  n: 'Trickster',    fav: { mirror: 6, ghost: 5, rift: 5, shield: 4, lightning: 2 },    look: { robe: 'amethyst', hat: 'feathered', staff: 'wand', beard: 'none', skin: 'peach', pet: 'wisp' } },
@@ -234,7 +241,8 @@ const PROFILES = [
 /* ---------- AI counter-picking ----------
    After each round the rival looks at what you cast most and favors cards (from its own fixed hand) that counter it. */
 const COUNTERS = {
-  fireball: ['icewall', 'orbs', 'ghost', 'shield', 'golem', 'hourglass', 'gale'], icewall: ['zombies', 'meteor', 'beam', 'flies', 'rift'], zombies: ['fireball', 'bubbles', 'meteor', 'archer', 'thorns', 'golem', 'sinkhole'],
+  ringfire: ['icewall', 'lightning', 'archer', 'ghost'], burnbody: ['archer', 'lightning', 'gale', 'ghost', 'meteor'],
+  fireball: ['icewall', 'orbs', 'ghost', 'shield', 'golem', 'hourglass', 'gale'], icewall: ['zombies', 'meteor', 'beam', 'flies', 'rift'], zombies: ['fireball', 'bubbles', 'meteor', 'archer', 'thorns', 'golem', 'sinkhole', 'ringfire', 'burnbody'],
   lightning: ['totem', 'ghost', 'icewall', 'mirror', 'shield'], meteor: ['ghost', 'mirror', 'blink'], flies: ['fireball', 'orbs', 'bubbles', 'gale'],
   ghost: ['gravity', 'zombies', 'flies', 'bubbles'], mirror: ['lightning', 'ricochet', 'meteor'], gravity: ['ghost', 'icewall'],
   orbs: ['meteor', 'beam', 'lightning'], bubbles: ['ghost', 'icewall', 'fireball'], ricochet: ['icewall', 'orbs', 'shield'],
@@ -245,3 +253,43 @@ const COUNTERS = {
   archer: ['fireball', 'meteor', 'lightning', 'zombies', 'shield'], beam: ['icewall', 'ghost', 'mirror', 'storm', 'golem'],
 };
 const THREAT = { meteor: 3, beam: 3, zombies: 2, golem: 2, storm: 2, fireball: 1.5, flies: 1.5 };
+
+/* ---------- spell tags: element + attack type ---------- */
+const ELEM_OF = {
+  fireball: 'fire', meteor: 'fire', ringfire: 'fire', burnbody: 'fire',
+  icewall: 'water', bubbles: 'water',
+  zombies: 'death', flies: 'death', archer: 'death', ghost: 'death',
+  lightning: 'lightning', storm: 'lightning', totem: 'lightning',
+  golem: 'earth', thorns: 'earth', sinkhole: 'earth',
+  gale: 'air', blink: 'air',
+  mirror: 'arcane', orbs: 'arcane', ricochet: 'arcane', beam: 'arcane', shield: 'arcane', hourglass: 'arcane', rift: 'arcane', gravity: 'arcane',
+};
+const TYPE_OF = {
+  fireball: 'proj', lightning: 'proj', ricochet: 'proj', bubbles: 'proj', beam: 'proj',
+  meteor: 'area', storm: 'area', thorns: 'area', sinkhole: 'area', gravity: 'area', gale: 'area', ringfire: 'area',
+  zombies: 'summon', flies: 'summon', archer: 'summon', golem: 'summon',
+  orbs: 'melee', burnbody: 'melee',
+  icewall: 'support', ghost: 'support', mirror: 'support', shield: 'support', hourglass: 'support', rift: 'support', totem: 'support', blink: 'support',
+};
+const ELEMS = {
+  fire: { n: 'Fire', c: '#ff7a2a', i: '🔥', t: 'Pyromancer' }, water: { n: 'Water', c: '#4fb8ff', i: '💧', t: 'Tidecaller' },
+  earth: { n: 'Earth', c: '#c9a56a', i: '⛰', t: 'Geomancer' }, air: { n: 'Air', c: '#9ff5e0', i: '🌪', t: 'Windwalker' },
+  lightning: { n: 'Lightning', c: '#ffd23a', i: '⚡', t: 'Stormcaller' }, arcane: { n: 'Arcane', c: '#c08cff', i: '✦', t: 'Arcanist' },
+  death: { n: 'Necromancy', c: '#9fe37a', i: '☠', t: 'Necromancer' },
+};
+const TYPES = { proj: 'Projectile', area: 'Area', summon: 'Summon', melee: 'Close range', support: 'Support' };
+/* Synergy: distinct spells of one element in your Battle Hand. 2 = +10%, 3 = +20%, 4 = +30% damage for that element. */
+const SYN_PCT = [0, 0, .10, .20, .30];
+function synergyOf(list) { const c = {}; [...new Set(list || [])].forEach(k => { const e = ELEM_OF[k]; if (e) c[e] = (c[e] || 0) + 1; }); const out = {}; for (const e in c) if (c[e] >= 2) out[e] = { n: c[e], pct: SYN_PCT[Math.min(4, c[e])] }; return out; }
+
+/* ---------- rival generator: names ---------- */
+const RIVAL_FIRST = ['Morgrath', 'Vexa', 'Ignis', 'Sable', 'Grizelda', 'Quill', 'Thistle', 'Zoltan', 'Elowen', 'Bramble', 'Corvina', 'Fennick', 'Hollis', 'Isolde', 'Jasper', 'Kestrel', 'Lirael', 'Magnus', 'Nyx', 'Orrin', 'Perrin', 'Rowan', 'Seraphine', 'Tamsin', 'Ulric', 'Vesper', 'Wendeline', 'Xander', 'Yarrow', 'Zephyra', 'Bartholomew', 'Cinder', 'Dorian', 'Esme', 'Gideon', 'Hester', 'Ignatius', 'Juno', 'Lucan', 'Mirabel', 'Ozzwald', 'Pell', 'Rook', 'Saffron', 'Tobias', 'Umbra', 'Wick', 'Agatha', 'Barnaby', 'Clementine', 'Drusilla', 'Elric', 'Fable', 'Gwendolyn', 'Horatio', 'Imogen'];
+const RIVAL_EPI = {
+  fire: ['the Red', 'Ashborn', 'Cinderhand', 'the Scorched', 'Emberwick', 'of the Ember Court', 'Flamecrown'],
+  water: ['Tidewhisper', 'the Drowned', 'Frostmantle', 'of the Deep', 'Rimeheart', 'Saltbeard'],
+  earth: ['Stonebeard', 'the Rooted', 'Mossheart', 'Thornback', 'of the Hollow Hill', 'Gravelgrin'],
+  air: ['Galeborn', 'the Restless', 'Skyward', 'Featherstep', 'of the Four Winds'],
+  lightning: ['Stormeye', 'the Crackling', 'Thunderbrow', 'Sparkfinger', 'of the High Spire'],
+  arcane: ['the Learned', 'Runebinder', 'of the Violet Tower', 'Hexwright', 'the Curious', 'Glyphkeeper'],
+  death: ['the Pale', 'Gravetender', 'Bonewhisper', 'the Unburied', 'Mournveil', 'of the Crypt'],
+};
