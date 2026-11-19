@@ -772,7 +772,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
 <script src="wizard-audio.js"></script>
 <script>
 /* ================= GAME ================= */
-const ROUNDS=99,WIN=4,PICKS=r=>r===1?3:2;
+const ROUNDS=99;let WIN=4;const PICKS=r=>r===1?3:2;
 const decider=()=>M&&M.score.me===WIN-1&&M.score.foe===WIN-1;const roundLabel=()=>'ROUND '+M.round+(decider()?' · DECIDER':'');
 
 const ICON={};const ART_ICONS=['fireball','icewall','zombies','lightning','meteor','flies','ghost','mirror','gravity','orbs','bubbles','ricochet','archer','beam','shield'];Object.keys(SP).forEach(k=>ICON[k]=ART_ICONS.includes(k)?'art/icons/'+k+'.png':icon(k));
@@ -784,7 +784,7 @@ const $=id=>document.getElementById(id);
 let M;
 function setArena(a){bgImg.src='art/arena-'+a+'.png';document.querySelectorAll('#draft .bg,#order .bg').forEach(e=>e.style.backgroundImage=`url(art/arena-${a}.png)`)}
 function foeHand(prof){const un=unlockedPath(),f=k=>(prof.fav[k]||1)+Math.random()*2;return un.slice().sort((a,b)=>f(b)-f(a)).slice(0,4)}
-function newMatch(o={}){resetScars();const prof=o.profile||PROFILES[Math.random()*PROFILES.length|0];M={foeRank:clamp(rankOf(PR.trophies)+(Math.random()<.25?-1:Math.random()<.33?1:0),0,RANKS.length-1),arena:o.arena||ARENAS[Math.random()*ARENAS.length|0],opts:o,profile:prof,unlocked:unlockedSpells(),foeLook:o.look||prof.look||randomLook(),mode:o.mode||PR.mode,foeName:o.name||FOES[Math.random()*FOES.length|0],foeLv:o.lv||null,round:1,casts:{},score:{me:0,foe:0},me:{book:[],up:new Set(),pool:PR.hand.slice()},foe:{book:[],up:new Set(),pool:foeHand(prof)},pick:0,offer:[],sel:0,swapSel:null,lastAdded:-1};
+function newMatch(o={}){resetScars();WIN=o.tut?2:4;const prof=o.profile||PROFILES[Math.random()*PROFILES.length|0];M={foeRank:clamp(rankOf(PR.trophies)+(Math.random()<.25?-1:Math.random()<.33?1:0),0,RANKS.length-1),arena:o.arena||ARENAS[Math.random()*ARENAS.length|0],opts:o,profile:prof,unlocked:unlockedSpells(),foeLook:o.look||prof.look||randomLook(),mode:o.mode||PR.mode,foeName:o.name||FOES[Math.random()*FOES.length|0],foeLv:o.lv||null,round:1,casts:{},score:{me:0,foe:0},me:{book:[],up:new Set(),pool:PR.hand.slice()},foe:{book:[],up:new Set(),pool:foeHand(prof)},pick:0,offer:[],sel:0,swapSel:null,lastAdded:-1};
  setArena(M.arena);showVs(startDraft);}
 function hasUp(p,id){return p.up.has(id)}
 const capOf=()=>BOOK_BASE+BOOK_SLOT_RANKS.filter(r=>rankOf(PR.trophies)>=r).length;
@@ -830,7 +830,7 @@ function roundCurtain(won,mid){sfx('ui_curtain');const c=$('curtain'),fw=M.lastW
 const QUIT_LOSS=18;
 const SET=()=>(PR.settings=Object.assign({slowmo:true,shake:true,music:70,sfx:80},PR.settings||{}));
 function setOpt(k,v){SET()[k]=v;save();if(typeof auVol==='function')auVol();}
-function settingsHTML(){const o=SET();return `<div class="opts"><label class="opt"><span>Slow-motion moments</span><input type="checkbox" ${o.slowmo?'checked':''} onchange="setOpt('slowmo',this.checked)"><i></i></label><label class="opt"><span>Screen shake</span><input type="checkbox" ${o.shake?'checked':''} onchange="setOpt('shake',this.checked)"><i></i></label><div class="opt"><span>Music</span><input type="range" min="0" max="100" value="${o.music}" oninput="setOpt('music',+this.value)"></div><div class="opt"><span>Sound effects</span><input type="range" min="0" max="100" value="${o.sfx}" oninput="setOpt('sfx',+this.value)"></div></div>`}
+function settingsHTML(){const o=SET();return `<div class="opts"><button class="hbtn out" style="width:100%;margin-bottom:6px" onclick="replayTutorial()">Replay tutorial</button><label class="opt"><span>Slow-motion moments</span><input type="checkbox" ${o.slowmo?'checked':''} onchange="setOpt('slowmo',this.checked)"><i></i></label><label class="opt"><span>Screen shake</span><input type="checkbox" ${o.shake?'checked':''} onchange="setOpt('shake',this.checked)"><i></i></label><div class="opt"><span>Music</span><input type="range" min="0" max="100" value="${o.music}" oninput="setOpt('music',+this.value)"></div><div class="opt"><span>Sound effects</span><input type="range" min="0" max="100" value="${o.sfx}" oninput="setOpt('sfx',+this.value)"></div></div>`}
 function openPause(){paused=true;const r=M.mode==='ranked';$('pzBody').innerHTML=`<div class="h1">Paused</div><div class="sub">${r?'Ranked':'Casual'} · vs ${M.foeName} · ${M.score.me}–${M.score.foe}</div>
  ${settingsHTML()}<button class="btn" onclick="closePause()">Resume</button><button class="btn pz2" onclick="askQuit('restart')">Restart Match</button><button class="btn pz3" onclick="askQuit('quit')">Quit Match</button>`;$('pause').classList.add('on');}
 function closePause(){$('pause').classList.remove('on');paused=false;last=performance.now();}
@@ -871,7 +871,7 @@ M.pick=0;M.lastAdded=-1;M.picked=[];
  M.foe.book.sort(()=>Math.random()-.5);
  nextPick();show('draft');}
 function nextPick(){M.offer=genOffer(M.me,M.round);M.lock=0;renderDraft();startPickTimer();}
-const PICK_TIME=15;function startPickTimer(){M.ptOn=1;M.pt=PICK_TIME;let last=performance.now();const f=now=>{if(!M.ptOn||!$('draft').classList.contains('on'))return;const dt=(now-last)/1000;last=now;if(!paused)M.pt-=dt;const q=Math.max(0,M.pt/PICK_TIME);$('ptBar').style.width=q*100+'%';$('ptBar').classList.toggle('low',M.pt<4);if(M.pt<=0&&!M.lock){M.ptOn=0;takeCard(Math.random()*M.offer.length|0);return}requestAnimationFrame(f)};requestAnimationFrame(f);}
+const PICK_TIME=15;function startPickTimer(){if(window.ONB_ACTIVE){M.ptOn=0;$('ptBar').style.width='100%';return;}M.ptOn=1;M.pt=PICK_TIME;let last=performance.now();const f=now=>{if(!M.ptOn||!$('draft').classList.contains('on'))return;const dt=(now-last)/1000;last=now;if(!paused)M.pt-=dt;const q=Math.max(0,M.pt/PICK_TIME);$('ptBar').style.width=q*100+'%';$('ptBar').classList.toggle('low',M.pt<4);if(M.pt<=0&&!M.lock){M.ptOn=0;takeCard(Math.random()*M.offer.length|0);return}requestAnimationFrame(f)};requestAnimationFrame(f);}
 function lvHex(n){return `<div class="lvhex"><span>${n}</span></div>`}
 function renderDraft(){$('scoreD').innerHTML=scoreHTML();const first=M.round===1,n=myPicks();
  $('pickLbl').textContent=`Scroll ${M.pick+1} of ${n}`;
@@ -1658,6 +1658,7 @@ function chestSVG(c1,c2){return `<svg viewBox="0 0 84 70"><ellipse cx="42" cy="6
 
 let PR;const SAVE='spellbinder.meta.v1';
 function defaults(){return{name:'Starweaver',lvl:7,xp:180,trophies:340,coins:1240,gems:85,mode:'ranked',claimed:[0,1],ms:{},deals:{},look:Object.assign({},DEFAULT_LOOK),icon:'wizard',emblem:'founder',owned:[],spells:{fireball:{lvl:3,cards:6},icewall:{lvl:2,cards:9},zombies:{lvl:2,cards:3},meteor:{lvl:1,cards:2}}}}
+function newPlayer(){return{name:'Starweaver',lvl:1,xp:0,trophies:0,coins:300,gems:60,mode:'ranked',claimed:[0],ms:{},deals:{},look:Object.assign({},DEFAULT_LOOK),icon:'wizard',emblem:'founder',owned:[],spells:{fireball:{lvl:1,cards:1},icewall:{lvl:1,cards:0},zombies:{lvl:1,cards:0}},tokens:1,chosen:[],cps:[],unlocked:STARTERS.slice(),hand:[],onb:{step:'welcome'}}}
 function load(){try{const d=JSON.parse(localStorage.getItem(SAVE));if(d&&d.spells)return d}catch(e){}return defaults()}
 function save(){try{localStorage.setItem(SAVE,JSON.stringify(PR))}catch(e){}}
 const xpNeed=l=>100+l*60;
@@ -1683,7 +1684,7 @@ const fmtN=v=>Math.round(v*10)/10;
 function countDec(el,a,b,ms,done){const dec=Math.max((String(b).split('.')[1]||'').length,(String(a).split('.')[1]||'').length);const t0=performance.now();const f=now=>{const k=Math.min(1,(now-t0)/ms),e=1-Math.pow(1-k,3);el.textContent=(a+(b-a)*e).toFixed(dec);if(k<1)requestAnimationFrame(f);else{el.textContent=b;done&&done()}};requestAnimationFrame(f)}
 function showSpellModal(k,from,to,unlockRankName){const el=$('upm'),unlock=!!unlockRankName;el.style.setProperty('--c',COL[SP[k].el][1]);
  $('upK').textContent=unlock?'New spell unlocked!':'Spell upgraded!';$('upImg').src=ICON[k];$('upName').textContent=SP[k].n;
- $('upLv').innerHTML=unlock?`<span class="to">Reached ${unlockRankName}</span>`:`<span>Lv ${from}</span><b>➜</b><span class="to">Lv ${to}</span>`;
+ $('upLv').innerHTML=unlock?`<span class="to">${/^unlocked/i.test(unlockRankName)?unlockRankName:"Reached "+unlockRankName}</span>`:`<span>Lv ${from}</span><b>➜</b><span class="to">Lv ${to}</span>`;
  $('upDesc').textContent=unlock?SP[k].d:'';$('upDesc').style.display=unlock?'block':'none';
  const st=STATS[k];$('upStats').innerHTML=Object.keys(st).map((x,i)=>{const lbl=(STAT_LBL_SPELL[k]&&STAT_LBL_SPELL[k][x])||STAT_LBL[x],a=st[x][from-1],b=st[x][to-1],ch=!unlock&&a!==b;
   return `<div class="ust" style="animation-delay:${.3+i*.14}s"><span class="k">${lbl}</span><span class="vals">${ch?`<span class="old">${a}</span><span class="arr">➜</span>`:''}<span class="new" data-a="${a}" data-b="${b}">${ch?a:b}</span>${ch?`<span class="plus" style="animation-delay:${1.5+i*.14}s">+${fmtN(b-a)}</span>`:''}</span></div>`}).join('');
@@ -1728,7 +1729,7 @@ function nav(t){show(t);document.querySelectorAll('.tab').forEach(b=>b.classList
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>nav(b.dataset.t));
 document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{PR.mode=b.dataset.m;refreshMeta()});
 $('battleBtn').onclick=()=>startMatch({});
-function startMatch(o){const un=unlockedSpells(),avg=Math.round(un.reduce((a,k)=>a+PR.spells[k].lvl,0)/un.length);const lv={};Object.keys(SP).forEach(k=>lv[k]=clamp(avg+(Math.random()<.3?1:0)-(Math.random()<.3?1:0),1,MAXL));
+function startMatch(o){if(window.ONB_ACTIVE){const lv={};Object.keys(SP).forEach(k=>lv[k]=1);return newMatch(Object.assign({lv,tut:1,name:'Apprentice Pip',profile:PROFILES.find(p=>p.id==='frost')||PROFILES[0]},o));}const un=unlockedSpells(),avg=Math.round(un.reduce((a,k)=>a+PR.spells[k].lvl,0)/un.length);const lv={};Object.keys(SP).forEach(k=>lv[k]=clamp(avg+(Math.random()<.3?1:0)-(Math.random()<.3?1:0),1,MAXL));
  newMatch(Object.assign({lv},o));}
 
 /* spells tab */
@@ -1891,7 +1892,8 @@ function pickItem(i){const it=catItems(wCat)[i],own=ownsItem(wCat,it),u=it.unloc
 function buyItem(i){const it=catItems(wCat)[i],u=it.unlock;if(PR.gems<u.v)return;PR.gems-=u.v;PR.owned.push(wCat+'.'+it.id);closeSheet();equip(wCat,it.id);toast(it.n+' unlocked!');}
 
 /* boot */
-PR=load();PR.hand=PR.hand||[];PR.ms=PR.ms||{};Object.keys(SP).forEach(k=>{if(!PR.spells[k])PR.spells[k]={lvl:1,cards:0}});PR.look=Object.assign({},DEFAULT_LOOK,PR.look);PR.icon=PR.icon||'wizard';PR.emblem=PR.emblem||'founder';PR.owned=PR.owned||[];PR.unlocked=PR.unlocked||STARTERS.slice();
+let FRESH=false;try{FRESH=!localStorage.getItem(SAVE)}catch(e){}
+PR=FRESH?newPlayer():load();if(!PR.onb)PR.onb={done:1};PR.hand=PR.hand||[];PR.ms=PR.ms||{};Object.keys(SP).forEach(k=>{if(!PR.spells[k])PR.spells[k]={lvl:1,cards:0}});PR.look=Object.assign({},DEFAULT_LOOK,PR.look);PR.icon=PR.icon||'wizard';PR.emblem=PR.emblem||'founder';PR.owned=PR.owned||[];PR.unlocked=PR.unlocked||STARTERS.slice();
 for(let t=50;t<=Math.min(PR.trophies,TOP);t+=50)if(!PR.ms[t]&&!isRankT(t))PR.ms[t]=STARTERS[t/50%3];
 $('gemIco').innerHTML=SVG.gem;$('trophIco').innerHTML=SVG.trophy;$('trophIco').style.width='22px';$('mIcoR').innerHTML=SVG.trophy;$('mIcoC').innerHTML=SVG.smile;
 $('tiShop').innerHTML=SVG.shop;$('bpause').innerHTML=SVG.pause;$('custIco').innerHTML=SVG.hanger;$('tiSpells').innerHTML=SVG.book;$('tiHome').innerHTML=SVG.swords;$('tiFriends').innerHTML=SVG.friends;$('tiRanks').innerHTML=SVG.trophy;
@@ -1899,4 +1901,5 @@ document.querySelectorAll('.mode span').forEach(s=>s.style.cssText='width:16px;h
 nav('home');
 {if(!PR.chosen){PR.chosen=(PR.unlocked||[]).filter(k=>!STARTERS.includes(k)&&SP[k]);PR.cps=CHECKPOINTS.filter(t=>PR.trophies>=t).slice(0,PR.chosen.length);PR.tokens=0;}const n=earnTokens();refreshMeta();if(n)queueModal(()=>showTokenModal(n));save();}
 </script>
+<script src="wizard-onboard.js"></script>
 </body></html>
