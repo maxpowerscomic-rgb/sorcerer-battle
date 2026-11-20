@@ -526,8 +526,8 @@
  },
  "bgm_menu": {
   "kind": "music",
-  "prompt": "Whimsical orchestral fantasy main menu loop for a cartoon wizard dueling mobile game. Playful pizzicato strings, celesta, harp and light woodwinds, warm and magical, medium tempo, instrumental only, loopable with no ending.",
-  "ms": 60000,
+  "prompt": "Original smooth, soft synth lounge music for a game's main menu and customization screen. Warm analog synth pads, gentle electric piano chords, a soft sub bass, airy reverb, a relaxed laid-back slow groove with light muted drum machine, dreamy late-night city calm, chill and polished, no big drops. Instrumental only, no vocals, loopable with no ending.",
+  "ms": 90000,
   "group": "music",
   "vol": 0.8,
   "loop": true,
@@ -537,10 +537,10 @@
  },
  "bgm_battle": {
   "kind": "music",
-  "prompt": "Energetic orchestral battle music for a cartoon wizard duel mobile game. Driving taiko and snare percussion, staccato strings, brass stabs, magical bells and choir hits, adventurous and fast, instrumental only, loopable with no ending.",
-  "ms": 60000,
+  "prompt": "Original instrumental fight loop for a wizard duel game, in the style of a tense new-wave reggae-rock outro. Up-tempo and steady around 150 BPM: rapid ticking hi-hats, tight snare, rolling tom fills, a busy melodic bass line, insistent choppy offbeat guitar chord stabs with echo, slightly dissonant minor harmony. Starts focused and controlled, not too energetic, then keeps progressing: stabs grow sharper, delay feedback swells, a dark sustained synth drone and pulsing low notes build suspense and urgency, tension climbing without a big climax or ending. Instrumental only, no vocals, loopable.",
+  "ms": 90000,
   "group": "music",
-  "vol": 0.75,
+  "vol": 0.72,
   "loop": true,
   "files": [
    "audio/bgm_battle.mp3"
