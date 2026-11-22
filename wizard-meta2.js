@@ -288,15 +288,15 @@
     if (db) { if (!u) { u = document.createElement('button'); u.id = 'undoO'; u.className = 'undoO'; u.onclick = () => undoPick(); db.before(u); } u.style.display = M.undo && M.undo.length ? '' : 'none'; u.textContent = '↶ Undo last pick'; }
     return r; };
 
-  /* ---------------- Mastery Tokens ----------------
+  /* ---------------- Echo Runes ----------------
      Spend one on an ability's page; at the end of your next match that ability's skill points are doubled, win or lose.
      The token is only used up when that ability was in your book. Start with 3, +1 per level up, or 3 for 40 gems. */
   if (PR.mTok === undefined) { PR.mTok = 3; try { save(); } catch (e) {} }
-  const TOK_SVG = '<svg viewBox="0 0 24 24" class="mtk"><path d="M12 2l8.5 5v10L12 22l-8.5-5V7z" fill="#ffd45e" stroke="#000" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.5l1.6 3.4 3.7.4-2.8 2.5.8 3.7L12 14.6l-3.3 1.9.8-3.7-2.8-2.5 3.7-.4z" fill="#fff6c8" stroke="#8a5a00" stroke-width="1"/></svg>';
+  const TOK_SVG = '<svg viewBox="0 0 24 24" class="mtk"><path d="M12 1.8 19.6 6v12L12 22.2 4.4 18V6z" fill="#5b3bd1" stroke="#000" stroke-width="2" stroke-linejoin="round"/><path d="M12 4.6 17 7.4v9.2L12 19.4 7 16.6V7.4z" fill="#8a6bff"/><path d="M12 7.5v9M9 9.5l3 2 3-2M9 13.5l3 2 3-2" fill="none" stroke="#f3ecff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.6 9.2a7.4 7.4 0 0 0 0 5.6M18.4 9.2a7.4 7.4 0 0 1 0 5.6" fill="none" stroke="#ffd75e" stroke-width="1.4" stroke-linecap="round"/></svg>';   // Echo Rune: a rune stone with an echo glyph
   // used on the rewards screen only: each ability that earned skill points this match gets a x2 button; spend one token per ability, on as many as you like
   window.masteryDouble = function (k) {
     const got = window.rwGot || {}, q = got[k] || 0; if (M) M.mtSet = M.mtSet || []; if (!(PR.mTok > 0) || !q || (M && M.mtSet.includes(k))) return;
-    PR.mTok--; PR.spells[k].cards += q; got[k] = q * 2; if (M) { M.mtSet.push(k); M.mtUsed = k; } try { save(); } catch (e) {} sfx('ui_unlock'); toast(`Mastery Token: ${SP[k].n} +${q} skill points`);
+    PR.mTok--; PR.spells[k].cards += q; got[k] = q * 2; if (M) { M.mtSet.push(k); M.mtUsed = k; } try { save(); } catch (e) {} sfx('ui_unlock'); toast(`Echo Rune: ${SP[k].n} +${q} skill points`);
     // update only this card: its +number and the new (yellow) part of its bar; the other cards are left alone
     const host = $('rwCards'); if (!host) return;
     { const mine = [...host.querySelectorAll('.rcard:not(.road)')].find(c => c.querySelector('img') && c.querySelector('img').getAttribute('src') === ICON[k]); if (mine) mine.querySelectorAll('button.x2').forEach(b => b.remove()); if (!(PR.mTok > 0)) host.querySelectorAll('button.x2').forEach(b => b.remove()); }
@@ -305,7 +305,7 @@
       const bar = el.querySelector('.pbar'); if (bar && sp.lvl < MAXL) bar.outerHTML = notches(sp.cards, need, got[k]);
       el.insertAdjacentHTML('beforeend', '<span class="x2 done">×2</span>');
       if (sp.lvl < MAXL && sp.cards >= need && !el.classList.contains('tapup')) { el.classList.add('tapup'); el.onclick = () => openSpell(k); el.insertAdjacentHTML('beforeend', '<small class="rcl rdy2">Tap to upgrade</small>'); } }
-    const note = document.getElementById('mtkNote'); if (note) note.innerHTML = `${TOK_SVG}<span>Mastery Token used on ${M.mtSet.map(q => SP[q].n).join(', ')}.${PR.mTok > 0 ? ` ${PR.mTok} left.` : ''}</span>`;
+    const note = document.getElementById('mtkNote'); if (note) note.innerHTML = `${TOK_SVG}<span>Echo Rune used on ${M.mtSet.map(q => SP[q].n).join(', ')}.${PR.mTok > 0 ? ` ${PR.mTok} left.` : ''}</span>`;
     try { if (window.onMasteryUsed) onMasteryUsed(k); } catch (e) {}
   };
   const _rrc = renderRwCards;
@@ -315,15 +315,15 @@
     host.querySelectorAll('.rcard:not(.road)').forEach(el => { const k = Object.keys(got).find(q => el.querySelector('img') && el.querySelector('img').getAttribute('src') === ICON[q]); if (!k) return;
       if (set.includes(k)) el.insertAdjacentHTML('beforeend', '<span class="x2 done">×2</span>'); else if (can) el.insertAdjacentHTML('beforeend', `<button class="x2" onclick="event.stopPropagation();masteryDouble('${k}')">×2</button>`); });
     let note = document.getElementById('mtkNote'); if (!note) { note = document.createElement('div'); note.id = 'mtkNote'; note.className = 'mtknote'; host.after(note); }
-    note.innerHTML = Object.keys(got).length ? (used && !(PR.mTok > 0) ? `${TOK_SVG}<span>Mastery Token used on ${set.map(q => SP[q].n).join(', ')}.</span>` : PR.mTok > 0 ? `${TOK_SVG}<span>Tap <b>×2</b> on any ability to spend a Mastery Token and double its points. You have ${PR.mTok}.</span>` : `${TOK_SVG}<span>No Mastery Tokens. Earn one each level up, or buy them in the shop.</span>`) : '';
+    note.innerHTML = Object.keys(got).length ? (used && !(PR.mTok > 0) ? `${TOK_SVG}<span>Echo Rune used on ${set.map(q => SP[q].n).join(', ')}.</span>` : PR.mTok > 0 ? `${TOK_SVG}<span>Tap <b>×2</b> on any ability to spend an Echo Rune and double its points. You have ${PR.mTok}.</span>` : `${TOK_SVG}<span>No Echo Runes. Earn one each level up, or buy them in the shop.</span>`) : '';
     return r;
   };
   const _gx = gainXp;
   window.gainXp = gainXp = function () { const from = PR.lvl, r = _gx.apply(this, arguments); if (PR.lvl > from) { PR.mTok = (PR.mTok || 0) + (PR.lvl - from); PR.tokPick = (PR.tokPick || 0) + (PR.lvl - from); } return r; };
-  window.buyMastery = function () { if (PR.gems < 40) return toast('Not enough gems'); PR.gems -= 40; PR.mTok = (PR.mTok || 0) + 3; try { save(); } catch (e) {} refreshMeta(); renderShop(); toast('+3 Mastery Tokens'); };
+  window.buyMastery = function () { if (PR.gems < 40) return toast('Not enough gems'); PR.gems -= 40; PR.mTok = (PR.mTok || 0) + 3; try { save(); } catch (e) {} refreshMeta(); renderShop(); toast('+3 Echo Runes'); };
   const _rs = renderShop;
   window.renderShop = renderShop = function () { const r = _rs.apply(this, arguments); const host = document.getElementById('packs'); if (host && !document.getElementById('mtkShop')) host.insertAdjacentHTML('afterend', `<div id="mtkShop"></div>`);
-    const m = document.getElementById('mtkShop'); if (m) m.innerHTML = `<div class="mtkbuy">${TOK_SVG}<div><b>Mastery Tokens ×3</b><small>After a match, double one ability's skill points. You have ${PR.mTok}.</small></div><button onclick="buyMastery()" ${PR.gems < 40 ? 'disabled' : ''}>${SVG.gem}40</button></div>`; return r; };
+    const m = document.getElementById('mtkShop'); if (m) m.innerHTML = `<div class="mtkbuy">${TOK_SVG}<div><b>Echo Runes ×3</b><small>After a match, double one ability's skill points. You have ${PR.mTok}.</small></div><button onclick="buyMastery()" ${PR.gems < 40 ? 'disabled' : ''}>${SVG.gem}40</button></div>`; return r; };
 
   /* ---------------- path-aware wording ---------------- */
   const _rm2 = refreshMeta;
@@ -707,4 +707,17 @@
 (function () {
   const _sm = showSpellModal;
   window.showSpellModal = showSpellModal = function (k, from, to, unlockName) { const r = _sm.apply(this, arguments); if (!unlockName) try { setTimeout(() => sfx('ui_abilityup'), 120); } catch (e) {} return r; };
+})();
+
+/* ---------------- your gold on every ability page, next to the upgrade button (F-476) ---------------- */
+(function () {
+  const _os = window.openSpell;
+  window.openSpell = openSpell = function (k) { const r = _os.apply(this, arguments);
+    try { const P = document.getElementById('sheetP'), b = P && P.querySelector('.upbtn[onclick^="upgrade"]'); if (b && !P.querySelector('.goldnow')) b.insertAdjacentHTML('beforebegin', `<div class="goldnow"><span class="ci coin-i"></span>You have <b>${(PR.coins || 0).toLocaleString()}</b> gold</div>`); } catch (e) {}
+    return r; };
+  const _up = window.upgrade;
+  if (typeof _up === 'function') window.upgrade = upgrade = function () { const r = _up.apply(this, arguments); try { const g = document.querySelector('#sheetP .goldnow b'); if (g) g.textContent = (PR.coins || 0).toLocaleString(); } catch (e) {} return r; };
+  const css = document.createElement('style');
+  css.textContent = `.goldnow{display:flex;align-items:center;justify-content:center;gap:6px;font:13px Nunito;font-weight:800;color:#e8e0ff;margin:2px 0 -2px}.goldnow b{color:#ffd75e;font-family:'Lilita One';font-weight:400;font-size:15px}.goldnow .ci{width:18px;height:18px}`;
+  document.head.appendChild(css);
 })();

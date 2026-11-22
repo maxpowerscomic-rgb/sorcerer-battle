@@ -182,8 +182,8 @@
   function lureOf(w, k) {
     if (k !== 'rush' && TGT_ABLE.includes(k)) { const m = prefMob(w, k); if (m) return m; }   // the player's "summons first" setting
     if (DECOY_AIM_SKIP.has(k) || (TECH[k] && k !== 'dissect') || typeof decoys === 'undefined') return null;
-    let b = null, bd = 1e9; for (const d of decoys) if (d.o !== w && !d.gone) { const dd = Math.hypot(d.x - w.x, d.y - w.y); if (dd < bd) { bd = dd; b = d; } }
-    return b;
+    const live = decoys.filter(d => d.o !== w && !d.gone); if (!live.length || Math.random() >= .66) return null;   // decoys fool the attacker 66% of the time
+    return live[Math.random() * live.length | 0];
   }
   const LOOP_ONCE = { ghost: 'GHOST SPENT', shield: 'SHIELD SPENT', hourglass: 'HOURGLASS SPENT', titan: 'SHELL SPENT', counter: 'STANCE SPENT' };
   window.LOOP_ONCE = LOOP_ONCE;
@@ -226,7 +226,36 @@
       try { _cast(c, k); if (TECH[k]) techCast(c, k); else if (k === 'healspring') castSpring(c); } finally { c.lv[k] = keep; copying = false; }
       text(c.x, c.y - 92 * HS, 'COPIED ' + SP[k].n.toUpperCase(), '#ff6b7a', true);
     }
+    if (!copying && !w.dead && !ended && U(w, 'mirror', 'mcast') && !CLONE_SKIP.has(k)) mirrorCast(w, k);
   };
+  /* Mirror Cast: each of your decoys repeats the spell from where it stands at 33% power, halved again for every
+     extra decoy (2 decoys: 16.5% each). Rushdown and spells that act on your own body or position are not repeated. */
+  const CLONE_SKIP = new Set(['rush', 'sanctum', 'doubletake', 'polarity', 'copycast', 'chosen', 'titan', 'counter', 'secondwind', 'ghost', 'blink', 'mirror', 'shield', 'hourglass', 'burnbody', 'healspring']);
+  window.CLONE_SCALE = 0;
+  function mirrorCast(w, k) {
+    const ds = decoys.filter(d => d.o === w && !d.gone && d.echoT === undefined); if (!ds.length) return;
+    const m = .33 * Math.pow(.5, ds.length - 1);
+    const lists = () => [typeof projs !== 'undefined' && projs, typeof runes !== 'undefined' && runes, typeof arrows !== 'undefined' && arrows, typeof meteors !== 'undefined' && meteors, typeof swarms !== 'undefined' && swarms, typeof clouds !== 'undefined' && clouds, zombies, golems, archers, typeof firerings !== 'undefined' && firerings, typeof totems !== 'undefined' && totems, typeof pits !== 'undefined' && pits, typeof wells !== 'undefined' && wells, typeof bubbles !== 'undefined' && bubbles, typeof cannons !== 'undefined' && cannons, typeof patches !== 'undefined' && patches, slashes, orbsC, muds, cleaves].filter(Boolean);
+    for (const d of ds) {
+      const keep = { x: w.x, y: w.y, face: w.face, cleaveN: w.cleaveN, zn: w.zn, polN: w.polN }, before = lists().map(L => new Set(L));
+      const st = window.setTimeout; copying = true; window.CLONE_SCALE = m;
+      window.setTimeout = (f, ms) => st(() => { const o = window.CLONE_SCALE; window.CLONE_SCALE = m; try { f(); } finally { window.CLONE_SCALE = o; } }, ms);
+      w.x = d.x; w.y = d.y; w.face = w.foe.x > d.x ? 1 : -1;
+      try { _cast(w, k); if (TECH[k]) techCast(w, k); }
+      catch (e) {}
+      finally { window.setTimeout = st; window.CLONE_SCALE = 0; copying = false; w.x = keep.x; w.y = keep.y; w.face = keep.face; w.cleaveN = keep.cleaveN; w.zn = keep.zn; w.polN = keep.polN; }
+      // everything the decoy just made is weaker
+      lists().forEach((L, i) => { for (const o of L) { if (before[i] && before[i].has(o)) continue; o.clone = 1;
+        for (const f of ['dmg', 'dps', 'wallDps', 'bodyDps']) if (typeof o[f] === 'number') o[f] *= m;
+        if (L === (typeof projs !== 'undefined' && projs)) o.dmgMul = (o.dmgMul || 1) * m;
+        for (const f of ['hp', 'mx', 'max', 'dmax']) if (typeof o[f] === 'number' && (L === zombies || L === golems || L === archers || L === (typeof swarms !== 'undefined' && swarms) || L === (typeof totems !== 'undefined' && totems))) o[f] = Math.max(1, o[f] * m); } });
+      inkRing(d.x, d.y, '#f0d2ff', 1, 6, 30, .5); burst(d.x, d.y - 40 * HS, 10, ['#f0d2ff', '#b06bff', '#fff'], 140, 3, .35);
+    }
+    text(w.x, w.y - 104 * HS, 'MIRROR CAST', '#f0d2ff');
+  }
+  // instant hits made while a decoy is casting (and its delayed bolts) are scaled the same way
+  { const _dmC = damage; window.damage = damage = function (t, d) { if (window.CLONE_SCALE && d > 0) arguments[1] = d * window.CLONE_SCALE; return _dmC.apply(this, arguments); };
+    const _hcC = hurtCreature; window.hurtCreature = hurtCreature = function (c, kk, d) { if (window.CLONE_SCALE && d > 0) arguments[2] = d * window.CLONE_SCALE; return _hcC.apply(this, arguments); }; }
 
   /* Techniques throw a burst of ki sparks on cast; spells draw a magic seal. Both grow with the card's tier,
      and every upgrade owned adds one more element to a spell's seal. */
@@ -342,7 +371,7 @@
   /* ---------------- Dissection ---------------- */
   function mkSlash(w, x0, y0, a, sp, mult, sz) {
     const tier = tierOf(w, 'dissect');
-    slashes.push({ o: w, x: x0, y: y0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.1, dmg: S(w, 'dissect', 'dmg') * mult, hit: new Set(), keen: U(w, 'dissect', 'keen'), cut: U(w, 'dissect', 'cutter'), sting: U(w, 'dissect', 'sting'), tested: new Set(), sz: sz * (1 + (tier - 1) * .16) * (U(w, 'dissect', 'broad') ? 1.8 : 1), wd: U(w, 'dissect', 'broad') ? 1.8 : 1, tier });
+    slashes.push({ o: w, x: x0, y: y0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.1, dmg: S(w, 'dissect', 'dmg') * mult, hit: new Set(), keen: U(w, 'dissect', 'keen'), cut: U(w, 'dissect', 'cutter'), sting: U(w, 'dissect', 'sting'), tested: new Set(), sz: sz * (1 + (tier - 1) * .16) * (U(w, 'dissect', 'broad') ? 1.3 : 1), wd: U(w, 'dissect', 'broad') ? 1.3 : 1, tier });
   }
   // a spell sliced in two: both halves drift apart and fizzle
   function cutSpell(x0, y0, cols, a) {
@@ -862,7 +891,17 @@
   /* ---------------- drawing ---------------- */
   const _drawZombie = drawZombie;
   // new art for fully risen zombies; the rising, sinking and electrocuted states keep their original animations
-  window.drawZombie = drawZombie = function (z) { if (z.beast) return drawBeast(z); if (ART_STYLE === 'hd' && typeof drawZombieHD === 'function' && z.rise >= 1 && !(z.sink > 0) && !(z.shockT > 0)) return drawZombieHD(z); return _drawZombie(z); };
+  // the selected art style draws the zombie the whole time: rising out of the ground, sinking, and shocked
+  window.drawZombie = drawZombie = function (z) { if (z.beast) return drawBeast(z);
+    if (!(ART_STYLE === 'hd' && typeof drawZombieHD === 'function')) return _drawZombie(z);
+    if (z.rise <= 0) return;
+    const x = ctx, r = Math.min(1, z.rise), down = (1 - r) * 46 * SC + (z.sink > 0 && r >= 1 ? z.sink * 34 : 0);
+    if (r < 1) { x.save(); x.translate(z.x, z.y); x.scale(SC, SC); x.fillStyle = '#4a3020'; x.strokeStyle = '#000'; x.lineWidth = 2; x.beginPath(); x.ellipse(0, 0, 15 * (.6 + .4 * r), 5.5, 0, 0, 7); x.fill(); x.stroke(); x.restore(); }   // the hole it climbs out of
+    if (z.shockT > 0) z.shockT -= .016;
+    if (down > .5) { x.save(); x.beginPath(); x.rect(z.x - 40, z.y - 110, 80, 112); x.clip(); x.translate(0, down); const r0 = z.rise, s0 = z.sink; z.rise = 1; z.sink = 0; try { drawZombieHD(z); } finally { z.rise = r0; z.sink = s0; x.restore(); } }
+    else drawZombieHD(z);
+    if (z.shockT > 0 && Math.floor(T * 24) % 2 === 0) { x.save(); x.globalCompositeOperation = 'lighter'; x.globalAlpha = .7; drawZombieHD(z); x.restore(); }   // shocked: flickers bright
+  };
   const _drawGolem = drawGolem, _drawArcher = drawArcher;
   window.drawGolem = drawGolem = function (g) { return ART_STYLE === 'hd' && typeof drawGolemHD === 'function' ? drawGolemHD(g) : _drawGolem(g); };
   window.drawArcher = drawArcher = function (a) { return ART_STYLE === 'hd' && typeof drawArcherHD === 'function' ? drawArcherHD(a) : _drawArcher(a); };

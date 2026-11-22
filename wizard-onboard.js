@@ -95,7 +95,7 @@ const ONB_STEPS = [
   { id: 'match', dot: 4, coachMatch: true,
     until: () => { const r = document.getElementById('rewards').classList.contains('on'); if (r) ONB.won = M && M.score.me > M.score.foe; return r; } },
   { id: 'spoils', dot: 4, allow: 'all', target: () => PR.mTok > 0 ? '#rwCards' : '#rwBtn', place: 'top',
-    html: () => `<b class="who">Hoot</b>Each ability you used earned <em>skill points</em>. Got a <em>Mastery Token</em>? Tap <em>×2</em> on one ability to double its points, win or lose. You get a token every level up.`,
+    html: () => `<b class="who">Hoot</b>Each ability you used earned <em>skill points</em>. Got an <em>Echo Rune</em>? Tap <em>×2</em> on one ability to double its points, win or lose. You get a token every level up.`,
     until: () => document.getElementById('home').classList.contains('on') && !modalOpen() },
   { id: 'upgrade', dot: 5, enter() { onbPrepUpgrade(); window.abTab = SCHOOL_OF(ONB.upK); nav('spells'); }, target: () => `.scard[onclick="openSpell('${ONB.upK}')"]`, place: 'auto', tap: true, allow: 'sheet',
     html: () => `<b class="who">Hoot</b>${ONB.won ? 'A fine first victory!' : 'Close one, but every duel pays!'} <em>${SP[ONB.upK].n}</em> now has enough skill points to level up. Tap it! Its page also shows what it is <em>strong against</em> and what to <em>watch out for</em>.`,
@@ -135,7 +135,7 @@ function onbEnter() {
   if (s.enter) s.enter();
   onbRenderBubble(); onbTick();
 }
-// spending a Mastery Token on the rewards screen during the tour carries straight on to the next step
+// spending an Echo Rune on the rewards screen during the tour carries straight on to the next step
 window.onMasteryUsed = function () { try { const s = onbCur && onbCur(); if (window.ONB_ACTIVE && s && s.id === 'spoils') setTimeout(() => { const b = document.getElementById('rwBtn'); if (b && document.getElementById('rewards').classList.contains('on')) b.click(); }, 1200); } catch (e) {} };
 function onbNext() { ONB.i++; if (ONB.i >= ONB_STEPS.length) return onbFinish(); onbEnter(); }
 function onbRenderBubble(html, placeOverride) {

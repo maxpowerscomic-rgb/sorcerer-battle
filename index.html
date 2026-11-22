@@ -1615,7 +1615,7 @@ function drawDecals(x){for(const d of decals){SRC=d.k==='acid'?'bubbles':d.k==='
  x.restore();}}
 /* ---------- new spells ---------- */
 function enemyCreatures(o){return zombies.filter(z=>z.o!==o&&z.rise>=1&&z.hp>0).map(e=>({e,k:'z'})).concat(totems.filter(q=>q.o!==o&&q.hp>0).map(e=>({e,k:'tm'})),golems.filter(g=>g.o!==o&&g.hp>0).map(e=>({e,k:'g'})),archers.filter(a=>a.o!==o&&a.hp>0).map(e=>({e,k:'a'})),swarms.filter(q=>q.o!==o&&q.hp>0).map(e=>({e,k:'s'})),decoys.filter(d=>d.o!==o&&!d.gone).map(e=>({e,k:'d'})))}
-function pickTarget(o){let best=o.foe,bd=1e9;for(const d of decoys)if(d.o!==o&&!d.gone){const dd=dist(o,d);if(dd<bd){bd=dd;best=d}}return best}
+function pickTarget(o,obj){/* decoys fool the attacker 66% of the time; a swarm or homing shot keeps its choice until that decoy pops */if(obj&&obj._lureSet&&!(obj._lure&&obj._lure.gone))return obj._lure||o.foe;const live=decoys.filter(d=>d.o!==o&&!d.gone),t=live.length&&Math.random()<.66?live[Math.random()*live.length|0]:null;if(obj){obj._lureSet=1;obj._lure=t;}return t||o.foe}
 function hurtArcher(a,d){if(a.hp<=0)return;a.hp-=d;a.flash=.1;if(a.hp<=0){burst(a.x,a.y-40*HS,30,['#e0fffb','#5fe0d0','#fff'],200,5,.6);text(a.x,a.y-70*HS,'BANISHED','#bff');}}
 function hurtGolem(g,d){if(g.hp<=0)return;g.hp-=d;g.flash=.1;if(g.hp<=0){burst(g.x,g.y-24*HS,30,['#a8824a','#c9a56a','#5a3d22'],200,6,.7,300);shake=Math.max(shake,8);scar('crack',g.x,g.y);for(let i=0;i<10;i++)P({x:g.x,y:g.y-20,vx:rnd(-120,120),vy:rnd(-200,-60),color:'#8a6a3a',size:4,life:.8,grav:500,glow:false});if(g.bloom&&!g.mini)for(let j=0;j<3;j++){const a=j*2.1;golems.push(mkGolem(g.o,g.x+Math.cos(a)*18,g.y+Math.sin(a)*10,true));}}}
 function hurtTotem(q,d){if(q.hp<=0)return;q.hp-=d;q.flash=.1;if(q.hp<=0){burst(q.x,q.y-24*HS,20,['#c87533','#ffd23a','#5a3d22'],160,4,.5,300);scar('crack',q.x,q.y);}}
@@ -1639,7 +1639,7 @@ function zap(w,k,bi=0,fac=1){SRC='lightning';sfx('c_lightning',{x:w.x,vol:bi?.7:
  const tr=tierOf(w,k);bolts.push({pts,life:.22,tier:tr});if(tr>=3)pts.slice(1).forEach(q=>inkRing(q.x,q.y,'#ffd23a',1,6,34));shake=Math.max(shake,5);}
 function updateNew(dt){updateNew2(dt);
  for(const b of bolts)b.life-=dt;bolts=bolts.filter(b=>b.life>0);
- for(const q of swarms){SRC='flies';q.t+=dt;q.life-=dt;if(ended)continue;const lt=totems.find(t=>t.o!==q.o&&t.hp>0&&t.lure),tg=lt||pickTarget(q.o),dx=tg.x-q.x,dy=tg.y-q.y,d=Math.hypot(dx,dy)||1;
+ for(const q of swarms){SRC='flies';q.t+=dt;q.life-=dt;if(ended)continue;const lt=totems.find(t=>t.o!==q.o&&t.hp>0&&t.lure),tg=lt||pickTarget(q.o,q),dx=tg.x-q.x,dy=tg.y-q.y,d=Math.hypot(dx,dy)||1;
   if(q.frozen>0){q.frozen-=dt;continue;}
   let blk=null;for(const wl of walls)if(wl.o!==q.o&&wallD(wl,q.x,q.y)<24)blk=wl;
   if(blk&&blk.spikes){q.hp-=8*dt;if(q.hp<=0)continue;}
@@ -1696,7 +1696,7 @@ function update(dt){SRC=null;shake*=Math.pow(.02,dt);updateDecals(dt);for(const 
   if(Math.abs(dx)>4)w.face=dx>0?1:-1;}
  for(const w of ents){w.petX+=(w.x-w.face*34-w.petX)*Math.min(1,dt*3);w.petY+=(w.y+8-w.petY)*Math.min(1,dt*3);if((w.rootT||0)>0){w.vx*=.5;w.vy*=.5;}else{w.x=clamp(w.x+w.vx*dt,F.x0,F.x1);w.y=clamp(w.y+w.vy*dt,F.y0,F.y1);}pushOut(w,16);if(Math.random()<Math.hypot(w.vx,w.vy)/400)P({x:w.x+rnd(-6,6),y:w.y,vx:rnd(-10,10),vy:-15,color:'#c9b98a',size:3,life:.4,glow:false})}
  // fireballs
- for(const p of projs){SRC=p.src||'fireball';p.life-=dt;if(p.held!==undefined&&window.heldProj&&heldProj(p,dt))continue;if(p.home){if(!p.tgt||p.tgt.gone||p.tgt.dead)p.tgt=pickTarget(p.o);const tg=p.tgt;const a=Math.atan2(tg.y-40*HS-p.y,tg.x-p.x),cur=Math.atan2(p.vy,p.vx);let da=a-cur;while(da>Math.PI)da-=6.28;while(da<-Math.PI)da+=6.28;const na=cur+clamp(da,-1.6*dt,1.6*dt);p.vx=Math.cos(na)*p.sp;p.vy=Math.sin(na)*p.sp;}
+ for(const p of projs){SRC=p.src||'fireball';p.life-=dt;if(p.held!==undefined&&window.heldProj&&heldProj(p,dt))continue;if(p.home){if(!p.tgt||p.tgt.gone||p.tgt.dead)p.tgt=pickTarget(p.o,p);const tg=p.tgt;const a=Math.atan2(tg.y-40*HS-p.y,tg.x-p.x),cur=Math.atan2(p.vy,p.vx);let da=a-cur;while(da>Math.PI)da-=6.28;while(da<-Math.PI)da+=6.28;const na=cur+clamp(da,-1.6*dt,1.6*dt);p.vx=Math.cos(na)*p.sp;p.vy=Math.sin(na)*p.sp;}
   {const ts=tsAt(p.x,p.y+40*HS,p.o);p.x+=p.vx*dt*ts;p.y+=p.vy*dt*ts;}p.age+=dt;if(p.drops.length&&p.age>=p.drops[0]){p.drops.shift();decals.push({k:'ember',x:p.x+rnd(-4,4),y:p.y+46*HS,t:0,life:2.6,s:rnd(.8,1.2)});P({x:p.x,y:p.y,vx:rnd(-20,20),vy:60,color:'#ffb347',size:3,life:.5,grav:200});}
   for(const q of projs)if(q!==p&&q.o!==p.o&&q.life>0&&p.life>0&&Math.hypot(p.x-q.x,p.y-q.y)<22){clash(p,q);break;}
   if(p.life<=0)continue;{const sp2=Math.hypot(p.vx,p.vy)||1;for(let q=0;q<2;q++)fireFx.push({x:p.x-p.vx/sp2*rnd(0,10)+rnd(-3,3),y:p.y-p.vy/sp2*rnd(0,10)+rnd(-3,3),vx:-p.vx*.12+rnd(-12,12),vy:-p.vy*.12-rnd(10,30),t:0,life:rnd(.22,.38),s:rnd(6,10)*(p.r/9),seed:rnd(0,99),smoke:0});}p.trail.unshift({x:p.x,y:p.y});if(p.trail.length>16)p.trail.pop();const [l,m]=COL.fire;
