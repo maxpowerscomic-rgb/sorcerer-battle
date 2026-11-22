@@ -1679,9 +1679,9 @@ function update(dt){SRC=null;shake*=Math.pow(.02,dt);updateDecals(dt);for(const 
   if(Math.random()<.6){const [l]=COL[SP[w.book[w.i]].el];const a=rnd(0,6.28),rr=rnd(18,30);P({x:w.x+w.face*22+Math.cos(a)*rr,y:w.y-66*HS+Math.sin(a)*rr,vx:-Math.cos(a)*rr*2.5,vy:-Math.sin(a)*rr*2.5,color:l,size:2.5,life:.35})}
   const dx=o.x-w.x,dy=o.y-w.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;let want=SP[w.book[w.i]].range;if(w.me){const bh=PR.behavior||'default';if(bh==='push')want=Math.min(want,60);else if(bh==='away')want=Math.max(want,280);}
   w.orbitT-=dt;if(w.orbitT<0){w.orbit*=-1;w.orbitT=rnd(1.2,3.2);}
-  const inMet=meteors.some(m=>m.o!==w&&!m.done&&m.t>=0&&Math.hypot(w.x-m.tx,w.y-m.ty)<m.r);w.inMet=inMet;if(w.beamT>0)w.beamT-=dt;const rad=clamp((d-want)/40,-1.4,1.4),spd=(w.bodyT>0?1.5:1)*(w.pitT>0?.35:1)*(w.beamT>0?.15:1)*((w.grabT=(w.grabT||0)-dt)>0?.35:1)*70*(w.recoil>0?.25:1)*(inMet?.45:1);
+  const inMet=meteors.some(m=>m.o!==w&&!m.done&&m.t>=0&&Math.hypot(w.x-m.tx,w.y-m.ty)<m.r);w.inMet=inMet;if(w.beamT>0)w.beamT-=dt;const rad=clamp((d-want)/40,-1.4,1.4),spd=(w.bodyT>0?1.5:1)*(w.pitT>0?.35:1)*(w.beamT>0?.15:1)*((w.grabT=(w.grabT||0)-dt)>0?.35:1)*70*(w.recoil>0?.25:1);
   let tx=ux*rad*spd+(-uy)*w.orbit*spd*.8,ty=uy*rad*spd+ux*w.orbit*spd*.8;
-  for(const m of meteors)if(m.o!==w&&!m.done&&m.t>.45){const md=Math.hypot(w.x-m.tx,w.y-m.ty)||1;if(md<m.r+10){tx+=(w.x-m.tx)/md*40;ty+=(w.y-m.ty)/md*40}}
+  for(const m of meteors)if(m.o!==w&&!m.done&&m.t>=0){const md=Math.hypot(w.x-m.tx,w.y-m.ty)||1;if(md<m.r+14){/* inside a meteor ring: run for the nearest edge */const ex=md>2?(w.x-m.tx)/md:(w.orbit||1),ey=md>2?(w.y-m.ty)/md:0;tx+=ex*150;ty+=ey*150;tx-=ux*rad*spd*.8;ty-=uy*rad*spd*.8;}}for(const c of clouds)if(c.o!==w)for(const mk of c.marks){const md=Math.hypot(w.x-mk.x,w.y-mk.y)||1;if(md<44){tx+=(w.x-mk.x)/md*110;ty+=(w.y-mk.y)/md*110;}}
   for(const z of zombies)if(z.o!==w&&z.rise>=1){const zd=Math.hypot(w.x-z.x,w.y-z.y)||1;if(zd<50){tx+=(w.x-z.x)/zd*22;ty+=(w.y-z.y)/zd*22}}
    if(typeof moveMod==='function'){const mm=moveMod(w);tx+=mm[0];ty+=mm[1];}
    if(w.bodyT>0){const d0=dist(w,w.foe)||1;tx+=(w.foe.x-w.x)/d0*150;ty+=(w.foe.y-w.y)/d0*150;}

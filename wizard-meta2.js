@@ -504,3 +504,64 @@
   };
   window.OFFER_DEBUG = { okIn };
 })();
+
+/* ---------------- targeting setting on the Your Abilities screen (F-447) ----------------
+   For abilities that aim, pick who they go for: Auto (the ability's normal behaviour), Caster, or Summons first
+   with a sub-choice of strongest or weakest. Saved on the profile, so it carries over between rounds and matches. */
+(function () {
+  const keyOf = () => { try { const b = M.me.book; return b[M.swapSel ?? (M.lastAdded >= 0 ? M.lastAdded : 0)]; } catch (e) { return null; } };
+  window.setTgt = function (k, v) { PR.tgt = PR.tgt || {}; if (v === 'mobs') v = (PR.tgt[k] === 'weak' ? 'weak' : 'strong'); PR.tgt[k] = v; try { save(); } catch (e) {} renderBook(); };
+  const _rb = renderBook;
+  window.renderBook = renderBook = function () {
+    const r = _rb.apply(this, arguments);
+    try {
+      const k = keyOf(), det = document.getElementById('detail'); if (!k || !det || !(window.TGT_ABLE || []).includes(k)) return r;
+      const v = (PR.tgt && PR.tgt[k]) || 'auto', mob = v === 'strong' || v === 'weak';
+      const b = (id, n, on) => `<button class="${on ? 'on' : ''}" onclick="event.stopPropagation();setTgt('${k}','${id}')">${n}</button>`;
+      det.insertAdjacentHTML('beforeend', `<div class="tgtrow"><span>Targets</span><div class="bseg">${b('auto', k === 'rush' ? 'Nearest' : 'Auto', v === 'auto')}${b('caster', 'Caster', v === 'caster')}${b('mobs', 'Summons', mob)}</div>${mob ? `<div class="bseg sub">${b('strong', 'Strongest first', v === 'strong')}${b('weak', 'Weakest first', v === 'weak')}</div>` : ''}</div>`);
+    } catch (e) {}
+    return r;
+  };
+  const css = document.createElement('style');
+  css.textContent = `.tgtrow{flex-basis:100%;width:100%;margin-top:8px}.tgtrow>span{display:block;font:11px 'Lilita One';letter-spacing:1px;color:#b9a6ee;margin:0 0 4px 2px;text-transform:uppercase}.tgtrow .bseg button{font-size:12px;padding:7px 2px}.tgtrow .bseg.sub{margin-top:4px}#detail{flex-wrap:wrap}`;
+  document.head.appendChild(css);
+})();
+
+/* ---------------- Ability Trials (F-450) ----------------
+   Every ability has three trial tracks: damage dealt with it, matches played with it in your book, and wins with it.
+   Each track has three tiers; clearing a tier pays skill points to that ability. Shown on the ability's page. */
+(function () {
+  const TR = [
+    { id: 'dmg', n: 'Deal damage with it', goals: [300, 1500, 5000], pay: [15, 30, 60] },
+    { id: 'games', n: 'Play matches with it', goals: [5, 20, 50], pay: [10, 25, 50] },
+    { id: 'wins', n: 'Win matches with it', goals: [3, 12, 30], pay: [15, 35, 70] },
+  ];
+  const st = k => { PR.trial = PR.trial || {}; return PR.trial[k] = PR.trial[k] || { dmg: 0, games: 0, wins: 0, got: { dmg: 0, games: 0, wins: 0 } }; };
+  // damage is counted per round, so add it up before the next round wipes it
+  let acc = {};
+  const _sd = startDuel;
+  window.startDuel = startDuel = function () { try { if (M && M.rdmg && M.rdmg.me) for (const k in M.rdmg.me) acc[k] = (acc[k] || 0) + M.rdmg.me[k]; } catch (e) {} return _sd.apply(this, arguments); };
+  const _nm = newMatch;
+  window.newMatch = newMatch = function () { acc = {}; return _nm.apply(this, arguments); };
+  const _sr = showRewards;
+  window.showRewards = showRewards = function () {
+    try { if (M && !M._trialDone && !window.ONB_ACTIVE) { M._trialDone = 1;
+      const dm = Object.assign({}, acc); if (M.rdmg && M.rdmg.me) for (const k in M.rdmg.me) dm[k] = (dm[k] || 0) + M.rdmg.me[k];
+      const won = M.score.me > M.score.foe, msgs = [];
+      for (const k of new Set(M.me.book.concat(Object.keys(dm)))) { if (!SP[k] || !PR.spells || !PR.spells[k]) continue; const s = st(k);
+        if (dm[k]) s.dmg += Math.round(dm[k]); if (M.me.book.includes(k)) { s.games++; if (won) s.wins++; }
+        for (const t of TR) while (s.got[t.id] < 3 && s[t.id] >= t.goals[s.got[t.id]]) { const q = t.pay[s.got[t.id]]; s.got[t.id]++; PR.spells[k].cards += q; msgs.push(`${SP[k].n} trial cleared: +${q} skill points`); } }
+      acc = {}; try { save(); } catch (e) {}
+      msgs.slice(0, 3).forEach((m, i) => setTimeout(() => { try { toast(m); } catch (e) {} }, 1400 + i * 1600)); } } catch (e) {}
+    return _sr.apply(this, arguments);
+  };
+  function trialHTML(k) { const s = st(k);
+    return `<div class="trials"><div class="trh">Trials</div>${TR.map(t => { const g = s.got[t.id], done = g >= 3, goal = t.goals[Math.min(2, g)], p = Math.min(1, s[t.id] / goal);
+      return `<div class="trw ${done ? 'done' : ''}"><div class="trt"><span>${t.n}</span><b>${done ? 'Complete' : `${Math.min(s[t.id], goal).toLocaleString()} / ${goal.toLocaleString()}`}</b></div><div class="trb"><i style="width:${(done ? 1 : p) * 100}%"></i></div><div class="trp">${[0, 1, 2].map(i => `<em class="${i < g ? 'on' : ''}">${i < g ? '✓' : '+' + t.pay[i]}</em>`).join('')}</div></div>`; }).join('')}</div>`; }
+  window.trialHTML = trialHTML;
+  const _os = window.openSpell;
+  window.openSpell = openSpell = function (k) { const r = _os.apply(this, arguments); try { const P = document.getElementById('sheetP'); if (P && !P.querySelector('.trials') && (typeof isUnl !== 'function' || isUnl(k))) { const at = P.querySelector('.ctrs') || P.querySelector('.ups')?.parentElement || P.querySelector('.shd'); if (at) at.insertAdjacentHTML('afterend', trialHTML(k)); } } catch (e) {} return r; };
+  const css = document.createElement('style');
+  css.textContent = `.trials{margin:10px 0 4px;background:#0006;border:2px solid #000;border-radius:12px;padding:8px 10px}.trh{font:13px 'Lilita One';letter-spacing:1px;color:#ffd75e;margin-bottom:4px}.trw{margin:6px 0}.trt{display:flex;justify-content:space-between;font:12px Nunito;font-weight:800;color:#e8e0ff}.trt b{color:#b9a6ee;font-weight:800}.trw.done .trt b{color:#7dffa8}.trb{height:7px;background:#000;border-radius:5px;overflow:hidden;margin:3px 0}.trb i{display:block;height:100%;background:linear-gradient(90deg,#7a5cff,#c48cff)}.trw.done .trb i{background:linear-gradient(90deg,#2fd08a,#7dffa8)}.trp{display:flex;gap:6px}.trp em{font:10px 'Lilita One';font-style:normal;color:#8d7fbf;background:#1a1236;border:1.5px solid #000;border-radius:6px;padding:1px 6px}.trp em.on{color:#0b2a14;background:#7dffa8}`;
+  document.head.appendChild(css);
+})();

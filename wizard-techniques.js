@@ -82,6 +82,15 @@
   /* ---------------- cast hook ---------------- */
   const _cast = cast;
   let copying = false;
+  /* targeting setting (set per ability on the Your Abilities screen): auto, caster, or summons first (strongest / weakest) */
+  const SUMMON_K = new Set(['z', 'g', 'a']);
+  const TGT_ABLE = ['fireball', 'lightning', 'meteor', 'ricochet', 'beam', 'sinkhole', 'storm', 'bubbles', 'flies', 'gravity', 'dissect', 'rush'];
+  window.TGT_ABLE = TGT_ABLE;
+  function tgtPref(w, k) { return w && w.me && typeof PR !== 'undefined' && PR.tgt && PR.tgt[k] || 'auto'; }
+  window.tgtPref = tgtPref;
+  function prefMob(w, k) { const p = tgtPref(w, k); if (p !== 'strong' && p !== 'weak') return null;
+    const mobs = enemyCreatures(w).filter(c => SUMMON_K.has(c.k) && c.e.x !== undefined); if (!mobs.length) return null;
+    return mobs.reduce((a, b) => (p === 'strong' ? b.e.hp > a.e.hp : b.e.hp < a.e.hp) ? b : a).e; }
   /* Titan Shell breaks like an ice wall: glassy shards in the shell's colour fly out, bounce and fade. Harmless. */
   let sshards = [];
   function shellShatter(w) {
@@ -107,6 +116,46 @@
       x.restore();
       if (c.land) { x.save(); x.globalAlpha = fade * .25; x.fillStyle = c.m; x.beginPath(); x.ellipse(c.x, c.y + 1, c.sz * .9, c.sz * .35, 0, 0, 7); x.fill(); x.restore(); } }
   }
+  /* Unrestrained Collapse: the singularity bursts into a violet sphere that erases everything in it, caster included */
+  let pblasts = [];
+  function unboundBlast(c) {
+    const w = c.o, f = w.foe, R = 125, dmg = c.dmg * 1.8; SRC = 'polarity';
+    pblasts.push({ x: c.x, y: c.y - 36 * HS, r0: performance.now(), R, seed: Math.random() * 99 });
+    shake = Math.max(shake, 26); slow = Math.min(slow, .05); setTimeout(() => { if (!ended) slow = 1; }, 260);
+    text(c.x, c.y - 120 * HS, 'UNRESTRAINED', '#e8d8ff', true); try { sfx('shatter', { x: c.x }); } catch (e) {}
+    const inR = e => Math.hypot(e.x - c.x, (e.y - c.y) * 1.2) < R;
+    if (!f.dead && !ghosted(f) && inR(f)) { const d = Math.hypot(f.x - c.x, f.y - c.y) || 1; damage(f, dmg, (f.x - c.x) / d * 700, (f.y - c.y) / d * 700, '#e8d8ff'); }
+    for (const e of enemyCreatures(w)) if (e.e.x !== undefined && inR(e.e)) hurtCreature(e.e, e.k, dmg, 'arcane');
+    for (const wl of walls) for (const cr of wl.cr) if (!cr.gone && inR(cr)) { cr.gone = 1; const live = wl.cr.filter(q => !q.gone).length; wl.hp = live ? Math.min(wl.hp, wl.max * live / wl.cr.length) : 0; }
+    // the caster feels it too: full damage inside the blast, a 30% backlash from anywhere else
+    if (!w.dead) { const keep = w.shell; w.shell = null; damage(w, inR(w) ? dmg : dmg * .3, 0, 0, '#c48cff'); w.shell = keep; text(w.x, w.y - 100 * HS, 'BACKLASH', '#c48cff'); }
+    scar('crack', c.x, c.y, { s: 2 }); scar('scorch', c.x, c.y, { r: R * .8, c: '#1a0a30', a: .5 });
+    for (let i = 0; i < 70; i++) { const an = rnd(0, 6.283), v = rnd(160, 520); P({ x: c.x, y: c.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .7, color: ['#c48cff', '#ffffff', '#ff4a4a', '#6fd3ff', '#2a0a5a'][i % 5], size: rnd(2, 6), life: rnd(.4, 1) }); }
+  }
+  function drawPBlasts(x) {
+    for (const b of pblasts) {
+      const t = (performance.now() - b.r0) / 1000, k = Math.min(1, t / .9); if (k >= 1) continue;
+      x.save();
+      if (t < .09) { x.globalCompositeOperation = 'difference'; x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.globalCompositeOperation = 'source-over'; }
+      x.translate(b.x, b.y);
+      const grow = 1 - Math.pow(1 - Math.min(1, t / .35), 3), Rr = b.R * (.25 + .9 * grow), fade = k < .55 ? 1 : 1 - (k - .55) / .45;
+      // the sphere: white-hot edge, violet body, a hole of nothing in the middle
+      x.globalAlpha = fade; x.globalCompositeOperation = 'lighter';
+      const g = x.createRadialGradient(0, 0, Rr * .2, 0, 0, Rr * 1.15); g.addColorStop(0, 'rgba(120,40,255,.15)'); g.addColorStop(.55, 'rgba(170,90,255,.55)'); g.addColorStop(.85, 'rgba(255,255,255,.95)'); g.addColorStop(1, 'rgba(196,140,255,0)');
+      x.fillStyle = g; x.beginPath(); x.ellipse(0, 0, Rr * 1.15, Rr * .95, 0, 0, 7); x.fill();
+      // red and blue halves twisting into each other at the rim
+      x.lineWidth = 5; x.lineCap = 'round'; for (const [cc, ph] of [['#ff4a4a', 0], ['#6fd3ff', Math.PI]]) { x.strokeStyle = cc; x.beginPath(); x.ellipse(0, 0, Rr, Rr * .82, 0, t * 9 + ph, t * 9 + ph + 2.4); x.stroke(); }
+      // light rays tearing outward
+      for (let i = 0; i < 18; i++) { const an = i / 18 * 6.283 + b.seed, l0 = Rr * .9, l1 = Rr * (1.25 + .5 * Math.sin(b.seed * 3 + i * 2.3)); x.strokeStyle = i % 2 ? 'rgba(255,255,255,.9)' : 'rgba(196,140,255,.8)'; x.lineWidth = 2 + (i % 3); x.beginPath(); x.moveTo(Math.cos(an) * l0, Math.sin(an) * l0 * .82); x.lineTo(Math.cos(an) * l1, Math.sin(an) * l1 * .82); x.stroke(); }
+      x.globalCompositeOperation = 'source-over';
+      // erased core
+      x.fillStyle = '#04000c'; x.beginPath(); x.ellipse(0, 0, Rr * .38 * (1 - k * .7), Rr * .32 * (1 - k * .7), 0, 0, 7); x.fill(); x.strokeStyle = '#f0e6ff'; x.lineWidth = 2; x.stroke();
+      // shockwave rings
+      for (let j = 0; j < 3; j++) { const kk = Math.max(0, Math.min(1, (t - j * .08) / .6)); if (kk <= 0 || kk >= 1) continue; x.globalAlpha = (1 - kk) * fade; x.strokeStyle = ['#ffffff', '#c48cff', '#120a24'][j]; x.lineWidth = 6 - j * 1.5; x.beginPath(); x.ellipse(0, 36 * HS, b.R * (.4 + kk * 1.2), b.R * (.4 + kk * 1.2) * .45, 0, 0, 7); x.stroke(); }
+      x.restore();
+    }
+    pblasts = pblasts.filter(b => performance.now() - b.r0 < 900);
+  }
   /* Rushdown crit impact frame: a split-second inverted black-and-white frame with manga speed lines on the hit point */
   let impacts = [];
   function drawImpacts(x) {
@@ -128,6 +177,7 @@
   }
   const DECOY_AIM_SKIP = new Set(['ghost', 'blink', 'shield', 'hourglass', 'ringfire', 'burnbody', 'totem', 'healspring', 'orbs', 'mirror', 'gale']);
   function lureOf(w, k) {
+    if (k !== 'rush' && TGT_ABLE.includes(k)) { const m = prefMob(w, k); if (m) return m; }   // the player's "summons first" setting
     if (DECOY_AIM_SKIP.has(k) || (TECH[k] && k !== 'dissect') || typeof decoys === 'undefined') return null;
     let b = null, bd = 1e9; for (const d of decoys) if (d.o !== w && !d.gone) { const dd = Math.hypot(d.x - w.x, d.y - w.y); if (dd < bd) { bd = dd; b = d; } }
     return b;
@@ -231,11 +281,12 @@
     if (k === 'polarity') {
       w.polN = (w.polN || 0) + 1; const str = U(w, k, 'field') ? 1.4 : 1;
       if (U(w, k, 'collapse') && w.polN % (U(w, k, 'rapid') ? 3 : 5) === 0) {
-        const a = Math.atan2(o.y - w.y, o.x - w.x); orbsC.push({ o: w, x: w.x + Math.cos(a) * 20, y: w.y + Math.sin(a) * 20, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 2.9, dmg: S(w, k, 'dmg') * 2.4, hit: new Set(), t: 0, a });
+        const a = Math.atan2(o.y - w.y, o.x - w.x); { let L = 0; for (let q = 0; q < 900; q += 6) { const px = w.x + Math.cos(a) * q, py = w.y + Math.sin(a) * q; if (px < F.x0 - 30 || px > F.x1 + 30 || py < F.y0 - 40 || py > F.y1 + 30) break; L = q; }   // journey to the edge, for Unrestrained Collapse
+          orbsC.push({ o: w, x: w.x + Math.cos(a) * 20, y: w.y + Math.sin(a) * 20, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 2.9, dmg: S(w, k, 'dmg') * 2.4, hit: new Set(), t: 0, a, sx: w.x, sy: w.y, L, unbound: U(w, k, 'unbound') }); }
         addFx({ k: 'collapse0', x: w.x, y: w.y - 40 * HS, life: .5 }); slow = Math.min(slow, .35); setTimeout(() => { if (!ended) slow = 1; }, 180); if (typeof flashScreen === 'function') flashScreen();
         text(w.x, w.y - 90 * HS, 'COLLAPSE', '#c48cff', true); shake = Math.max(shake, 12);
       } else if (w.polN % 2) { // Draw
-        if (U(w, k, 'drag') && !ghosted(o) && !o.dead) { const d0 = dist(w, o) || 1; o.drag = { by: w, t: 0, dur: .62, a0: Math.atan2(o.y - w.y, o.x - w.x), r0: d0, dir: Math.random() < .5 ? 1 : -1, dmg: S(w, k, 'dmg') }; if (o.rush) o.rush = null; text(o.x, o.y - 96 * HS, 'CRESCENT DRAG', '#6fd3ff', true); }
+        if (U(w, k, 'drag') && !ghosted(o) && !o.dead) { if (o.shell) { o.shell = null; o.shellDown = 1; shellShatter(o); text(o.x, o.y - 110 * HS, 'RIPPED OUT', '#9fb8ff', true); try { sfx('shatter', { x: o.x }); } catch (e) {} } const d0 = dist(w, o) || 1; o.drag = { by: w, t: 0, dur: .62, a0: Math.atan2(o.y - w.y, o.x - w.x), r0: d0, dir: Math.random() < .5 ? 1 : -1, dmg: S(w, k, 'dmg') }; if (o.rush) o.rush = null; text(o.x, o.y - 96 * HS, 'CRESCENT DRAG', '#6fd3ff', true); }
         else o.pull = { by: w, t: .45, s: S(w, k, 'pull') * str };
         enemyCreatures(w).forEach(c => { if (c.e.x !== undefined) c.e.pullBy = { by: w, t: .45, s: S(w, k, 'pull') * .8 * str }; });
         addFx({ k: 'draw', w, life: .5, r: 120 * str }); text(w.x, w.y - 86 * HS, 'DRAW' + colTag(w), '#6fd3ff');
@@ -356,11 +407,10 @@
   /* ---------------- Rushdown ---------------- */
   const tAlive = t => t.k === 'wiz' ? !t.e.dead : t.k === 'wall' ? (t.e.hp > 0 && !t.e.dead && walls.includes(t.e)) : t.k === 'd' ? !t.e.gone : t.e.hp > 0;
   const tPos = t => t.k === 'wall' ? t : t.e;
-  function rushPick(w) {           // nearest enemy unit by default; upgrades pick the caster, the healthiest or the weakest
-    const o = w.foe; if (U(w, 'rush', 'hunter')) return { k: 'wiz', e: o };
+  function rushPick(w) {           // nearest enemy unit by default; the player's targeting setting can pick the caster or the strongest / weakest summon
+    const o = w.foe, pref = tgtPref(w, 'rush'); if (pref === 'caster') return { k: 'wiz', e: o };
     const all = [{ k: 'wiz', e: o }].concat(enemyCreatures(w).map(c => ({ k: c.k, e: c.e }))), hp = t => t.k === 'd' ? 1 : (t.e.hp || 0);
-    if (U(w, 'rush', 'giant')) return all.reduce((a, b) => hp(b) > hp(a) ? b : a);
-    if (U(w, 'rush', 'cull')) return all.reduce((a, b) => hp(b) < hp(a) ? b : a);
+    if (pref === 'strong' || pref === 'weak') { const mobs = all.filter(t => SUMMON_K.has(t.k)); if (mobs.length) return mobs.reduce((a, b) => (pref === 'strong' ? hp(b) > hp(a) : hp(b) < hp(a)) ? b : a); return { k: 'wiz', e: o }; }
     return all.reduce((a, b) => dist(w, b.e) < dist(w, a.e) ? b : a);
   }
   function rushWall(w, t) {        // an enemy ice wall standing between the fighter and the target
@@ -406,7 +456,7 @@
     }
     let tg = r.tg;
     if (r.ph === 'dash') {
-      if (tg.k !== 'wall' && !U(w, 'rush', 'hunter') && !U(w, 'rush', 'giant') && !U(w, 'rush', 'cull')) { const nb = rushPick(w), dn = dist(w, nb.e), dc = dist(w, tPos(tg)); if (nb.e !== tg.e && dn < dc - 12) r.tg = tg = nb; }   // something nearer: go for that instead
+      if (tg.k !== 'wall' && tgtPref(w, 'rush') === 'auto') { const nb = rushPick(w), dn = dist(w, nb.e), dc = dist(w, tPos(tg)); if (nb.e !== tg.e && dn < dc - 12) r.tg = tg = nb; }   // something nearer: go for that instead
       if (tg.k !== 'wall') { const wl = rushWall(w, tg); if (wl) r.tg = tg = wl; }                     // ice in the way: hit the ice
       const p = tPos(tg), d = Math.hypot(p.x - w.x, p.y - w.y) || 1, ux = (p.x - w.x) / d, uy = (p.y - w.y) / d, stop = tg.k === 'wiz' ? 30 : tg.k === 'wall' ? 16 : 24;
       const mv = Math.min(460 * dt * rushMudF(w), Math.max(0, d - stop)); w.x += ux * mv; w.y += uy * mv; w.face = Math.sign(p.x - w.x) || w.face; w.vx = w.vy = 0; r.dashT += dt;
@@ -434,14 +484,14 @@
     else { r.done++; const over = r.done >= r.n; if (over && U(w, 'rush', 'flurry')) { r.fl = 1; last = false; text(w.x, w.y - 92 * HS, 'FLURRY!', '#ffe08a', true); } else last = over; }
     const crit = Math.random() < (U(w, 'rush', 'flow') ? .27 : .15) + (U(w, 'rush', 'oath') ? .2 : 0), fin = last && U(w, 'rush', 'finisher');
     // flurry jabs are light and not boosted by Infused
-    const dmg = S(w, 'rush', 'dmg') * (U(w, 'rush', 'momentum') ? 1 + .02 * (w.mom || 0) : 1) * (jab ? .3 : 1) * (crit ? 2 : 1) * (fin ? (jab ? 6.6 : 2) : 1) * (r.inf && !jab ? 1.5 : 1);
+    const dmg = S(w, 'rush', 'dmg') * (U(w, 'rush', 'momentum') ? 1 + .02 * (w.mom || 0) : 1) * (jab ? .3 : 1) * (crit ? 2 : 1) * (fin ? (jab ? 6.6 : 2) : 1) * (r.inf && !jab ? 1.5 : 1) * (U(w, 'rush', 'cornered') && w.hp < w.maxHp * .3 ? 2 : 1);   // Cornered: double below 30% health
     const px = (tg.k === 'wall' ? p.x : w.x + vx2 * (stop - 8)) - vy2 * r.side * 6, py = (tg.k === 'wall' ? p.y : w.y) - (40 + r.side * 7) * HS + vy2 * 10;
     SRC = 'rush';
     if (!(tg.k === 'wiz' && ghosted(o))) { w.mom = (w.mom || 0) + 1; if (U(w, 'rush', 'momentum') && w.mom % 10 === 0) text(w.x, w.y - 100 * HS, 'MOMENTUM +' + (w.mom * 2) + '%', '#ffe08a'); }
     if (tg.k === 'wiz') {
       if (ghosted(o)) text(px, py - 20, 'MISS', '#ccc');
       else { damage(o, dmg, vx2 * (fin ? 760 : 0), vy2 * (fin ? 760 : 0), crit ? '#ffe08a' : r.inf ? '#ffb347' : '#ffd6d2'); if (r.inf && !o.shell) { o.burn = 5; o.burnD = 2; o.burnSrc = 'rush'; } }
-    } else if (tg.k === 'wall') { tg.e.hp -= dmg * 1.5; tg.e.flash = .12; burst(px, py, 6, ['#d8f6ff', '#fff'], 150, 3, .35); text(px + rnd(-6, 6), py - 14, Math.round(dmg * 1.5), '#d8f6ff'); }
+    } else if (tg.k === 'wall') { tg.e.hp -= dmg * 2.5; tg.e.flash = .12; burst(px, py, 6, ['#d8f6ff', '#fff'], 150, 3, .35); text(px + rnd(-6, 6), py - 14, Math.round(dmg * 2.5), '#d8f6ff'); }
     else { hurtCreature(tg.e, tg.k, dmg, 'crush'); text(px + rnd(-6, 6), py - 14, Math.round(dmg), '#ffd6d2'); }
     if (!(tg.k === 'wiz' && ghosted(o))) { sanctumEcho(w, dmg, tg.k === 'wall' ? null : tg.e, COL.ki); SRC = 'rush'; }
     if (crit && tg.k !== 'wall' && !(tg.k === 'wiz' && ghosted(o))) { impacts.push({ x: px, y: py, t: 0, r0: performance.now(), a: Math.atan2(vy2, vx2), seed: Math.random() * 99 }); shake = Math.max(shake, 14); slow = Math.min(slow, .05); setTimeout(() => { if (!ended) slow = 1; }, 90); }   // crit impact frame
@@ -559,6 +609,7 @@
         if (src === 'zombies' || src === 'zodiac' || src === 'golem') { let bd = 70; for (const e of enemyCreatures(w)) { const dd = dist(w, e.e); if (dd < bd) { bd = dd; bit = e; } } if (bit) { hurtCreature(bit.e, bit.k, 5, 'crush'); addFx({ k: 'redir', x: w.x, y: w.y - 50 * HS, x2: bit.e.x, y2: bit.e.y - 20 * HS, life: .2 }); } }
         if (!bit && f && !f.dead && !f.shell) { addFx({ k: 'redir', x: w.x, y: w.y - 50 * HS, x2: f.x, y2: f.y - 40 * HS, life: .22 }); _damage(f, 5, 0, 0, '#bcd2ff'); }
         SRC = src; }
+      if (SRC === 'rush') d *= 2;   // fists crack the shell twice as fast
       w.shell.hp -= d; w.shell.hit = .18; text(w.x + rnd(-8, 8), w.y - 100 * HS, Math.round(d), '#9fb8ff');
       burst(w.x + rnd(-14, 14), w.y - rnd(30, 80) * HS, 8, ['#e6f0ff', '#7aa6ff'], 140, 4, .35);
       if (w.shell.hp <= 0) { w.shell = null; w.shellDown = 1; shake = Math.max(shake, 10); text(w.x, w.y - 104 * HS, 'SHELL BROKEN', '#9fb8ff', true); shellShatter(w); sfx('shatter', { x: w.x }); }
@@ -756,10 +807,17 @@
         if (Math.random() < .8) P({ x: c.x + rnd(-5, 5), y: c.y - 36 * HS + rnd(-5, 5), vx: -c.vx * .15 + rnd(-20, 20), vy: -c.vy * .15 + rnd(-20, 20), color: Math.random() < .5 ? '#ff6b6b' : '#ffffff', size: rnd(2, 3.6), life: rnd(.2, .4) });
         continue; }
       if (c.x < F.x0 - 30 || c.x > F.x1 + 30 || c.y < F.y0 - 40 || c.y > F.y1 + 30) c.life = 0;
-      for (const p of projs) if (p.o !== c.o && p.life > 0 && Math.hypot(p.x - c.x, p.y + 40 * HS - c.y) < 26) { p.life = 0; burst(p.x, p.y, 10, ['#c48cff', '#fff'], 150, 3, .3); }
-      for (const e of enemyCreatures(c.o)) if (!c.hit.has(e.e) && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 28) { c.hit.add(e.e); hurtCreature(e.e, e.k, c.dmg, 'arcane'); }
-      for (const wl of walls) if (wl.o !== c.o && wallD(wl, c.x, c.y) < 20 && !c.hit.has(wl)) { c.hit.add(wl); wl.hp -= c.dmg * 1.5; wl.flash = .15; }
-      const f = c.o.foe; if (!c.hit.has(f) && !f.dead && Math.hypot(f.x - c.x, f.y - c.y) < 28) { c.hit.add(f); if (!ghosted(f)) { damage(f, c.dmg, c.vx * .8, c.vy * .8, '#d9c8ff'); shake = Math.max(shake, 16); addFx({ k: 'implode', x: f.x, y: f.y - 36 * HS, life: .7 }); slow = Math.min(slow, .15); setTimeout(() => { if (!ended) slow = 1; }, 200); scar('crack', f.x, f.y); for (let i = 0; i < 24; i++) { const an = rnd(0, 6.283), v = rnd(120, 360); P({ x: f.x, y: f.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v, color: ['#c48cff', '#6fd3ff', '#ff4a4a', '#fff'][i % 4], size: rnd(2, 4.5), life: rnd(.3, .7) }); } } }
+      // suction: enemies near the singularity are dragged toward it
+      { const f0 = c.o.foe, SR = 130;
+        if (!f0.dead && !ghosted(f0) && !anchored(f0)) { const d = Math.hypot(c.x - f0.x, c.y - f0.y) || 1; if (d < SR && d > 8) { const s = 120 * (1 - d / SR) + 30; f0.x += (c.x - f0.x) / d * s * dt; f0.y += (c.y - f0.y) / d * s * dt; } }
+        for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined) { const d = Math.hypot(c.x - e.e.x, c.y - e.e.y) || 1; if (d < SR && d > 8) { const s = 150 * (1 - d / SR) + 30; e.e.x += (c.x - e.e.x) / d * s * dt; e.e.y += (c.y - e.e.y) / d * s * dt; } }
+        if (Math.random() < .7) { const an = rnd(0, 6.283), rr = rnd(60, SR); P({ x: c.x + Math.cos(an) * rr, y: c.y - 36 * HS + Math.sin(an) * rr * .7, vx: -Math.cos(an) * rr * 2.2, vy: -Math.sin(an) * rr * 1.5, color: Math.random() < .5 ? '#c48cff' : '#ffffff', size: rnd(1.5, 3), life: .4 }); } }
+      // Unrestrained Collapse: halfway along its path the singularity bursts
+      if (c.unbound && !c.burst && Math.hypot(c.x - c.sx, c.y - c.sy) >= c.L / 2) { c.burst = 1; c.life = 0; unboundBlast(c); continue; }
+      for (const p of projs) if (p.o !== c.o && p.life > 0 && Math.hypot(p.x - c.x, p.y + 40 * HS - c.y) < 36) { p.life = 0; burst(p.x, p.y, 10, ['#c48cff', '#fff'], 150, 3, .3); }
+      for (const e of enemyCreatures(c.o)) if (!c.hit.has(e.e) && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 40) { c.hit.add(e.e); hurtCreature(e.e, e.k, c.dmg, 'arcane'); }
+      for (const wl of walls) if (wl.o !== c.o && wallD(wl, c.x, c.y) < 30 && !c.hit.has(wl)) { c.hit.add(wl); wl.hp -= c.dmg * 1.5; wl.flash = .15; }
+      const f = c.o.foe; if (!c.hit.has(f) && !f.dead && Math.hypot(f.x - c.x, f.y - c.y) < 40) { c.hit.add(f); if (!ghosted(f)) { damage(f, c.dmg, c.vx * .8, c.vy * .8, '#d9c8ff'); shake = Math.max(shake, 16); addFx({ k: 'implode', x: f.x, y: f.y - 36 * HS, life: .7 }); slow = Math.min(slow, .15); setTimeout(() => { if (!ended) slow = 1; }, 200); scar('crack', f.x, f.y); for (let i = 0; i < 24; i++) { const an = rnd(0, 6.283), v = rnd(120, 360); P({ x: f.x, y: f.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v, color: ['#c48cff', '#6fd3ff', '#ff4a4a', '#fff'][i % 4], size: rnd(2, 4.5), life: rnd(.3, .7) }); } } }
       c.arcs = c.arcs || []; if (Math.random() < .5) { const an = rnd(0, 6.283), rr = rnd(30, 62); c.arcs.push({ a: an, r: rr, t: 0, j: [rnd(-8, 8), rnd(-8, 8), rnd(-8, 8)] }); } c.arcs = c.arcs.filter(q => (q.t += dt) < .12);
       if (Math.random() < .5) scar('scorch', c.x + rnd(-6, 6), c.y + rnd(-3, 3), { r: 7, c: '#1a0a30', a: .25, s: .6 });
       if (Math.random() < .9) fireFx.push({ x: c.x + rnd(-6, 6), y: c.y - 36 * HS + rnd(-6, 6), vx: -c.vx * .2 + rnd(-20, 20), vy: -c.vy * .2 + rnd(-20, 20), t: 0, life: rnd(.25, .4), s: rnd(8, 12), seed: rnd(0, 99), el: 'arcane' });
@@ -937,6 +995,7 @@
         x.globalCompositeOperation = 'source-over'; x.strokeStyle = '#fff'; x.lineWidth = 5; x.lineCap = 'round'; x.beginPath(); x.moveTo(c.x - ca * 900, c.y + yo - sa * 900); x.lineTo(c.x + ca * 900, c.y + yo + sa * 900); x.stroke(); x.restore(); }
     }
     drawShards(x);
+    drawPBlasts(x);
     drawImpacts(x);
     drawScatter(x);
     // Not Yet: a steady light-blue halo until the destined hit lands
@@ -962,7 +1021,7 @@
     if (orbsC.some(c => !c.repel)) { x.save(); x.fillStyle = 'rgba(10,2,30,.32)'; x.fillRect(0, 0, cv.width / dpr, cv.height / dpr); x.restore(); }
     for (const c of orbsC) { if (c.repel) { x.save(); x.translate(c.x, c.y - 36 * HS); x.fillStyle = '#12020a'; x.beginPath(); x.arc(0, 0, (c.bounced ? 11 : 9), 0, 7); x.fill(); x.globalCompositeOperation = 'lighter'; const R3 = (c.bounced ? 14 : 11) + Math.sin(c.t * 22) * 1.5, g3 = x.createRadialGradient(0, 0, 0, 0, 0, R3 * 2.4); g3.addColorStop(0, '#ffffff'); g3.addColorStop(.35, c.bounced ? 'rgba(255,90,90,.95)' : 'rgba(255,150,150,.6)'); g3.addColorStop(1, 'rgba(255,40,40,0)'); x.fillStyle = g3; x.beginPath(); x.arc(0, 0, R3 * 2.4, 0, 7); x.fill();
         if (c.bounced) { x.strokeStyle = '#fff'; x.lineWidth = 1.6; x.setLineDash([3, 4]); x.beginPath(); x.arc(0, 0, R3 * 1.7, c.t * 8, c.t * 8 + 6.283); x.stroke(); } x.restore(); continue; }
-      x.save(); x.translate(c.x, c.y - 36 * HS); const R = 19 + Math.sin(c.t * 18) * 2, grow = Math.min(1, c.t * 4);
+      x.save(); x.translate(c.x, c.y - 36 * HS); const R = 26 + Math.sin(c.t * 18) * 2.6, grow = Math.min(1, c.t * 4);
       x.scale(grow, grow); x.globalCompositeOperation = 'lighter';
       const g = x.createRadialGradient(0, 0, 0, 0, 0, R * 3.2); g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(.25, 'rgba(196,140,255,.85)'); g.addColorStop(.6, 'rgba(110,40,220,.35)'); g.addColorStop(1, 'rgba(90,20,180,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, R * 3.2, 0, 7); x.fill();
       // light being pulled in: curved streaks spiralling to the core
