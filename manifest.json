@@ -1,0 +1,14 @@
+{
+  "name": "Wizards vs Sorcerers",
+  "short_name": "Wiz vs Sorc",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#120a24",
+  "theme_color": "#120a24",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

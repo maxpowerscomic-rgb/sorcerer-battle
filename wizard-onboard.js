@@ -1,5 +1,5 @@
 /* =====================================================================
-   SORCERER BATTLE: first-time onboarding
+   WIZARDS VS SORCERERS: first-time onboarding
    Hoot the owl walks a new player through: name → look → spells (free
    Spell Token for a 4th spell) → first duel (short, easy, coached) →
    first upgrade → Shop, Friends and Ranks tour → welcome gift.
@@ -64,56 +64,60 @@ function onbRect(sel) {
 const modalOpen = (except) => ['sheet', 'upm', 'lvup', 'chestOv', 'pause', 'rep'].filter(id => id !== except).some(id => { const e = document.getElementById(id); return e && e.classList.contains('on'); }) || (document.getElementById('curtain').className.includes(' on'));
 
 /* ---------- steps ---------- */
-const DOT_STEPS = ['name', 'look', 'spells', 'battle', 'upgrade', 'tour'];
+const DOT_STEPS = ['name', 'path', 'look', 'spells', 'battle', 'upgrade', 'tour'];
 function onbCur() { return ONB_STEPS[ONB.i]; }
 const ONB_STEPS = [
   { id: 'welcome', dot: -1, enter() { nav('home'); },
-    html: () => `<b class="who">Hoot</b>Hoo-hoo! Welcome to <em>Sorcerer Battle</em>, apprentice. I'm Hoot, keeper of the spellbooks. Let's get you ready for your first duel!<div class="row"><button class="go" data-next>Let's go!</button><button class="skip" data-skip>Skip tutorial</button></div>` },
+    html: () => `<b class="who">Hoot</b>Hoo-hoo! Welcome to <em>Wizards vs Sorcerers</em>, apprentice. I'm Hoot, keeper of the spellbooks and the scrolls. Let's get you ready for your first duel!<div class="row"><button class="go" data-next>Let's go!</button><button class="skip" data-skip>Skip tutorial</button></div>` },
   { id: 'name', dot: 0,
     html: () => `<b class="who">Hoot</b>First things first. What shall the arena call you?<input class="nin" id="onbName" maxlength="16" value="${(PR.name && PR.name !== 'Starweaver') ? PR.name : randName()}"><div class="row"><button class="dice" id="onbDice" title="Random name">🎲</button><button class="go" id="onbNameGo">That's me!</button></div>`,
     after() { const i = document.getElementById('onbName'); i.focus(); i.select();
       document.getElementById('onbDice').onclick = () => { i.value = randName(); };
       const go = () => { const v = i.value.trim(); if (v.length < 3) { i.style.borderColor = '#d63a4a'; return; } PR.name = v; save(); refreshMeta(); onbNext(); };
       document.getElementById('onbNameGo').onclick = go; i.onkeydown = e => { if (e.key === 'Enter') go(); }; } },
-  { id: 'look', dot: 1, enter() { nav('wardrobe'); }, target: ['.wstage', '#cats', '#items'], place: 'pinBottom',
-    html: () => `<b class="who">Hoot</b>Splendid, <em>${PR.name}</em>! Now dress the part. Tap a category, then pick your hat, robe, staff, beard and pet.<div class="row"><button class="go" data-next>Looking sharp!</button></div>` },
-  { id: 'spells', dot: 2, enter() { nav('spells'); }, target: '#sgrid', place: 'top',
-    html: () => `<b class="who">Hoot</b>These are your spell scrolls. You start with <em>Fireball</em>, <em>Ice Wall</em> and <em>Raise Dead</em>. Every spell you cast in a duel earns spell points to level it up.<div class="row"><button class="go" data-next>Got it</button></div>` },
-  { id: 'token', dot: 2, enter() { nav('spells'); }, target: '#sgrid', place: 'top', allow: 'sheet',
-    html: () => `<b class="who">Hoot</b>Here's a <em>Spell Token</em>, on the house! Tap any locked spell, then <em>Unlock</em> it to choose your 4th spell.`,
+  { id: 'path', dot: 1, enter() { nav('wardrobe'); if (typeof wCat !== 'undefined') { wCat = 'cls'; renderWardrobe(); } }, target: '.wstage', place: 'pinBottom',
+    html: () => `<b class="who">Hoot</b>Two paths fight in this arena. <em>Wizards</em> wear robes and cast <em>Spells</em>. <em>Sorcerers</em> wear the gi and use <em>Techniques</em>. Which do you walk? Your deck can mix both, and you can switch looks any time under <em>Path</em> in the wardrobe.<div class="row"><button class="go" id="onbWiz">🪄 Wizard</button><button class="go" id="onbSorc" style="background:linear-gradient(#ff6b6b,#9a1020)">✊ Sorcerer</button></div>`,
+    after() { const pick = c => { PR.look.cls = c; save(); refreshMeta(); try { renderWardrobe(); } catch (e) {} setTimeout(onbNext, 450); }; document.getElementById('onbWiz').onclick = () => pick('wiz'); document.getElementById('onbSorc').onclick = () => pick('sorc'); } },
+  { id: 'look', dot: 2, enter() { nav('wardrobe'); }, target: ['.wstage', '#cats', '#items'], place: 'pinBottom',
+    html: () => `<b class="who">Hoot</b>Splendid, <em>${PR.name}</em>! Now dress the part. Tap a category, then pick your outfit, colours and pet.<div class="row"><button class="go" data-next>Looking sharp!</button></div>` },
+  { id: 'spells', dot: 3, enter() { window.abTab = 'wiz'; nav('spells'); }, target: ['#abTabs', '#sgrid'], place: 'top',
+    html: () => `<b class="who">Hoot</b>These are your <em>Abilities</em>. The <em>Spells</em> tab holds wizard magic, the <em>Techniques</em> tab holds sorcerer moves. You start with two of each. Using one in a duel earns <em>skill points</em> to level it up. A book of only one kind gets a <em>Pure</em> bonus!<div class="row"><button class="go" data-next>Got it</button></div>` },
+  { id: 'token', dot: 3, enter() { window.abTab = 'wiz'; nav('spells'); }, target: '#sgrid', place: 'top', allow: 'sheet',
+    html: () => `<b class="who">Hoot</b>Here's a <em>Spell Token</em>, on the house! Tap any locked spell, then <em>Unlock</em> it. Later, every Rank Road checkpoint and every level up gives a token, and you choose: Spell or Technique.`,
     until: () => (PR.chosen || []).length > 0 && !modalOpen() },
-  { id: 'hand', dot: 2, enter() { nav('spells'); }, target: '#handBar', place: 'bottom',
-    html: () => `<b class="who">Hoot</b>Your <em>Battle Hand</em> is the 4 spells you bring to a duel. Tap any spell to add it or swap it in, any time.<div class="row"><button class="go" data-next>Ready to fight</button></div>` },
-  { id: 'battle', dot: 3, enter() { nav('home'); }, target: '#battleBtn', place: 'top', tap: true,
+  { id: 'hand', dot: 3, enter() { nav('spells'); }, target: '#handBar', place: 'bottom',
+    html: () => `<b class="who">Hoot</b>Your <em>Battle Hand</em> is the 4 abilities you bring to a duel. Tap any ability to add or remove it. All 4 slots must be filled before you can battle.<div class="row"><button class="go" data-next>Ready to fight</button></div>` },
+  { id: 'battle', dot: 4, enter() { nav('home'); }, target: '#battleBtn', place: 'top', tap: true,
     html: () => `<b class="who">Hoot</b>Time for your first duel! I've found you a gentle sparring partner. Tap <em>Battle</em>.`,
     until: () => ['vs', 'draft', 'order', 'battle'].some(id => document.getElementById(id).classList.contains('on')) },
-  { id: 'match', dot: 3, coachMatch: true,
+  { id: 'match', dot: 4, coachMatch: true,
     until: () => { const r = document.getElementById('rewards').classList.contains('on'); if (r) ONB.won = M && M.score.me > M.score.foe; return r; } },
-  { id: 'spoils', dot: 3, allow: 'all', silent: true,
+  { id: 'spoils', dot: 4, allow: 'all', target: '#rwCards', place: 'top',
+    html: () => `<b class="who">Hoot</b>Each ability you used earned <em>skill points</em>. Got a <em>Mastery Token</em>? Tap <em>×2</em> on one ability to double its points, win or lose. You get a token every level up.`,
     until: () => document.getElementById('home').classList.contains('on') && !modalOpen() },
-  { id: 'upgrade', dot: 4, enter() { onbPrepUpgrade(); nav('spells'); }, target: () => `.scard[onclick="openSpell('${ONB.upK}')"]`, place: 'auto', tap: true, allow: 'sheet',
-    html: () => `<b class="who">Hoot</b>${ONB.won ? 'A fine first victory!' : 'Close one, but every duel pays!'} The spells you cast earned <em>spell points</em>, and <em>${SP[ONB.upK].n}</em> now has enough to level up. Tap it!`,
+  { id: 'upgrade', dot: 5, enter() { onbPrepUpgrade(); window.abTab = SCHOOL_OF(ONB.upK); nav('spells'); }, target: () => `.scard[onclick="openSpell('${ONB.upK}')"]`, place: 'auto', tap: true, allow: 'sheet',
+    html: () => `<b class="who">Hoot</b>${ONB.won ? 'A fine first victory!' : 'Close one, but every duel pays!'} <em>${SP[ONB.upK].n}</em> now has enough skill points to level up. Tap it! Its page also shows what it is <em>strong against</em> and what to <em>watch out for</em>.`,
     until: () => document.getElementById('sheet').classList.contains('on') },
-  { id: 'upgrade2', dot: 4, target: '#sheetP .upbtn', place: 'top', tap: true, over: 'sheet',
-    html: () => `<b class="who">Hoot</b>Tap <em>Upgrade</em>. Spending spell points and coins makes the spell stronger for good.`,
+  { id: 'upgrade2', dot: 5, target: '#sheetP .upbtn', place: 'top', tap: true, over: 'sheet',
+    html: () => `<b class="who">Hoot</b>Tap <em>Upgrade</em>. Spending skill points and coins makes the spell stronger for good.`,
     until: () => PR.spells[ONB.upK].lvl > ONB.upFrom && !modalOpen(),
     guard: () => { if (!document.getElementById('sheet').classList.contains('on') && !(PR.spells[ONB.upK].lvl > ONB.upFrom)) ONB.i -= 1; } },
-  { id: 'shop', dot: 5, enter() { nav('shop'); }, target: ['#deals', '#chests'], place: 'pinBottom',
-    html: () => `<b class="who">Hoot</b>The <em>Shop</em>. Daily spell deals and chests stuffed with spell points. Coins come from duels; gems are the rare stuff.<div class="row"><button class="go" data-next>Next</button></div>` },
-  { id: 'friends', dot: 5, enter() { nav('friends'); }, target: '#flist', place: 'top',
+  { id: 'shop', dot: 6, enter() { nav('shop'); }, target: ['#deals', '#chests'], place: 'pinBottom',
+    html: () => `<b class="who">Hoot</b>The <em>Shop</em>. Daily deals, chests stuffed with points, and <em>Unlock Packs</em> for new Spells and Techniques. Coins come from duels; gems are the rare stuff.<div class="row"><button class="go" data-next>Next</button></div>` },
+  { id: 'friends', dot: 6, enter() { nav('friends'); }, target: '#flist', place: 'top',
     html: () => `<b class="who">Hoot</b><em>Friends</em>. See who's online and challenge them to a friendly duel. No trophies on the line.<div class="row"><button class="go" data-next>Next</button></div>` },
-  { id: 'ranks', dot: 5, enter() { nav('ranks'); }, target: '.tier.here', place: 'top',
-    html: () => `<b class="who">Hoot</b>The <em>Rank Road</em>. This is you! Win ranked duels for trophies to climb it. Every checkpoint pays out rewards and a new <em>Spell Token</em>.<div class="row"><button class="go" data-next>Next</button></div>` },
+  { id: 'ranks', dot: 6, enter() { nav('ranks'); }, target: '.tier.here', place: 'top',
+    html: () => `<b class="who">Hoot</b>The <em>Rank Road</em>. This is you! Win ranked duels for trophies to climb it. Checkpoints pay out rewards and unlock tokens of your choice. Your account level also makes you cast faster, and earns <em>titles</em> to show under your name.<div class="row"><button class="go" data-next>Next</button></div>` },
   { id: 'done', dot: -1, enter() { nav('home'); },
     html: () => `<b class="who">Hoot</b>That's everything, <em>${PR.name}</em>. The arena awaits! Take these to get started.<div class="gift"><span class="ci" style="width:22px;height:22px;display:grid">${SVG.gem}</span>+100 gems</div><div class="row"><button class="go" data-finish>Let's duel!</button></div>` },
 ];
 
 /* ---------- in-match coaching (bubble only, no blocking) ---------- */
 const MATCH_TIPS = {
-  draft1: { when: () => isOn('draft') && M.round === 1, target: '#cards', place: 'bottom', text: 'Pick a <em>spell scroll</em>. It goes into your spellbook for this match. You get to pick a few each round.' },
-  order: { when: () => isOn('order'), target: '#loopt', place: 'bottom', clear: true, text: 'Your wizard casts the spellbook <em>in order, then loops</em>. Tap two spells to swap them, then tap <em>Begin Duel</em>.' },
-  fight: { when: () => isOn('battle') && M.round === 1, target: null, place: 'top', clear: true, text: 'Your wizard fights on their own! Watch the cast bars, and <em>tap any unit</em> to see what it is.', ttl: 6 },
-  draft2: { when: () => isOn('draft') && M.round >= 2, target: '#cards', place: 'bottom', text: 'Each round you add new spells or <em>upgrade</em> ones you have. Upgrade scrolls show a badge.' },
+  draft1: { when: () => isOn('draft') && M.round === 1, target: '#cards', place: 'bottom', text: 'Pick an <em>ability</em>. It goes into your book for this match. You pick a few each round, and the rival drafts to counter you.' },
+  order: { when: () => isOn('order'), target: '#loopt', place: 'bottom', clear: true, text: 'Your fighter uses the book <em>in order, then loops</em>. Tap two to swap. Below, pick a <em>Battle Style</em> (the ★ is my advice) and <em>Auto</em> or <em>Steer</em> movement, then <em>Begin Duel</em>.' },
+  fight: { when: () => isOn('battle') && M.round === 1, target: null, place: 'top', clear: true, text: 'Abilities fire on their own! Watch the cast bars. If you chose <em>Steer</em>, hold and drag on the arena to move.', ttl: 7 },
+  draft2: { when: () => isOn('draft') && M.round >= 2, target: '#cards', place: 'bottom', text: 'Now you can add abilities or <em>upgrade</em> ones you have. The buttons below let you <em>Reroll</em> once a round, <em>Remove</em> an ability, or <em>Undo</em> a pick.' },
 };
 const isOn = id => document.getElementById(id).classList.contains('on');
 

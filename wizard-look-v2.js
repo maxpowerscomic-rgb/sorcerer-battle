@@ -11,7 +11,7 @@
    ===================================================================== */
 const drawWizV1 = drawWiz;
 let ART_STYLE = (() => { try { return localStorage.getItem('sb.artStyle') || 'v2'; } catch (e) { return 'v2'; } })();
-function setArtStyle(s) { ART_STYLE = s; try { localStorage.setItem('sb.artStyle', s); } catch (e) {} if (typeof refreshMeta === 'function') refreshMeta(); }
+function setArtStyle(s) { ART_STYLE = s; try { localStorage.setItem('sb.artStyle2', s); } catch (e) {} if (typeof refreshMeta === 'function') refreshMeta(); }
 drawWiz = function (w, X, ava) { return ART_STYLE === 'v1' ? drawWizV1(w, X, ava) : drawWizV2(w, X, ava); };
 
 /* ---------- helpers ---------- */

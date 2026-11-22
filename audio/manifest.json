@@ -1,623 +1,792 @@
 {
- "ui_click": {
-  "kind": "sfx",
-  "prompt": "tiny soft wooden button tap with a faint magical sparkle tail, menu button press, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.5,
-  "group": "ui",
-  "vol": 0.7,
-  "cd": 0.04,
-  "variants": 1,
-  "influence": 0.75,
-  "files": [
-   "audio/ui_click.mp3"
-  ]
- },
- "ui_deal": {
-  "kind": "sfx",
-  "prompt": "quick parchment scroll whoosh flying onto a table, light paper flutter, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.5,
-  "group": "ui",
-  "vol": 0.6,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/ui_deal.mp3"
-  ]
- },
- "ui_pick": {
-  "kind": "sfx",
-  "prompt": "magical scroll chosen, bright sparkly chime with crisp paper snap, satisfying confirm, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.8,
-  "group": "ui",
-  "vol": 0.8,
-  "cd": 0.1,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/ui_pick.mp3"
-  ]
- },
- "ui_coin": {
-  "kind": "sfx",
-  "prompt": "handful of gold coins jingling into a leather pouch, bright reward, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.9,
-  "group": "ui",
-  "vol": 0.7,
-  "cd": 0.1,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/ui_coin.mp3"
-  ]
- },
- "ui_upgrade": {
-  "kind": "sfx",
-  "prompt": "magic power-up, rising shimmering swell into a bright sparkle burst, spell upgrade, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.6,
-  "group": "ui",
-  "vol": 0.9,
-  "cd": 0.2,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/ui_upgrade.mp3"
-  ]
- },
- "ui_chest": {
-  "kind": "sfx",
-  "prompt": "wooden treasure chest lid creaking open then a golden magical shimmer burst, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 2.0,
-  "group": "ui",
-  "vol": 0.9,
-  "cd": 0.3,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/ui_chest.mp3"
-  ]
- },
- "ui_unlock": {
-  "kind": "sfx",
-  "prompt": "ancient rune unlocking, deep resonant chime with rising sparkles, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.6,
-  "group": "ui",
-  "vol": 0.9,
-  "cd": 0.3,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/ui_unlock.mp3"
-  ]
- },
- "ui_curtain": {
-  "kind": "sfx",
-  "prompt": "heavy velvet stage curtain swooshing closed with a soft thud, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.9,
-  "group": "ui",
-  "vol": 0.6,
-  "cd": 0.3,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/ui_curtain.mp3"
-  ]
- },
- "hit": {
-  "kind": "sfx",
-  "prompt": "magic projectile hitting a wizard, punchy cartoon thump with a small sparkle, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.5,
-  "group": "sfx",
-  "vol": 0.6,
-  "cd": 0.07,
-  "variants": 3,
-  "influence": 0.6,
-  "files": [
-   "audio/hit_1.mp3",
-   "audio/hit_2.mp3",
-   "audio/hit_3.mp3"
-  ]
- },
- "ko": {
-  "kind": "sfx",
-  "prompt": "big knockout, heavy cartoon boom, magical shatter and descending whistle, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.6,
-  "group": "sfx",
-  "vol": 1,
-  "cd": 0.5,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/ko.mp3"
-  ]
- },
- "boom": {
-  "kind": "sfx",
-  "prompt": "fiery magical explosion, punchy boom with short crackling debris tail, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.2,
-  "group": "sfx",
-  "vol": 0.8,
-  "cd": 0.08,
-  "variants": 2,
-  "influence": 0.6,
-  "files": [
-   "audio/boom_1.mp3",
-   "audio/boom_2.mp3"
-  ]
- },
- "shatter": {
-  "kind": "sfx",
-  "prompt": "ice wall shattering into crystal shards, bright glassy crash, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.0,
-  "group": "sfx",
-  "vol": 0.8,
-  "cd": 0.1,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/shatter.mp3"
-  ]
- },
- "round_start": {
-  "kind": "sfx",
-  "prompt": "magical duel start gong hit with shimmering sparkle tail, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.4,
-  "group": "ui",
-  "vol": 0.8,
-  "cd": 0.5,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/round_start.mp3"
-  ]
- },
- "meteor_impact": {
-  "kind": "sfx",
-  "prompt": "huge meteor slamming into the ground, deep earth-shaking boom with rock debris rain, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.8,
-  "group": "sfx",
-  "vol": 1,
-  "cd": 0.15,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/meteor_impact.mp3"
-  ]
- },
- "grounded": {
-  "kind": "sfx",
-  "prompt": "lightning bolt striking a copper rod, metallic clang with buzzing electric discharge, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.9,
-  "group": "sfx",
-  "vol": 0.8,
-  "cd": 0.1,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/grounded.mp3"
-  ]
- },
- "c_fireball": {
-  "kind": "sfx",
-  "prompt": "fireball launched from a staff, roaring flame whoosh, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.8,
-  "group": "sfx",
-  "vol": 0.8,
-  "cd": 0.06,
-  "variants": 2,
-  "influence": 0.6,
-  "files": [
-   "audio/c_fireball_1.mp3",
-   "audio/c_fireball_2.mp3"
-  ]
- },
- "c_icewall": {
-  "kind": "sfx",
-  "prompt": "ice crystals rapidly growing upward and cracking, frosty chime, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.0,
-  "group": "sfx",
-  "vol": 1.0,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_icewall.mp3"
-  ]
- },
- "c_zombies": {
-  "kind": "sfx",
-  "prompt": "zombies clawing up out of the dirt, groans and crumbling soil, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.6,
-  "group": "sfx",
-  "vol": 0.8,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_zombies.mp3"
-  ]
- },
- "c_lightning": {
-  "kind": "sfx",
-  "prompt": "sharp lightning bolt crack with sizzling electric zap, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.7,
-  "group": "sfx",
-  "vol": 0.8,
-  "cd": 0.06,
-  "variants": 2,
-  "influence": 0.6,
-  "files": [
-   "audio/c_lightning_1.mp3",
-   "audio/c_lightning_2.mp3"
-  ]
- },
- "c_meteor": {
-  "kind": "sfx",
-  "prompt": "meteor whistling down from the sky with a building fiery rumble, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.5,
-  "group": "sfx",
-  "vol": 1.0,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_meteor.mp3"
-  ]
- },
- "c_flies": {
-  "kind": "sfx",
-  "prompt": "swarm of buzzing flies released, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.2,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_flies.mp3"
-  ]
- },
- "c_ghost": {
-  "kind": "sfx",
-  "prompt": "ghostly airy whoosh, eerie woo, body turning to spirit, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.0,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_ghost.mp3"
-  ]
- },
- "c_mirror": {
-  "kind": "sfx",
-  "prompt": "magical mirror copies appearing, glassy sparkling shimmer, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.0,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_mirror.mp3"
-  ]
- },
- "c_orbs": {
-  "kind": "sfx",
-  "prompt": "glowing arcane orbs summoned, humming chimes spinning around, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.0,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_orbs.mp3"
-  ]
- },
- "c_bubbles": {
-  "kind": "sfx",
-  "prompt": "blobs of bubbling acid launched, gloopy bubbling pops, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.0,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_bubbles.mp3"
-  ]
- },
- "c_ricochet": {
-  "kind": "sfx",
-  "prompt": "arcane rune bolt fired with a pinging ricochet zing, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.7,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.06,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_ricochet.mp3"
-  ]
- },
- "c_archer": {
-  "kind": "sfx",
-  "prompt": "spectral bow string twang with an arrow whoosh, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.7,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.06,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_archer.mp3"
-  ]
- },
- "c_beam_charge": {
-  "kind": "sfx",
-  "prompt": "energy cannon charging up, rising electric hum and whine building tension, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 2.4,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.5,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_beam_charge.mp3"
-  ]
- },
- "c_beam": {
-  "kind": "sfx",
-  "prompt": "massive sustained energy beam blast, roaring plasma laser, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 2.0,
-  "group": "sfx",
-  "vol": 0.9,
-  "cd": 0.3,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_beam.mp3"
-  ]
- },
- "c_shield": {
-  "kind": "sfx",
-  "prompt": "magical force shield activating, resonant hum with shimmer, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.0,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_shield.mp3"
-  ]
- },
- "c_golem": {
-  "kind": "sfx",
-  "prompt": "stone golem forming from rocks, heavy grinding stone and a big thud footstep, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.5,
-  "group": "sfx",
-  "vol": 1.0,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_golem.mp3"
-  ]
- },
- "c_hourglass": {
-  "kind": "sfx",
-  "prompt": "time magic, ticking clock slowing down with a reversed shimmer, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.5,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_hourglass.mp3"
-  ]
- },
- "c_thorns": {
-  "kind": "sfx",
-  "prompt": "thorny vines bursting up from the ground, creaking wood and leafy rustle, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.0,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_thorns.mp3"
-  ]
- },
- "c_storm": {
-  "kind": "sfx",
-  "prompt": "dark storm cloud gathering with rolling thunder rumble, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.8,
-  "group": "sfx",
-  "vol": 0.8,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_storm.mp3"
-  ]
- },
- "c_rift": {
-  "kind": "sfx",
-  "prompt": "void portal tearing open, swirling warping whoosh, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.2,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_rift.mp3"
-  ]
- },
- "c_totem": {
-  "kind": "sfx",
-  "prompt": "copper rod slammed into the ground, metallic clang and electric hum, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.0,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_totem.mp3"
-  ]
- },
- "c_blink": {
-  "kind": "sfx",
-  "prompt": "teleport blink, quick magical zip and pop, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 0.6,
-  "group": "sfx",
-  "vol": 0.7,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_blink.mp3"
-  ]
- },
- "c_sinkhole": {
-  "kind": "sfx",
-  "prompt": "ground cracking open into a sinkhole, rumbling collapse of dirt and rocks, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.5,
-  "group": "sfx",
-  "vol": 1.0,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_sinkhole.mp3"
-  ]
- },
- "c_gale": {
-  "kind": "sfx",
-  "prompt": "powerful gust of wind blasting forward, big whooshing air shove, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.0,
-  "group": "sfx",
-  "vol": 1.0,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_gale.mp3"
-  ]
- },
- "c_gravity": {
-  "kind": "sfx",
-  "prompt": "gravity vortex opening, deep low warping whoom with swirling pull, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.5,
-  "group": "sfx",
-  "vol": 1.0,
-  "cd": 0.05,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_gravity.mp3"
-  ]
- },
- "bgm_menu": {
-  "kind": "music",
-  "prompt": "Original smooth, soft synth lounge music for a game's main menu and customization screen. Warm analog synth pads, gentle electric piano chords, a soft sub bass, airy reverb, a relaxed laid-back slow groove with light muted drum machine, dreamy late-night city calm, chill and polished, no big drops. Instrumental only, no vocals, loopable with no ending.",
-  "ms": 90000,
-  "group": "music",
-  "vol": 0.8,
-  "loop": true,
-  "files": [
-   "audio/bgm_menu.mp3"
-  ]
- },
- "bgm_battle": {
-  "kind": "music",
-  "prompt": "Original instrumental fight loop for a wizard duel game, in the style of a tense new-wave reggae-rock outro. Up-tempo and steady around 150 BPM: rapid ticking hi-hats, tight snare, rolling tom fills, a busy melodic bass line, insistent choppy offbeat guitar chord stabs with echo, slightly dissonant minor harmony. Starts focused and controlled, not too energetic, then keeps progressing: stabs grow sharper, delay feedback swells, a dark sustained synth drone and pulsing low notes build suspense and urgency, tension climbing without a big climax or ending. Instrumental only, no vocals, loopable.",
-  "ms": 90000,
-  "group": "music",
-  "vol": 0.72,
-  "loop": true,
-  "files": [
-   "audio/bgm_battle.mp3"
-  ]
- },
- "j_win": {
-  "kind": "music",
-  "prompt": "Short triumphant orchestral victory fanfare jingle for a cartoon wizard game: bright brass, timpani roll and sparkling bells, ends on a big major chord. Instrumental.",
-  "ms": 5000,
-  "group": "jingle",
-  "vol": 1,
-  "loop": false,
-  "files": [
-   "audio/j_win.mp3"
-  ]
- },
- "j_lose": {
-  "kind": "music",
-  "prompt": "Short comedic defeat jingle for a cartoon wizard game: sad descending tuba and pizzicato strings, a little wobble at the end. Instrumental.",
-  "ms": 4000,
-  "group": "jingle",
-  "vol": 1,
-  "loop": false,
-  "files": [
-   "audio/j_lose.mp3"
-  ]
- },
- "j_round_win": {
-  "kind": "sfx",
-  "prompt": "short bright magical success sting, rising chimes and a sparkle, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.6,
-  "group": "jingle",
-  "vol": 0.9,
-  "cd": 0.5,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/j_round_win.mp3"
-  ]
- },
- "j_round_lose": {
-  "kind": "sfx",
-  "prompt": "short deflating magical fail sting, descending warbling tones, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.6,
-  "group": "jingle",
-  "vol": 0.9,
-  "cd": 0.5,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/j_round_lose.mp3"
-  ]
- },
- "c_ringfire": {
-  "kind": "sfx",
-  "prompt": "ring of fire bursting outward from a wizard, roaring whoosh of expanding flames, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.2,
-  "group": "sfx",
-  "vol": 0.85,
-  "cd": 0.1,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_ringfire.mp3"
-  ]
- },
- "c_burnbody": {
-  "kind": "sfx",
-  "prompt": "wizard body igniting into flames, fiery whoomph then crackling fire aura, cartoon fantasy mobile game, punchy and clean, no music, no voice",
-  "dur": 1.2,
-  "group": "sfx",
-  "vol": 0.8,
-  "cd": 0.1,
-  "variants": 1,
-  "influence": 0.6,
-  "files": [
-   "audio/c_burnbody.mp3"
-  ]
- }
+  "ui_click": {
+    "kind": "sfx",
+    "prompt": "tiny soft wooden button tap with a faint magical sparkle tail, menu button press, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.5,
+    "group": "ui",
+    "vol": 0.7,
+    "cd": 0.04,
+    "variants": 1,
+    "influence": 0.75,
+    "files": [
+      "audio/ui_click.mp3"
+    ]
+  },
+  "ui_deal": {
+    "kind": "sfx",
+    "prompt": "quick parchment scroll whoosh flying onto a table, light paper flutter, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.5,
+    "group": "ui",
+    "vol": 0.6,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/ui_deal.mp3"
+    ]
+  },
+  "ui_pick": {
+    "kind": "sfx",
+    "prompt": "magical scroll chosen, bright sparkly chime with crisp paper snap, satisfying confirm, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.8,
+    "group": "ui",
+    "vol": 0.8,
+    "cd": 0.1,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/ui_pick.mp3"
+    ]
+  },
+  "ui_coin": {
+    "kind": "sfx",
+    "prompt": "handful of gold coins jingling into a leather pouch, bright reward, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.9,
+    "group": "ui",
+    "vol": 0.7,
+    "cd": 0.1,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/ui_coin.mp3"
+    ]
+  },
+  "ui_upgrade": {
+    "kind": "sfx",
+    "prompt": "magic power-up, rising shimmering swell into a bright sparkle burst, spell upgrade, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.6,
+    "group": "ui",
+    "vol": 0.9,
+    "cd": 0.2,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/ui_upgrade.mp3"
+    ]
+  },
+  "ui_chest": {
+    "kind": "sfx",
+    "prompt": "wooden treasure chest lid creaking open then a golden magical shimmer burst, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 2.0,
+    "group": "ui",
+    "vol": 0.9,
+    "cd": 0.3,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/ui_chest.mp3"
+    ]
+  },
+  "ui_unlock": {
+    "kind": "sfx",
+    "prompt": "ancient rune unlocking, deep resonant chime with rising sparkles, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.6,
+    "group": "ui",
+    "vol": 0.9,
+    "cd": 0.3,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/ui_unlock.mp3"
+    ]
+  },
+  "ui_curtain": {
+    "kind": "sfx",
+    "prompt": "heavy velvet stage curtain swooshing closed with a soft thud, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.9,
+    "group": "ui",
+    "vol": 0.6,
+    "cd": 0.3,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/ui_curtain.mp3"
+    ]
+  },
+  "hit": {
+    "kind": "sfx",
+    "prompt": "magic projectile hitting a wizard, punchy cartoon thump with a small sparkle, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.5,
+    "group": "sfx",
+    "vol": 0.6,
+    "cd": 0.07,
+    "variants": 3,
+    "influence": 0.6,
+    "files": [
+      "audio/hit_1.mp3",
+      "audio/hit_2.mp3",
+      "audio/hit_3.mp3"
+    ]
+  },
+  "ko": {
+    "kind": "sfx",
+    "prompt": "big knockout, heavy cartoon boom, magical shatter and descending whistle, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.6,
+    "group": "sfx",
+    "vol": 1,
+    "cd": 0.5,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/ko.mp3"
+    ]
+  },
+  "boom": {
+    "kind": "sfx",
+    "prompt": "fiery magical explosion, punchy boom with short crackling debris tail, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.2,
+    "group": "sfx",
+    "vol": 0.8,
+    "cd": 0.08,
+    "variants": 2,
+    "influence": 0.6,
+    "files": [
+      "audio/boom_1.mp3",
+      "audio/boom_2.mp3"
+    ]
+  },
+  "shatter": {
+    "kind": "sfx",
+    "prompt": "ice wall shattering into crystal shards, bright glassy crash, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 0.8,
+    "cd": 0.1,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/shatter.mp3"
+    ]
+  },
+  "round_start": {
+    "kind": "sfx",
+    "prompt": "magical duel start gong hit with shimmering sparkle tail, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.4,
+    "group": "ui",
+    "vol": 0.8,
+    "cd": 0.5,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/round_start.mp3"
+    ]
+  },
+  "meteor_impact": {
+    "kind": "sfx",
+    "prompt": "huge meteor slamming into the ground, deep earth-shaking boom with rock debris rain, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.8,
+    "group": "sfx",
+    "vol": 1,
+    "cd": 0.15,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/meteor_impact.mp3"
+    ]
+  },
+  "grounded": {
+    "kind": "sfx",
+    "prompt": "lightning bolt striking a copper rod, metallic clang with buzzing electric discharge, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.9,
+    "group": "sfx",
+    "vol": 0.8,
+    "cd": 0.1,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/grounded.mp3"
+    ]
+  },
+  "c_fireball": {
+    "kind": "sfx",
+    "prompt": "fireball launched from a staff, roaring flame whoosh, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.8,
+    "group": "sfx",
+    "vol": 0.8,
+    "cd": 0.06,
+    "variants": 2,
+    "influence": 0.6,
+    "files": [
+      "audio/c_fireball_1.mp3",
+      "audio/c_fireball_2.mp3"
+    ]
+  },
+  "c_icewall": {
+    "kind": "sfx",
+    "prompt": "ice crystals rapidly growing upward and cracking, frosty chime, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 1.0,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_icewall.mp3"
+    ]
+  },
+  "c_zombies": {
+    "kind": "sfx",
+    "prompt": "zombies clawing up out of the dirt, groans and crumbling soil, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.6,
+    "group": "sfx",
+    "vol": 0.8,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_zombies.mp3"
+    ]
+  },
+  "c_lightning": {
+    "kind": "sfx",
+    "prompt": "sharp lightning bolt crack with sizzling electric zap, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.7,
+    "group": "sfx",
+    "vol": 0.8,
+    "cd": 0.06,
+    "variants": 2,
+    "influence": 0.6,
+    "files": [
+      "audio/c_lightning_1.mp3",
+      "audio/c_lightning_2.mp3"
+    ]
+  },
+  "c_meteor": {
+    "kind": "sfx",
+    "prompt": "meteor whistling down from the sky with a building fiery rumble, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.5,
+    "group": "sfx",
+    "vol": 1.0,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_meteor.mp3"
+    ]
+  },
+  "c_flies": {
+    "kind": "sfx",
+    "prompt": "swarm of buzzing flies released, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.2,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_flies.mp3"
+    ]
+  },
+  "c_ghost": {
+    "kind": "sfx",
+    "prompt": "ghostly airy whoosh, eerie woo, body turning to spirit, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_ghost.mp3"
+    ]
+  },
+  "c_mirror": {
+    "kind": "sfx",
+    "prompt": "magical mirror copies appearing, glassy sparkling shimmer, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_mirror.mp3"
+    ]
+  },
+  "c_orbs": {
+    "kind": "sfx",
+    "prompt": "glowing arcane orbs summoned, humming chimes spinning around, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_orbs.mp3"
+    ]
+  },
+  "c_bubbles": {
+    "kind": "sfx",
+    "prompt": "blobs of bubbling acid launched, gloopy bubbling pops, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_bubbles.mp3"
+    ]
+  },
+  "c_ricochet": {
+    "kind": "sfx",
+    "prompt": "arcane rune bolt fired with a pinging ricochet zing, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.7,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.06,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_ricochet.mp3"
+    ]
+  },
+  "c_archer": {
+    "kind": "sfx",
+    "prompt": "spectral bow string twang with an arrow whoosh, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.7,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.06,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_archer.mp3"
+    ]
+  },
+  "c_beam_charge": {
+    "kind": "sfx",
+    "prompt": "energy cannon charging up, rising electric hum and whine building tension, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 2.4,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.5,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_beam_charge.mp3"
+    ]
+  },
+  "c_beam": {
+    "kind": "sfx",
+    "prompt": "massive sustained energy beam blast, roaring plasma laser, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 2.0,
+    "group": "sfx",
+    "vol": 0.9,
+    "cd": 0.3,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_beam.mp3"
+    ]
+  },
+  "c_shield": {
+    "kind": "sfx",
+    "prompt": "magical force shield activating, resonant hum with shimmer, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_shield.mp3"
+    ]
+  },
+  "c_golem": {
+    "kind": "sfx",
+    "prompt": "stone golem forming from rocks, heavy grinding stone and a big thud footstep, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.5,
+    "group": "sfx",
+    "vol": 1.0,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_golem.mp3"
+    ]
+  },
+  "c_hourglass": {
+    "kind": "sfx",
+    "prompt": "time magic, ticking clock slowing down with a reversed shimmer, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.5,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_hourglass.mp3"
+    ]
+  },
+  "c_thorns": {
+    "kind": "sfx",
+    "prompt": "thorny vines bursting up from the ground, creaking wood and leafy rustle, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_thorns.mp3"
+    ]
+  },
+  "c_storm": {
+    "kind": "sfx",
+    "prompt": "dark storm cloud gathering with rolling thunder rumble, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.8,
+    "group": "sfx",
+    "vol": 0.8,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_storm.mp3"
+    ]
+  },
+  "c_rift": {
+    "kind": "sfx",
+    "prompt": "void portal tearing open, swirling warping whoosh, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.2,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_rift.mp3"
+    ]
+  },
+  "c_totem": {
+    "kind": "sfx",
+    "prompt": "copper rod slammed into the ground, metallic clang and electric hum, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_totem.mp3"
+    ]
+  },
+  "c_blink": {
+    "kind": "sfx",
+    "prompt": "teleport blink, quick magical zip and pop, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.6,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_blink.mp3"
+    ]
+  },
+  "c_sinkhole": {
+    "kind": "sfx",
+    "prompt": "ground cracking open into a sinkhole, rumbling collapse of dirt and rocks, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.5,
+    "group": "sfx",
+    "vol": 1.0,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_sinkhole.mp3"
+    ]
+  },
+  "c_gale": {
+    "kind": "sfx",
+    "prompt": "powerful gust of wind blasting forward, big whooshing air shove, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 1.0,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_gale.mp3"
+    ]
+  },
+  "c_gravity": {
+    "kind": "sfx",
+    "prompt": "gravity vortex opening, deep low warping whoom with swirling pull, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.5,
+    "group": "sfx",
+    "vol": 1.0,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_gravity.mp3"
+    ]
+  },
+  "bgm_menu": {
+    "kind": "music",
+    "prompt": "Original smooth, soft synth lounge music for a game's main menu and customization screen. Warm analog synth pads, gentle electric piano chords, a soft sub bass, airy reverb, a relaxed laid-back slow groove with light muted drum machine, dreamy late-night city calm, chill and polished, no big drops. Instrumental only, no vocals, loopable with no ending.",
+    "ms": 90000,
+    "group": "music",
+    "vol": 0.8,
+    "loop": true,
+    "files": [
+      "audio/bgm_menu.mp3"
+    ]
+  },
+  "bgm_battle": {
+    "kind": "music",
+    "prompt": "Original instrumental fight loop for a wizard duel game, in the style of a tense new-wave reggae-rock outro. Up-tempo and steady around 150 BPM: rapid ticking hi-hats, tight snare, rolling tom fills, a busy melodic bass line, insistent choppy offbeat guitar chord stabs with echo, slightly dissonant minor harmony. Starts focused and controlled, not too energetic, then keeps progressing: stabs grow sharper, delay feedback swells, a dark sustained synth drone and pulsing low notes build suspense and urgency, tension climbing without a big climax or ending. Instrumental only, no vocals, loopable.",
+    "ms": 90000,
+    "group": "music",
+    "vol": 0.72,
+    "loop": true,
+    "files": [
+      "audio/bgm_battle.mp3"
+    ]
+  },
+  "j_win": {
+    "kind": "music",
+    "prompt": "Short triumphant orchestral victory fanfare jingle for a cartoon wizard game: bright brass, timpani roll and sparkling bells, ends on a big major chord. Instrumental.",
+    "ms": 5000,
+    "group": "jingle",
+    "vol": 1,
+    "loop": false,
+    "files": [
+      "audio/j_win.mp3"
+    ]
+  },
+  "j_lose": {
+    "kind": "music",
+    "prompt": "Short comedic defeat jingle for a cartoon wizard game: sad descending tuba and pizzicato strings, a little wobble at the end. Instrumental.",
+    "ms": 4000,
+    "group": "jingle",
+    "vol": 1,
+    "loop": false,
+    "files": [
+      "audio/j_lose.mp3"
+    ]
+  },
+  "j_round_win": {
+    "kind": "sfx",
+    "prompt": "short bright magical success sting, rising chimes and a sparkle, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.6,
+    "group": "jingle",
+    "vol": 0.9,
+    "cd": 0.5,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/j_round_win.mp3"
+    ]
+  },
+  "j_round_lose": {
+    "kind": "sfx",
+    "prompt": "short deflating magical fail sting, descending warbling tones, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.6,
+    "group": "jingle",
+    "vol": 0.9,
+    "cd": 0.5,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/j_round_lose.mp3"
+    ]
+  },
+  "c_ringfire": {
+    "kind": "sfx",
+    "prompt": "ring of fire bursting outward from a wizard, roaring whoosh of expanding flames, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.2,
+    "group": "sfx",
+    "vol": 0.85,
+    "cd": 0.1,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_ringfire.mp3"
+    ]
+  },
+  "c_burnbody": {
+    "kind": "sfx",
+    "prompt": "wizard body igniting into flames, fiery whoomph then crackling fire aura, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.2,
+    "group": "sfx",
+    "vol": 0.8,
+    "cd": 0.1,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_burnbody.mp3"
+    ]
+  },
+  "c_dissect": {
+    "kind": "sfx",
+    "prompt": "sharp blade slash whoosh, a razor cut slicing through air with a thin metallic ring, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.6,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_dissect.mp3"
+    ]
+  },
+  "c_sanctum": {
+    "kind": "sfx",
+    "prompt": "deep resonant barrier dome forming, glassy hum swelling into a soft bell tone, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.2,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_sanctum.mp3"
+    ]
+  },
+  "c_doubletake": {
+    "kind": "sfx",
+    "prompt": "single sharp hand clap followed by a quick teleport swap zip, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.6,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_doubletake.mp3"
+    ]
+  },
+  "c_rush": {
+    "kind": "sfx",
+    "prompt": "fast flurry of punches, rapid thudding martial arts hits with a whoosh, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_rush.mp3"
+    ]
+  },
+  "c_polarity": {
+    "kind": "sfx",
+    "prompt": "magnetic force pulse, a deep sucking whoomp then a snappy repel pop, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.9,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_polarity.mp3"
+    ]
+  },
+  "c_zodiac": {
+    "kind": "sfx",
+    "prompt": "dark shadow summon, inky whoosh with a low animal growl rising, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.2,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_zodiac.mp3"
+    ]
+  },
+  "c_titan": {
+    "kind": "sfx",
+    "prompt": "huge spectral armor forming, heavy ethereal clank with a ghostly roar swell, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.3,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_titan.mp3"
+    ]
+  },
+  "c_copycast": {
+    "kind": "sfx",
+    "prompt": "eerie eye-opening sting, reversed shimmer with a sharp glint ping, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.8,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_copycast.mp3"
+    ]
+  },
+  "c_secondwind": {
+    "kind": "sfx",
+    "prompt": "deep calm breath in and soft rising healing chime, warm glow, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.1,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_secondwind.mp3"
+    ]
+  },
+  "c_healspring": {
+    "kind": "sfx",
+    "prompt": "gentle water spring bubbling up with sparkling healing chimes, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.3,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_healspring.mp3"
+    ]
+  },
+  "c_counter": {
+    "kind": "sfx",
+    "prompt": "martial arts guard stance, a sharp cloth snap and a tense rising hum, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 0.8,
+    "group": "sfx",
+    "vol": 0.7,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_counter.mp3"
+    ]
+  },
+  "c_earthm": {
+    "kind": "sfx",
+    "prompt": "thick mud churning and a heavy earth rumble as stone pushes up from the ground, wet squelch, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+    "dur": 1.0,
+    "group": "sfx",
+    "vol": 0.75,
+    "cd": 0.05,
+    "variants": 1,
+    "influence": 0.6,
+    "files": [
+      "audio/c_earthm.mp3"
+    ]
+  },
+  "ui_fanfare": {
+    "kind": "sfx",
+    "prompt": "short triumphant brass fanfare, two bright trumpet notes ba-baa rising into a heroic chord, celebratory level up jingle, cartoon fantasy mobile game, clean, no voice",
+    "dur": 1.8,
+    "group": "sfx",
+    "vol": 0.8,
+    "cd": 0.5,
+    "variants": 1,
+    "influence": 0.7,
+    "files": [
+      "audio/ui_fanfare.mp3"
+    ]
+  }
 }

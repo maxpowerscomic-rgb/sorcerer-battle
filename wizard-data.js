@@ -27,18 +27,18 @@ const SP = {
   icewall:   { n: 'Ice Wall',        el: 'ice',    t: 1.1, range: 130, d: 'Raises a wall of ice between you and the enemy.' , tag: 'Blocks' },
   zombies:   { n: 'Raise Dead',      el: 'death',  t: 2.4, range: 190, d: 'Three zombies burst out of the ground halfway to the enemy and hunt them down.' , tag: 'Summons' },
   lightning: { n: 'Lightning Bolt',  el: 'storm',  t: 1.7, range: 170, d: 'Zaps the closest enemy creature, or the wizard, and stuns it.' , tag: 'Stuns' },
-  meteor:    { n: 'Meteor',          el: 'fire',   t: 3.6, range: 230, d: 'A huge meteor lands where the enemy stands. Dodgeable.' , tag: 'Big hit' },
+  meteor:    { n: 'Meteor',          el: 'fire',   t: 4.0, range: 230, d: 'A huge meteor lands where the enemy stands. Dodgeable.' , tag: 'Big hit' },
   flies:     { n: 'Fly Swarm',       el: 'swamp',  t: 2.0, range: 180, d: 'A buzzing swarm streams out and chews on the enemy.' , tag: 'Swarms' },
-  ghost:     { n: 'Ghost Form',      el: 'spirit', t: 0.8, range: 150, d: 'Turn see-through for a moment. Attacks pass right through you.' , tag: 'Phases' },
-  mirror:    { n: 'Mirror Image',    el: 'arcane', t: 1.2, range: 150, d: 'Conjures a decoy of yourself that draws enemy attacks.' , tag: 'Decoys' },
+  ghost:     { n: 'Ghost Form',      el: 'spirit', t: 0.8, range: 150, d: 'Turn see-through for a moment. Attacks pass right through you. Once per loop.' , tag: 'Phases' },
+  mirror:    { n: 'Mirror Image',    el: 'arcane', t: 1.2, range: 150, d: 'Conjures a decoy of yourself that draws enemy attacks. Each new decoy in a round has half the health of the last.' , tag: 'Decoys' },
   orbs:      { n: 'Arcane Orbs',     el: 'arcane', t: 1.6, range: 120, d: 'Three orbs circle you and pop on enemy fireballs, zombies and flies.', tag: 'Guards' },
   bubbles:   { n: 'Acid Bubbles',    el: 'swamp',  t: 2.0, range: 170, d: 'Wobbling bubbles drift at the enemy and pop into acid puddles.', tag: 'Puddles' },
   ricochet:  { n: 'Ricochet Rune',   el: 'arcane', t: 1.4, range: 160, d: 'A rune bolt that bounces off the arena walls, hitting everything it passes.', tag: 'Bounces' },
   archer:    { n: 'Spirit Archer',   el: 'spirit', t: 2.6, range: 190, d: 'Summons a ghost archer that shoots the nearest enemy until destroyed.', tag: 'Turret' },
   beam:      { n: 'Spell Cannon',    el: 'beam',   t: 3.0, range: 210, d: 'Charges up, then fires a sustained beam that burns through anything in its path. Only one per spellbook.', tag: 'Beam' },
-  shield:    { n: 'Spell Shield',    el: 'aegis',  t: 1.4, range: 150, d: 'A barrier soaks up incoming spells, holds them, then fires them back. Meteors smash straight through.', tag: 'Absorbs' },
+  shield:    { n: 'Spell Shield',    el: 'aegis',  t: 1.4, range: 150, d: 'A barrier soaks up incoming spells, holds them, then fires them back. Meteors smash through. Once per loop.', tag: 'Absorbs' },
   golem:     { n: 'Stone Golem',     el: 'earth',  t: 2.8, range: 170, d: 'A slow stone golem walks at the enemy, blocking their spells, and stomps when it arrives.', tag: 'Tank' },
-  hourglass: { n: 'Hourglass',       el: 'time',   t: 1.2, range: 140, d: 'A time bubble around you slows every enemy spell and creature inside it, meteors included.', tag: 'Slows' },
+  hourglass: { n: 'Hourglass',       el: 'time',   t: 1.2, range: 140, d: 'A time bubble around you slows enemy spells and creatures inside it, and enemy casters there charge 25% slower. Once per loop.', tag: 'Slows' },
   ringfire:  { n: 'Ring of Fire',    el: 'fire',   t: 3.0, range: 130, d: 'A ring of flame bursts out from you, scorching and shoving back everything it passes.', tag: 'Shoves' },
   burnbody:  { n: 'Burning Body',    el: 'fire',   t: 1.6, range: 90,  d: 'Your body erupts in flame. Anything that touches you burns, and so do you, a little.', tag: 'Aura' },
   thorns:    { n: 'Thornfield',      el: 'nature', t: 1.8, range: 170, d: 'Seeds sprout into thorny vine patches that root whatever walks in.', tag: 'Roots' },
@@ -57,7 +57,7 @@ const MAXL = 20;
 const STATS = {
   fireball:  { dmg: [12, 14, 16, 19, 22], burn: [3, 3, 4, 4, 5] },
   icewall:   { hp: [24, 28, 33, 39, 46], dur: [8, 8, 9, 9, 10] },
-  zombies:   { hp: [16, 18, 21, 24, 28], dmg: [4, 5, 5, 6, 7] },
+  zombies:   { hp: [32, 36, 42, 48, 56], dmg: [3, 3.5, 4, 4.5, 5.25] },
   lightning: { dmg: [7, 8, 9, 11, 13], stun: [0.6, 0.6, 0.7, 0.8, 0.9] },
   meteor:    { dmg: [28, 32, 35, 40, 46], radius: [52, 55, 58, 62, 66] },
   flies:     { dps: [4, 5, 5, 6, 7], hp: [10, 12, 14, 16, 18] },
@@ -74,7 +74,7 @@ const STATS = {
   ringfire:  { dmg: [6, 7, 8, 9, 10], radius: [165, 170, 176, 184, 195] },
   burnbody:  { dps: [10, 11, 12, 14, 16], dur: [4.5, 4.5, 5, 5, 5.5] },
   thorns:    { dps: [4, 4, 5, 6, 7], root: [1, 1, 1.1, 1.2, 1.3] },
-  storm:     { dmg: [9, 10, 11, 13, 15], dur: [6, 6, 6.5, 6.5, 7] },
+  storm:     { dmg: [8, 9, 10, 11, 13], dur: [6, 6, 6.5, 6.5, 7] },
   rift:      { dur: [4, 4, 4.5, 4.5, 5] },
   totem:     { hp: [20, 22, 25, 28, 32], dur: [8, 8, 9, 9, 10] },
   blink:     { dist: [110, 115, 120, 130, 140] },
@@ -111,7 +111,7 @@ const STAT_LBL_SPELL = {
   bubbles: { dps: 'Acid damage per second', radius: 'Puddle radius' },
   archer:  { dmg: 'Arrow damage', hp: 'Archer health' },
 };
-/* Leveling cost: spell points and coins needed to go from level i to i+1 */
+/* Leveling cost: skill points and coins needed to go from level i to i+1 */
 /* Spell-point and coin cost to go from level L to L+1 (index = current level). */
 const CARDS = Array.from({ length: MAXL }, (_, l) => l ? Math.round(3 + l * l * 0.9) : 0);
 const COST  = Array.from({ length: MAXL }, (_, l) => l ? Math.round(50 * Math.pow(l, 1.7) / 10) * 10 : 0);
@@ -161,8 +161,8 @@ const MS_STEP = 50;
 const EXTRA_UNLOCKS = [{ k: 'orbs', t: 250 }, { k: 'bubbles', t: 450 }, { k: 'ricochet', t: 750 }, { k: 'archer', t: 1100 }, { k: 'beam', t: 700 }, { k: 'shield', t: 600 }, { k: 'thorns', t: 400 }, { k: 'storm', t: 550 }, { k: 'golem', t: 650 }, { k: 'hourglass', t: 850 }, { k: 'rift', t: 950 }, { k: 'totem', t: 1200 }, { k: 'ringfire', t: 800 }, { k: 'burnbody', t: 1000 }, { k: 'blink', t: 1350 }, { k: 'sinkhole', t: 1500 }, { k: 'gale', t: 1650 }];
 /* Spellbook size: copies count as slots. +1 slot at Sorcerer (rank 3) and Archmage (rank 5). */
 const BOOK_BASE = 4, BOOK_SLOT_RANKS = [3, 5];
-const GAME_NAME = ['SORCERER', 'BATTLE']; // working title shown on the logo; swap here
-const ARENAS = ['bog', 'frost', 'bones', 'castle', 'critters', 'sea']; // Rank Road gives +5 spell points every 50 trophies between ranks
+const GAME_NAME = ['WIZARDS', 'VS SORCERERS']; // working title shown on the logo; swap here
+const ARENAS = ['bog', 'frost', 'bones', 'castle', 'critters', 'sea']; // Rank Road gives +5 skill points every 50 trophies between ranks
 
 /* ---------- Cosmetics ----------
    unlock: {type:'free'} | {type:'rank', v:rankIndex} | {type:'level', v:playerLevel} | {type:'gems', v:price}
@@ -197,6 +197,7 @@ const COSMETICS = {
     { id: 'white',  n: 'White Beard',  r: 'common', c: '#eef2ff', style: 'short', unlock: { type: 'free' } },
     { id: 'brown',  n: 'Brown Beard',  r: 'common', c: '#7a4a24', style: 'short', unlock: { type: 'free' } },
     { id: 'ginger', n: 'Ginger Beard', r: 'common', c: '#e07a2a', style: 'short', unlock: { type: 'free' } },
+    { id: 'pink',   n: 'Pink Beard',   r: 'common', c: '#ff8ad0', style: 'short', unlock: { type: 'free' } },
     { id: 'none',   n: 'Clean Shaven', r: 'common', c: null,      style: 'none',  unlock: { type: 'free' } },
     { id: 'long',   n: 'Sage Beard',   r: 'epic',   c: '#f4f6ff', style: 'long',  unlock: { type: 'level', v: 8 } },
   ],
@@ -282,7 +283,7 @@ const TYPES = { proj: 'Projectile', area: 'Area', summon: 'Summon', melee: 'Clos
 /* Synergy (Battle Hand): 2+ spells sharing an element or an attack type give +5% damage per spell to that group.
    4 fire spells = Pyromancer, +20% fire. Element and type bonuses stack. */
 const TYPE_SYN = { proj: { n: 'Projectile', t: 'Marksman', i: '➶', c: '#ffb36b' }, area: { n: 'Area', t: 'Devastator', i: '◎', c: '#ff8a96' }, summon: { n: 'Summon', t: 'Summoner', i: '☗', c: '#9fe37a' }, melee: { n: 'Close range', t: 'Brawler', i: '✊', c: '#ffd45e' }, support: { n: 'Support', t: 'Warden', i: '⛨', c: '#9fd8ff' } };
-function synergyOf(list) { const ce = {}, ct = {}; [...new Set(list || [])].forEach(k => { const e = ELEM_OF[k], t = TYPE_OF[k]; if (e) ce[e] = (ce[e] || 0) + 1; if (t) ct[t] = (ct[t] || 0) + 1; }); const out = {}; for (const e in ce) if (ce[e] >= 2) out['el:' + e] = { n: ce[e], pct: .05 * ce[e] }; for (const t in ct) if (ct[t] >= 2) out['ty:' + t] = { n: ct[t], pct: .05 * ct[t] }; return out; }
+function synergyOf(list) { const ce = {}, ct = {}; [...new Set(list || [])].forEach(k => { const e = ELEM_OF[k], t = TYPE_OF[k]; if (e) ce[e] = (ce[e] || 0) + 1; if (t) ct[t] = (ct[t] || 0) + 1; }); const out = {}; for (const e in ce) if (ce[e] >= 2) out['el:' + e] = { n: ce[e], pct: .05 * ce[e] }; for (const t in ct) if (ct[t] >= 2) out['ty:' + t] = { n: ct[t], pct: .05 * ct[t] }; const u = [...new Set(list || [])]; if (u.length >= 3 && typeof SCHOOL_OF === 'function') { const sc = SCHOOL_OF(u[0]); if (u.every(k => SCHOOL_OF(k) === sc)) out['sc:' + sc] = { n: u.length, pct: .10 }; } return out; }
 
 /* ---------- rival generator: names ---------- */
 const RIVAL_FIRST = ['Morgrath', 'Vexa', 'Ignis', 'Sable', 'Grizelda', 'Quill', 'Thistle', 'Zoltan', 'Elowen', 'Bramble', 'Corvina', 'Fennick', 'Hollis', 'Isolde', 'Jasper', 'Kestrel', 'Lirael', 'Magnus', 'Nyx', 'Orrin', 'Perrin', 'Rowan', 'Seraphine', 'Tamsin', 'Ulric', 'Vesper', 'Wendeline', 'Xander', 'Yarrow', 'Zephyra', 'Bartholomew', 'Cinder', 'Dorian', 'Esme', 'Gideon', 'Hester', 'Ignatius', 'Juno', 'Lucan', 'Mirabel', 'Ozzwald', 'Pell', 'Rook', 'Saffron', 'Tobias', 'Umbra', 'Wick', 'Agatha', 'Barnaby', 'Clementine', 'Drusilla', 'Elric', 'Fable', 'Gwendolyn', 'Horatio', 'Imogen'];

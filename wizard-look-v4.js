@@ -114,5 +114,6 @@ function drawWounds(x, w, layer) {
   x.restore();
 }
 
-(function () { try { ART_STYLE = localStorage.getItem('sb.artStyle') || 'v1'; } catch (e) { ART_STYLE = 'v1'; } })();
+/* Default look is the new character-sheet art ('hd'). The key was bumped so older saved choices do not hide it. */
+(function () { try { ART_STYLE = localStorage.getItem('sb.artStyle2') || 'hd'; } catch (e) { ART_STYLE = 'hd'; } })();
 drawWiz = function (w, X, ava) { return ART_STYLE === 'v4' ? drawWizV4(w, X, ava) : ART_STYLE === 'v3' ? drawWizV3(w, X, ava) : ART_STYLE === 'v2' ? drawWizV2(w, X, ava) : drawWizV1(w, X, ava); };
