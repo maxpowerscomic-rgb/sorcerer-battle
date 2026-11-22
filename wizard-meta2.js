@@ -1229,3 +1229,26 @@
     for (let i = 0; i < 6; i++) { const an = rnd(0, 6.283), dd = rnd(12, 22) * sc; spots.push({ x: Math.cos(an) * dd, y: Math.sin(an) * dd * .5, rx: rnd(1.2, 2.6), ry: rnd(1, 2), rot: 0 }); }
     M.drips.push({ x, y: y + 2, spots, rd: M.round, t: 0, shade: kind === 'shade' }); if (M.drips.length > 90) M.drips.shift(); };
 })();
+
+/* ---------------- every draft offer has 3 cards, no matter what (F-539) ----------------
+   Hands full of one-copy abilities (Shield, Spell Cannon, Ghost Form, Chosen One…) could run out of legal cards and
+   leave only 2. This runs last and fills the gap, loosening rules step by step: any upgrade for an ability in your book
+   (rare and gated ones included, except Chosen One's), then more copies of hand abilities past the copy cap, and as a last
+   resort an ability you have unlocked outside your hand. Never a card already in the offer. */
+(function () {
+  const same = (a, b) => a.type === b.type && a.k === b.k && (a.type !== 'up' || (a.u && b.u && a.u.id === b.u.id));
+  const _go = genOffer;
+  window.genOffer = genOffer = function (p, round) {
+    let out = []; try { out = _go.apply(this, arguments) || []; } catch (e) { out = []; }
+    if (out.length >= 3) return out;
+    try {
+      const add = c => { if (out.length < 3 && !out.some(q => same(q, c))) out.push(c); };
+      const full = p.book.length >= capOf() && round > 1, owned = new Set(p.book);
+      for (const k of [...owned].sort(() => Math.random() - .5)) for (const u of UPG[k] || []) if (!p.up.has(k + '.' + u.id) && (!u.req || p.up.has(k + '.' + u.req)) && k !== 'chosen') add({ type: 'up', k, u });
+      for (const k of (p.pool || []).slice().sort(() => Math.random() - .5)) { if (ONE_COPY.has(k) && p.book.includes(k)) continue; add({ type: full ? 'replace' : 'new', k }); }
+      const extra = (typeof unlockedSpells === 'function' ? unlockedSpells() : Object.keys(SP)).filter(k => !(p.pool || []).includes(k) && !(ONE_COPY.has(k) && p.book.includes(k)));
+      for (const k of extra.sort(() => Math.random() - .5)) add({ type: full ? 'replace' : 'new', k });
+    } catch (e) {}
+    return out;
+  };
+})();

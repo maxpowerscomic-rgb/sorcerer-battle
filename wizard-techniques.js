@@ -84,7 +84,8 @@
   let copying = false;
   /* targeting setting (set per ability on the Your Abilities screen): auto, caster, or summons first (strongest / weakest) */
   const SUMMON_K = new Set(['z', 'g', 'a']);
-  const TGT_ABLE = ['fireball', 'lightning', 'meteor', 'ricochet', 'beam', 'sinkhole', 'storm', 'bubbles', 'flies', 'gravity', 'dissect', 'rush'];
+  const TGT_ABLE = ['fireball', 'lightning', 'meteor', 'ricochet', 'beam', 'sinkhole', 'storm', 'bubbles', 'flies', 'gravity', 'dissect', 'rush', 'zombies', 'zodiac', 'archer'];
+  const SUMMON_AIM = new Set(['zombies', 'zodiac', 'archer']);   // these choose targets as they fight, not when cast
   window.TGT_ABLE = TGT_ABLE;
   function tgtPref(w, k) { return w && w.me && typeof PR !== 'undefined' && PR.tgt && PR.tgt[k] || 'auto'; }
   window.tgtPref = tgtPref;
@@ -180,7 +181,7 @@
   }
   const DECOY_AIM_SKIP = new Set(['ghost', 'blink', 'shield', 'hourglass', 'ringfire', 'burnbody', 'totem', 'healspring', 'orbs', 'mirror', 'gale']);
   function lureOf(w, k) {
-    if (k !== 'rush' && TGT_ABLE.includes(k)) { const m = prefMob(w, k); if (m) return m; }   // the player's "summons first" setting
+    if (k !== 'rush' && !SUMMON_AIM.has(k) && TGT_ABLE.includes(k)) { const m = prefMob(w, k); if (m) return m; }   // the player's "summons first" setting
     if (DECOY_AIM_SKIP.has(k) || (TECH[k] && k !== 'dissect') || typeof decoys === 'undefined') return null;
     const live = decoys.filter(d => d.o !== w && !d.gone); if (!live.length || Math.random() >= .66) return null;   // decoys fool the attacker 66% of the time
     return live[Math.random() * live.length | 0];
@@ -881,7 +882,9 @@
       if (c.x < F.x0 - 30 || c.x > F.x1 + 30 || c.y < F.y0 - 40 || c.y > F.y1 + 30) c.life = 0;
       // suction: enemies near the singularity are dragged toward it
       { const f0 = c.o.foe, SR = 130;
-        if (!f0.dead && !ghosted(f0) && !anchored(f0)) { const d = Math.hypot(c.x - f0.x, c.y - f0.y) || 1; if (d < SR && d > 8) { const s = 120 * (1 - d / SR) + 30; f0.x += (c.x - f0.x) / d * s * dt; f0.y += (c.y - f0.y) / d * s * dt; } }
+        if (!f0.dead && !ghosted(f0) && !anchored(f0)) { const d = Math.hypot(c.x - f0.x, c.y - f0.y) || 1; if (d < SR && d > 8) { const s = 120 * (1 - d / SR) + 30; f0.x += (c.x - f0.x) / d * s * dt; f0.y += (c.y - f0.y) / d * s * dt;
+          // being dragged in hurts: damage over time while caught in the pull, landing in small ticks
+          c.dot = (c.dot || 0) + c.dmg * .4 * dt; if (c.dot >= 2) { damage(f0, c.dot, 0, 0, '#d9c8ff'); c.dot = 0; if (Math.random() < .6) burst(f0.x, f0.y - 40 * HS, 5, ['#c48cff', '#fff'], 90, 3, .3); } } }
         for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined) { const d = Math.hypot(c.x - e.e.x, c.y - e.e.y) || 1; if (d < SR && d > 8) { const s = 150 * (1 - d / SR) + 30; e.e.x += (c.x - e.e.x) / d * s * dt; e.e.y += (c.y - e.e.y) / d * s * dt; } }
         if (Math.random() < .7) { const an = rnd(0, 6.283), rr = rnd(60, SR); P({ x: c.x + Math.cos(an) * rr, y: c.y - 36 * HS + Math.sin(an) * rr * .7, vx: -Math.cos(an) * rr * 2.2, vy: -Math.sin(an) * rr * 1.5, color: Math.random() < .5 ? '#c48cff' : '#ffffff', size: rnd(1.5, 3), life: .4 }); } }
       // Unrestrained Collapse: halfway along its path the singularity bursts
