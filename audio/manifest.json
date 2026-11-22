@@ -828,5 +828,18 @@
   "files": [
    "audio/bgm_battle_calm_backup.mp3"
   ]
+ },
+ "ui_abilityup": {
+  "kind": "sfx",
+  "prompt": "magical power-up reward sound: a shimmering harp glissando rising into a bright crystal chime chord with a warm low choir swell and a sparkle tail, satisfying ability level up, fantasy mobile game, clean, no voice",
+  "dur": 2.2,
+  "group": "jingle",
+  "vol": 0.9,
+  "cd": 0.5,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/ui_abilityup.mp3"
+  ]
  }
 }

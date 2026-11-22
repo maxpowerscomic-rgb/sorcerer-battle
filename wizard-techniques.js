@@ -342,7 +342,7 @@
   /* ---------------- Dissection ---------------- */
   function mkSlash(w, x0, y0, a, sp, mult, sz) {
     const tier = tierOf(w, 'dissect');
-    slashes.push({ o: w, x: x0, y: y0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.1, dmg: S(w, 'dissect', 'dmg') * mult, hit: new Set(), keen: U(w, 'dissect', 'keen'), cut: U(w, 'dissect', 'cutter'), sting: U(w, 'dissect', 'sting'), tested: new Set(), sz: sz * (1 + (tier - 1) * .16), tier });
+    slashes.push({ o: w, x: x0, y: y0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.1, dmg: S(w, 'dissect', 'dmg') * mult, hit: new Set(), keen: U(w, 'dissect', 'keen'), cut: U(w, 'dissect', 'cutter'), sting: U(w, 'dissect', 'sting'), tested: new Set(), sz: sz * (1 + (tier - 1) * .16) * (U(w, 'dissect', 'broad') ? 1.8 : 1), wd: U(w, 'dissect', 'broad') ? 1.8 : 1, tier });
   }
   // a spell sliced in two: both halves drift apart and fizzle
   function cutSpell(x0, y0, cols, a) {
@@ -742,13 +742,13 @@
         for (const q of slashes) if (q.o !== s.o && q.life > 0 && Math.hypot(q.x - s.x, q.y - s.y) < 22 && roll(q)) { q.life = 0; cutSpell(q.x, q.y - 36 * HS, ['#ffd6d2', '#ff3b4a', '#fff'], a); }
         for (const q of orbsC) if (q.o !== s.o && q.life > 0 && Math.hypot(q.x - s.x, q.y - s.y) < 26 && roll(q)) { q.life = 0; cutSpell(q.x, q.y - 36 * HS, ['#c48cff', '#6fd3ff', '#fff'], a); } }
       if (s.x < F.x0 - 20 || s.x > F.x1 + 20 || s.y < F.y0 - 30 || s.y > F.y1 + 20) s.life = 0;
-      for (const c of enemyCreatures(s.o)) { if (s.hit.has(c.e)) continue; if (Math.hypot(c.e.x - s.x, c.e.y - s.y) < 22) { s.hit.add(c.e); hurtCreature(c.e, c.k, s.dmg, 'slash'); burst(c.e.x, c.e.y - 20 * HS, 8, ['#fff', '#ff3b4a'], 140, 3, .3); } }
-      for (const wl of walls) if (wl.o !== s.o && s.life > 0 && wallD(wl, s.x, s.y) < 12) {
+      for (const c of enemyCreatures(s.o)) { if (s.hit.has(c.e)) continue; if (Math.hypot(c.e.x - s.x, c.e.y - s.y) < 22 * (s.wd || 1)) { s.hit.add(c.e); hurtCreature(c.e, c.k, s.dmg, 'slash'); burst(c.e.x, c.e.y - 20 * HS, 8, ['#fff', '#ff3b4a'], 140, 3, .3); } }
+      for (const wl of walls) if (wl.o !== s.o && s.life > 0 && wallD(wl, s.x, s.y) < 12 * (s.wd || 1)) {
         { const mud = wl.mud, k3 = s.keen ? 3 : 1; wl.hp -= s.dmg * k3; wl.flash = .12; s.life = 0; burst(s.x, s.y - 25 * HS, s.keen ? 16 : 10, mud ? ['#d8c09a', '#8a6a48', '#fff'] : ['#d8f6ff', '#fff'], s.keen ? 170 : 120, 3, .35); if (s.keen) text(s.x, s.y - 40 * HS, Math.round(s.dmg * k3), mud ? '#f0d6a6' : '#d8f6ff'); }   // slashes stop at walls; Keen Edge hits them 3x
       }
       // enemy domes stop slashes
       for (const dm of domes) if (dm.o !== s.o && s.life > 0 && Math.hypot(s.x - dm.x, (s.y - dm.y) * 1.4) < dm.r) { s.life = 0; dm.hp -= s.dmg * (Math.hypot(s.o.x - dm.x, (s.o.y - dm.y) * 1.4) < dm.r ? .5 : 1); dm.hit = .15; addFx({ k: 'ping', x: s.x, y: s.y, life: .3 }); }
-      const f = s.o.foe; if (s.life > 0 && !s.hit.has(f) && !f.dead && Math.hypot(f.x - s.x, f.y - s.y) < 24) { s.hit.add(f); if (ghosted(f)) text(f.x, f.y - 70 * HS, 'PHASED', '#bff'); else { const h0 = f.hp; damage(f, s.dmg, s.vx * .12, s.vy * .12, '#c9fff4'); scar('splash', f.x, f.y + 6, { s: .6 }); if (s.sting && f.hp < h0) addBleed(f); } s.life = 0; }
+      const f = s.o.foe; if (s.life > 0 && !s.hit.has(f) && !f.dead && Math.hypot(f.x - s.x, f.y - s.y) < 24 * (s.wd || 1)) { s.hit.add(f); if (ghosted(f)) text(f.x, f.y - 70 * HS, 'PHASED', '#bff'); else { const h0 = f.hp; damage(f, s.dmg, s.vx * .12, s.vy * .12, '#c9fff4'); scar('splash', f.x, f.y + 6, { s: .6 }); if (s.sting && f.hp < h0) addBleed(f); } s.life = 0; }
     }
     slashes = slashes.filter(s => s.life > 0);
     for (const c of cleaves) cleaveStep(c, dt);

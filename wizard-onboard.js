@@ -84,6 +84,8 @@ const ONB_STEPS = [
     html: () => `<b class="who">Hoot</b>These are your <em>Abilities</em>. The <em>Spells</em> tab holds wizard magic, the <em>Techniques</em> tab holds sorcerer moves. You start with two of each. Using one in a duel earns <em>skill points</em> to level it up. A book of only one kind gets a <em>Pure</em> bonus!<div class="row"><button class="go" data-next>Got it</button></div>` },
   { id: 'token', dot: 3, enter() { window.abTab = 'wiz'; nav('spells'); }, target: '#sgrid', place: 'top', allow: 'sheet',
     html: () => `<b class="who">Hoot</b>Here's a <em>Spell Token</em>, on the house! Tap any locked spell, then <em>Unlock</em> it. Later, every Rank Road checkpoint and every level up gives a token, and you choose: Spell or Technique.`,
+    // once the spell is unlocked, its reveal card closes by itself and the tour moves on
+    guard() { if ((PR.chosen || []).length > 0 && !ONB.tokAuto) { const up = document.getElementById('upm'); if (up && getComputedStyle(up).display !== 'none') { ONB.tokAuto = 1; setTimeout(() => { const b = document.getElementById('upOk'); if (b) b.click(); }, 1500); } } },
     until: () => (PR.chosen || []).length > 0 && !modalOpen() },
   { id: 'hand', dot: 3, enter() { nav('spells'); }, target: '#handBar', place: 'bottom',
     html: () => `<b class="who">Hoot</b>Your <em>Battle Hand</em> is the 4 abilities you bring to a duel. Tap any ability to add or remove it. All 4 slots must be filled before you can battle.<div class="row"><button class="go" data-next>Ready to fight</button></div>` },
@@ -92,7 +94,7 @@ const ONB_STEPS = [
     until: () => ['vs', 'draft', 'order', 'battle'].some(id => document.getElementById(id).classList.contains('on')) },
   { id: 'match', dot: 4, coachMatch: true,
     until: () => { const r = document.getElementById('rewards').classList.contains('on'); if (r) ONB.won = M && M.score.me > M.score.foe; return r; } },
-  { id: 'spoils', dot: 4, allow: 'all', target: '#rwCards', place: 'top',
+  { id: 'spoils', dot: 4, allow: 'all', target: () => PR.mTok > 0 ? '#rwCards' : '#rwBtn', place: 'top',
     html: () => `<b class="who">Hoot</b>Each ability you used earned <em>skill points</em>. Got a <em>Mastery Token</em>? Tap <em>×2</em> on one ability to double its points, win or lose. You get a token every level up.`,
     until: () => document.getElementById('home').classList.contains('on') && !modalOpen() },
   { id: 'upgrade', dot: 5, enter() { onbPrepUpgrade(); window.abTab = SCHOOL_OF(ONB.upK); nav('spells'); }, target: () => `.scard[onclick="openSpell('${ONB.upK}')"]`, place: 'auto', tap: true, allow: 'sheet',
@@ -133,6 +135,8 @@ function onbEnter() {
   if (s.enter) s.enter();
   onbRenderBubble(); onbTick();
 }
+// spending a Mastery Token on the rewards screen during the tour carries straight on to the next step
+window.onMasteryUsed = function () { try { const s = onbCur && onbCur(); if (window.ONB_ACTIVE && s && s.id === 'spoils') setTimeout(() => { const b = document.getElementById('rwBtn'); if (b && document.getElementById('rewards').classList.contains('on')) b.click(); }, 1200); } catch (e) {} };
 function onbNext() { ONB.i++; if (ONB.i >= ONB_STEPS.length) return onbFinish(); onbEnter(); }
 function onbRenderBubble(html, placeOverride) {
   const s = onbCur(), b = ONB.el.querySelector('.bub'); b.innerHTML = ''; b.style.animation = 'none'; void b.offsetWidth; b.style.animation = '';

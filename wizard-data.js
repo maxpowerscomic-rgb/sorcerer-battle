@@ -28,7 +28,7 @@ const SP = {
   zombies:   { n: 'Raise Dead',      el: 'death',  t: 2.4, range: 190, d: 'Three zombies burst out of the ground halfway to the enemy and hunt them down.' , tag: 'Summons' },
   lightning: { n: 'Lightning Bolt',  el: 'storm',  t: 1.7, range: 170, d: 'Zaps the closest enemy creature, or the wizard, and stuns it.' , tag: 'Stuns' },
   meteor:    { n: 'Meteor',          el: 'fire',   t: 4.0, range: 230, d: 'A huge meteor lands where the enemy stands. Dodgeable.' , tag: 'Big hit' },
-  flies:     { n: 'Fly Swarm',       el: 'swamp',  t: 2.0, range: 180, d: 'A buzzing swarm streams out and chews on the enemy. Attacks that hit it do half damage.' , tag: 'Swarms' },
+  flies:     { n: 'Fly Swarm',       el: 'swamp',  t: 2.0, range: 180, d: 'A buzzing swarm streams out and chews on the enemy. Takes half damage, but fire burns it at once.' , tag: 'Swarms' },
   ghost:     { n: 'Ghost Form',      el: 'spirit', t: 0.8, range: 150, d: 'Turn see-through for a moment. Attacks pass right through you. Once per loop.' , tag: 'Phases' },
   mirror:    { n: 'Mirror Image',    el: 'arcane', t: 1.2, range: 150, d: 'Conjures a decoy of yourself that draws enemy attacks. Each new decoy in a round has half the health of the last.' , tag: 'Decoys' },
   orbs:      { n: 'Arcane Orbs',     el: 'arcane', t: 1.6, range: 120, d: 'Three orbs circle you and pop on enemy fireballs, zombies and flies.', tag: 'Guards' },

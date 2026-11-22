@@ -293,28 +293,29 @@
      The token is only used up when that ability was in your book. Start with 3, +1 per level up, or 3 for 40 gems. */
   if (PR.mTok === undefined) { PR.mTok = 3; try { save(); } catch (e) {} }
   const TOK_SVG = '<svg viewBox="0 0 24 24" class="mtk"><path d="M12 2l8.5 5v10L12 22l-8.5-5V7z" fill="#ffd45e" stroke="#000" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.5l1.6 3.4 3.7.4-2.8 2.5.8 3.7L12 14.6l-3.3 1.9.8-3.7-2.8-2.5 3.7-.4z" fill="#fff6c8" stroke="#8a5a00" stroke-width="1"/></svg>';
-  // used on the rewards screen only: each ability that earned skill points this match gets a x2 button (one token per match)
+  // used on the rewards screen only: each ability that earned skill points this match gets a x2 button; spend one token per ability, on as many as you like
   window.masteryDouble = function (k) {
-    const got = window.rwGot || {}, q = got[k] || 0; if (!(PR.mTok > 0) || !q || (M && M.mtUsed)) return;
-    PR.mTok--; PR.spells[k].cards += q; got[k] = q * 2; if (M) M.mtUsed = k; try { save(); } catch (e) {} sfx('ui_unlock'); toast(`Mastery Token: ${SP[k].n} +${q} skill points`);
+    const got = window.rwGot || {}, q = got[k] || 0; if (M) M.mtSet = M.mtSet || []; if (!(PR.mTok > 0) || !q || (M && M.mtSet.includes(k))) return;
+    PR.mTok--; PR.spells[k].cards += q; got[k] = q * 2; if (M) { M.mtSet.push(k); M.mtUsed = k; } try { save(); } catch (e) {} sfx('ui_unlock'); toast(`Mastery Token: ${SP[k].n} +${q} skill points`);
     // update only this card: its +number and the new (yellow) part of its bar; the other cards are left alone
     const host = $('rwCards'); if (!host) return;
-    host.querySelectorAll('button.x2').forEach(b => b.remove());
+    { const mine = [...host.querySelectorAll('.rcard:not(.road)')].find(c => c.querySelector('img') && c.querySelector('img').getAttribute('src') === ICON[k]); if (mine) mine.querySelectorAll('button.x2').forEach(b => b.remove()); if (!(PR.mTok > 0)) host.querySelectorAll('button.x2').forEach(b => b.remove()); }
     const el = [...host.querySelectorAll('.rcard:not(.road)')].find(c => c.querySelector('img') && c.querySelector('img').getAttribute('src') === ICON[k]);
     if (el) { const sp = PR.spells[k], need = CARDS[sp.lvl] || 1, b = el.querySelector('b'); if (b) b.textContent = '+' + got[k];
       const bar = el.querySelector('.pbar'); if (bar && sp.lvl < MAXL) bar.outerHTML = notches(sp.cards, need, got[k]);
       el.insertAdjacentHTML('beforeend', '<span class="x2 done">×2</span>');
       if (sp.lvl < MAXL && sp.cards >= need && !el.classList.contains('tapup')) { el.classList.add('tapup'); el.onclick = () => openSpell(k); el.insertAdjacentHTML('beforeend', '<small class="rcl rdy2">Tap to upgrade</small>'); } }
-    const note = document.getElementById('mtkNote'); if (note) note.innerHTML = `${TOK_SVG}<span>Mastery Token used on ${SP[k].n}.</span>`;
+    const note = document.getElementById('mtkNote'); if (note) note.innerHTML = `${TOK_SVG}<span>Mastery Token used on ${M.mtSet.map(q => SP[q].n).join(', ')}.${PR.mTok > 0 ? ` ${PR.mTok} left.` : ''}</span>`;
+    try { if (window.onMasteryUsed) onMasteryUsed(k); } catch (e) {}
   };
   const _rrc = renderRwCards;
   window.renderRwCards = renderRwCards = function () {
     const r = _rrc.apply(this, arguments), host = $('rwCards'), got = window.rwGot || {}; if (!host) return r;
-    const used = M && M.mtUsed, can = PR.mTok > 0 && !used;
+    const set = (M && M.mtSet) || [], used = set.length ? set[set.length - 1] : null, can = PR.mTok > 0;
     host.querySelectorAll('.rcard:not(.road)').forEach(el => { const k = Object.keys(got).find(q => el.querySelector('img') && el.querySelector('img').getAttribute('src') === ICON[q]); if (!k) return;
-      if (used === k) el.insertAdjacentHTML('beforeend', '<span class="x2 done">×2</span>'); else if (can) el.insertAdjacentHTML('beforeend', `<button class="x2" onclick="event.stopPropagation();masteryDouble('${k}')">×2</button>`); });
+      if (set.includes(k)) el.insertAdjacentHTML('beforeend', '<span class="x2 done">×2</span>'); else if (can) el.insertAdjacentHTML('beforeend', `<button class="x2" onclick="event.stopPropagation();masteryDouble('${k}')">×2</button>`); });
     let note = document.getElementById('mtkNote'); if (!note) { note = document.createElement('div'); note.id = 'mtkNote'; note.className = 'mtknote'; host.after(note); }
-    note.innerHTML = Object.keys(got).length ? (used ? `${TOK_SVG}<span>Mastery Token used on ${SP[used].n}.</span>` : PR.mTok > 0 ? `${TOK_SVG}<span>Tap <b>×2</b> to spend a Mastery Token and double one ability's points. You have ${PR.mTok}.</span>` : `${TOK_SVG}<span>No Mastery Tokens. Earn one each level up, or buy them in the shop.</span>`) : '';
+    note.innerHTML = Object.keys(got).length ? (used && !(PR.mTok > 0) ? `${TOK_SVG}<span>Mastery Token used on ${set.map(q => SP[q].n).join(', ')}.</span>` : PR.mTok > 0 ? `${TOK_SVG}<span>Tap <b>×2</b> on any ability to spend a Mastery Token and double its points. You have ${PR.mTok}.</span>` : `${TOK_SVG}<span>No Mastery Tokens. Earn one each level up, or buy them in the shop.</span>`) : '';
     return r;
   };
   const _gx = gainXp;
@@ -650,4 +651,60 @@
   const css = document.createElement('style');
   css.textContent = `#chBtn{top:88px!important}.optbtn{position:absolute;top:10px;left:10px;z-index:2;width:34px;height:34px;display:grid;place-items:center;border-radius:11px;border:2px solid #000;background:linear-gradient(#4a3a80,#2b2050);color:#fff;cursor:pointer;box-shadow:0 3px 0 #000;padding:0}`;
   document.head.appendChild(css);
+})();
+
+/* ---------------- phones: the game fills the screen and never scrolls the page; every sheet can always be closed
+   (F-471, F-472, F-473) ---------------- */
+(function () {
+  const phone = matchMedia('(max-width: 600px), (pointer: coarse)').matches || navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+  const css = document.createElement('style');
+  css.textContent = (phone ? `html,body{height:100%;overflow:hidden;overscroll-behavior:none;position:fixed;inset:0;width:100%}body{padding:0!important;gap:0!important;background:#0d0a18!important;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.notes,.pknote{display:none!important}
+    .phone{position:fixed!important;top:env(safe-area-inset-top);bottom:env(safe-area-inset-bottom);left:0;right:0;width:auto!important;aspect-ratio:auto!important;border:0!important;border-radius:0!important;box-shadow:none!important}` : '') +
+    // sheets: never taller than the screen; the panel scrolls inside and the close button rides along at the top
+    `.sheet .panel{max-height:calc(100% - 28px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}.sheet .panel::-webkit-scrollbar{display:none}
+    .sheet .panel>.xbtn{position:sticky!important;top:0;align-self:flex-end;margin:-6px -4px -40px 0;z-index:5;flex-shrink:0}
+    .sheet .panel>*{flex-shrink:0}`;
+  document.head.appendChild(css);
+  if (phone) { const vp = document.querySelector('meta[name=viewport]'); if (vp) vp.content = 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover'; }
+  // a page-level swipe never scrolls the page itself: only something that can scroll inside the game moves
+  if (phone) document.addEventListener('touchmove', e => { let n = e.target; while (n && n !== document.body) { const st = getComputedStyle(n); if (/(auto|scroll)/.test(st.overflowY) && n.scrollHeight > n.clientHeight + 1) return; n = n.parentElement; } if (e.cancelable) e.preventDefault(); }, { passive: false });
+  // every sheet gets a close button, even ones built without one; Escape / the back gesture key also closes
+  new MutationObserver(() => { const P = document.getElementById('sheetP'); if (P && document.getElementById('sheet').classList.contains('on') && !P.querySelector(':scope>.xbtn')) P.insertAdjacentHTML('afterbegin', '<button class="xbtn" onclick="closeSheet()">✕</button>'); }).observe(document.getElementById('sheet'), { attributes: true, childList: true, subtree: true });
+  document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; const sh = document.getElementById('sheet'); if (sh && sh.classList.contains('on')) return closeSheet(); const up = document.getElementById('upm'); if (up && up.style.display !== 'none' && getComputedStyle(up).display !== 'none') { const b = document.getElementById('upOk'); if (b) b.click(); } });
+})();
+
+/* ---------------- summons flash white when hit (F-465); freezing hurts and shattering kills (F-467) ---------------- */
+(function () {
+  const FL = .11, hit = e => { if (e) e._wf = T; };
+  // brighten the creature by drawing it a second time additively for a split second after each hit
+  for (const nm of ['drawZombie', 'drawGolem', 'drawArcher', 'drawSwarm']) { const f = window[nm]; if (typeof f !== 'function') continue;
+    const g = function (e) { const r = f.apply(this, arguments); if (e && e._wf !== undefined && T - e._wf < FL && T >= e._wf) { const k = 1 - (T - e._wf) / FL; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .9 * k; try { f.apply(this, arguments); f.apply(this, arguments); } catch (er) {} ctx.restore(); } return r; };
+    window[nm] = g; try { eval(nm + ' = g'); } catch (er) {} }
+  // ice: freezing takes half the creature's health at once; any hit while it is frozen shatters the ice and kills it
+  const shatter = (e, kill) => { e.frozen = 0; burst(e.x, e.y - 20 * HS, 26, ['#ffffff', '#d8f6ff', '#9fe0ff'], 220, 5, .55, 300); text(e.x, e.y - 60 * HS, 'SHATTERED', '#d8f6ff'); try { sfx('shatter', { x: e.x, vol: .5 }); } catch (er) {} kill(); };
+  let freezing = false;
+  const _hz = hurtZ;
+  window.hurtZ = hurtZ = function (z, d, by, kind) {
+    if (z && d > 0 && z.frozen > 0 && !freezing && z.hp > 0) { hit(z); return shatter(z, () => _hz.call(this, z, z.hp + 999, by, 'crush')); }
+    if (z && d > 0) hit(z); return _hz.apply(this, arguments); };
+  const _hs = hurtSwarm;
+  window.hurtSwarm = hurtSwarm = function (q, d, fire) {
+    if (q && d > 0 && q.frozen > 0 && !freezing && q.hp > 0) { hit(q); return shatter(q, () => { q.hp = 0; }); }
+    if (q && d > 0) hit(q); return _hs.apply(this, arguments); };
+  for (const nm of ['hurtGolem', 'hurtArcher']) { const f = window[nm]; if (typeof f !== 'function') continue; const g = function (e, d) { if (e && d > 0) hit(e); return f.apply(this, arguments); }; window[nm] = g; try { eval(nm + ' = g'); } catch (er) {} }
+  try { hurtTotem = (f => function (e, d) { if (e && d > 0) hit(e); return f.apply(this, arguments); })(hurtTotem); } catch (er) {}
+  // notice the moment something becomes frozen and take half its health
+  const _up = update;
+  window.update = update = function (dt) { const r = _up.apply(this, arguments);
+    try { freezing = true;
+      for (const z of zombies) { if (z.frozen > 0 && !z._fz && z.hp > 0) { z._fz = 1; _hz(z, (z.mx || z.hp) * .5, null, 'ice'); hit(z); text(z.x, z.y - 70 * HS, 'FROZEN', '#bff0ff'); } else if (!(z.frozen > 0)) z._fz = 0; }
+      for (const q of swarms) { if (q.frozen > 0 && !q._fz && q.hp > 0) { q._fz = 1; q.hp -= (q.mx || q.hp) * .5; hit(q); } else if (!(q.frozen > 0)) q._fz = 0; }
+    } catch (e) {} finally { freezing = false; }
+    return r; };
+})();
+
+/* ---------------- a reward sound of its own when a spell or technique levels up (F-470) ---------------- */
+(function () {
+  const _sm = showSpellModal;
+  window.showSpellModal = showSpellModal = function (k, from, to, unlockName) { const r = _sm.apply(this, arguments); if (!unlockName) try { setTimeout(() => sfx('ui_abilityup'), 120); } catch (e) {} return r; };
 })();
