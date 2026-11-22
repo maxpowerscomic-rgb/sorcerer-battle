@@ -895,7 +895,9 @@
         if (!f0.dead && !ghosted(f0) && !anchored(f0)) { const d = Math.hypot(c.x - f0.x, c.y - f0.y) || 1; if (d < SR && d > 8) { const s = 120 * (1 - d / SR) + 30; f0.x += (c.x - f0.x) / d * s * dt; f0.y += (c.y - f0.y) / d * s * dt;
           // being dragged in hurts: damage over time while caught in the pull, landing in small ticks
           c.dot = (c.dot || 0) + c.dmg * .4 * dt; if (c.dot >= 2) { damage(f0, c.dot, 0, 0, '#d9c8ff'); c.dot = 0; if (Math.random() < .6) burst(f0.x, f0.y - 40 * HS, 5, ['#c48cff', '#fff'], 90, 3, .3); } } }
-        for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined) { const d = Math.hypot(c.x - e.e.x, c.y - e.e.y) || 1; if (d < SR && d > 8) { const s = 150 * (1 - d / SR) + 30; e.e.x += (c.x - e.e.x) / d * s * dt; e.e.y += (c.y - e.e.y) / d * s * dt; } }
+        for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined) { const d = Math.hypot(c.x - e.e.x, c.y - e.e.y) || 1; if (d < SR && d > 8) { const s = 150 * (1 - d / SR) + 30; e.e.x += (c.x - e.e.x) / d * s * dt; e.e.y += (c.y - e.e.y) / d * s * dt;
+          // summons being dragged in take the same damage over time as casters, in small ticks
+          e.e._cdot = (e.e._cdot || 0) + c.dmg * .4 * dt; if (e.e._cdot >= 2) { hurtCreature(e.e, e.k, e.e._cdot, 'arcane'); e.e._cdot = 0; } } }
         if (Math.random() < .7) { const an = rnd(0, 6.283), rr = rnd(60, SR); P({ x: c.x + Math.cos(an) * rr, y: c.y - 36 * HS + Math.sin(an) * rr * .7, vx: -Math.cos(an) * rr * 2.2, vy: -Math.sin(an) * rr * 1.5, color: Math.random() < .5 ? '#c48cff' : '#ffffff', size: rnd(1.5, 3), life: .4 }); } }
       // Unrestrained Collapse: halfway along its path the singularity bursts
       if (c.unbound && !c.burst && Math.hypot(c.x - c.sx, c.y - c.sy) >= c.L / 2) { c.burst = 1; c.life = 0; unboundBlast(c); continue; }
