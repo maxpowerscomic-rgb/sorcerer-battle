@@ -130,6 +130,9 @@
     // the caster feels it too: full damage inside the blast, a 30% backlash from anywhere else
     if (!w.dead) { const keep = w.shell; w.shell = null; damage(w, inR(w) ? dmg : dmg * .3, 0, 0, '#c48cff'); w.shell = keep; text(w.x, w.y - 100 * HS, 'BACKLASH', '#c48cff'); }
     scar('crack', c.x, c.y, { s: 2 }); scar('scorch', c.x, c.y, { r: R * .8, c: '#1a0a30', a: .5 });
+    if (typeof beamScar === 'function') for (let i = 0; i < 6; i++) { const an = i / 6 * 6.283 + rnd(-.3, .3), l = R * rnd(.6, .95); const d0 = beamScar({ x: c.x, y: c.y }, { x: c.x + Math.cos(an) * l, y: c.y + Math.sin(an) * l * .6 }, false, 1.1, true); d0.life = 5; decals.push(d0); }
+    for (let i = 0; i < 40; i++) { const an = rnd(0, 6.283), rr = rnd(10, R); decals.push({ k: 'ember', x: c.x + Math.cos(an) * rr, y: c.y + Math.sin(an) * rr * .6, t: 0, life: rnd(2.5, 4.5), s: rnd(.8, 1.4) }); }
+    for (let i = 0; i < 50; i++) { const an = rnd(0, 6.283), v = rnd(200, 560); P({ x: c.x, y: c.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .7 - 120, color: ['#ffd45e', '#ff8a3a', '#ffffff'][i % 3], size: rnd(1.5, 3.5), life: rnd(.5, 1.1), grav: 420 }); }
     for (let i = 0; i < 70; i++) { const an = rnd(0, 6.283), v = rnd(160, 520); P({ x: c.x, y: c.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .7, color: ['#c48cff', '#ffffff', '#ff4a4a', '#6fd3ff', '#2a0a5a'][i % 5], size: rnd(2, 6), life: rnd(.4, 1) }); }
   }
   function drawPBlasts(x) {
@@ -627,6 +630,9 @@
     const slowed = mudPre(dt);
     _update(dt);
     updShards(dt);
+    // runes, orb shots and arrows that fly through an enemy swarm hurt it (swarms take half damage)
+    if (typeof swarms !== 'undefined' && swarms.length && typeof hurtSwarm === 'function') for (const L of [typeof runes !== 'undefined' ? runes : [], typeof arrows !== 'undefined' ? arrows : []]) for (const r of L) { if (!(r.life > 0)) continue;
+      for (const q of swarms) if (q.o !== r.o && q.hp > 0 && Math.hypot(r.x - q.x, r.y - q.y) < 26) { r.hitS = r.hitS || new Set(); if (r.hitS.has(q)) continue; r.hitS.add(q); hurtSwarm(q, r.dmg || 8); } }
     // a rushing fighter's movement belongs to the rush: undo the main loop's push-out (it shoved fighters out of their OWN walls, so dashes stalled)
     ents.forEach((w, i) => { if (w.rush && (w.rush.ph === 'dash' || w.rush.ph === 'hit') && !w.dead) { w.x = prev[i].x; w.y = prev[i].y; }
       else if (!w.dead && U(w, 'rush', 'oath') && !w.rush) { const q = inArena(prev[i].x + (w.x - prev[i].x) * 1.3, prev[i].y + (w.y - prev[i].y) * 1.3); w.x = q.x; w.y = q.y; }   // Blood Oath: 30% faster on foot
@@ -820,6 +826,12 @@
       const f = c.o.foe; if (!c.hit.has(f) && !f.dead && Math.hypot(f.x - c.x, f.y - c.y) < 40) { c.hit.add(f); if (!ghosted(f)) { damage(f, c.dmg, c.vx * .8, c.vy * .8, '#d9c8ff'); shake = Math.max(shake, 16); addFx({ k: 'implode', x: f.x, y: f.y - 36 * HS, life: .7 }); slow = Math.min(slow, .15); setTimeout(() => { if (!ended) slow = 1; }, 200); scar('crack', f.x, f.y); for (let i = 0; i < 24; i++) { const an = rnd(0, 6.283), v = rnd(120, 360); P({ x: f.x, y: f.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v, color: ['#c48cff', '#6fd3ff', '#ff4a4a', '#fff'][i % 4], size: rnd(2, 4.5), life: rnd(.3, .7) }); } } }
       c.arcs = c.arcs || []; if (Math.random() < .5) { const an = rnd(0, 6.283), rr = rnd(30, 62); c.arcs.push({ a: an, r: rr, t: 0, j: [rnd(-8, 8), rnd(-8, 8), rnd(-8, 8)] }); } c.arcs = c.arcs.filter(q => (q.t += dt) < .12);
       if (Math.random() < .5) scar('scorch', c.x + rnd(-6, 6), c.y + rnd(-3, 3), { r: 7, c: '#1a0a30', a: .25, s: .6 });
+      // a deeper, wider version of the Spell Cannon's burn trench, laid down in pieces as it travels
+      c.lsx = c.lsx === undefined ? c.sx : c.lsx; c.lsy = c.lsy === undefined ? c.sy : c.lsy;
+      if (Math.hypot(c.x - c.lsx, c.y - c.lsy) > 46 && typeof beamScar === 'function') { const d0 = beamScar({ x: c.lsx, y: c.lsy }, { x: c.x, y: c.y }, true, 1.45, true); d0.life = 5; decals.push(d0); c.lsx = c.x; c.lsy = c.y; }
+      // sparks and embers shed along the way
+      for (let i = 0; i < 2; i++) { const an = c.a + Math.PI + rnd(-.9, .9), v = rnd(80, 240); P({ x: c.x + rnd(-10, 10), y: c.y - 36 * HS + rnd(-10, 10), vx: Math.cos(an) * v, vy: Math.sin(an) * v - 40, color: ['#ffd45e', '#ff8a3a', '#ffffff', '#c48cff'][Math.random() * 4 | 0], size: rnd(1.6, 3.2), life: rnd(.3, .7), grav: 260 }); }
+      if (Math.random() < dt * 14) decals.push({ k: 'ember', x: c.x + rnd(-22, 22), y: c.y + rnd(-10, 10), t: 0, life: rnd(2, 3.4), s: rnd(.8, 1.3) });
       if (Math.random() < .9) fireFx.push({ x: c.x + rnd(-6, 6), y: c.y - 36 * HS + rnd(-6, 6), vx: -c.vx * .2 + rnd(-20, 20), vy: -c.vy * .2 + rnd(-20, 20), t: 0, life: rnd(.25, .4), s: rnd(8, 12), seed: rnd(0, 99), el: 'arcane' });
     }
     orbsC = orbsC.filter(c => c.life > 0);

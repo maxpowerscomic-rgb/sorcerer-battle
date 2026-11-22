@@ -69,9 +69,14 @@
   };
   window.AI_DEBUG = { counterVs };
 
-  /* ---------------- account level: 2.5% faster casting every 5 levels ---------------- */
+  /* ---------------- account level: from level 3, every other level alternates +5% cast speed and +5% health
+     (3 cast, 5 health, 7 cast, 9 health ...), each capped at +30% ---------------- */
   const acctLv = w => w && w.me ? PR.lvl : (typeof M !== 'undefined' && M && M.foeAcct) || PR.lvl;
-  const castBonus = w => Math.min(.25, .025 * Math.floor((acctLv(w) || 1) / 5));
+  const lvSteps = w => { const L = acctLv(w) || 1; return L >= 3 ? Math.floor((L - 1) / 2) : 0; };
+  const castBonus = w => .05 * Math.min(6, Math.ceil(lvSteps(w) / 2));
+  const hpBonus = w => .05 * Math.min(6, Math.floor(lvSteps(w) / 2));
+  window.hpBonusOf = hpBonus;
+  { const _sdH = startDuel; window.startDuel = startDuel = function () { const r = _sdH.apply(this, arguments); try { if (!window.ONB_ACTIVE) for (const w of ents) { const m = 1 + hpBonus(w); if (m > 1) { w.maxHp = Math.round(w.maxHp * m); w.hp = w.maxHp; if (w.lag !== undefined) w.lag = w.maxHp; } } } catch (e) {} return r; }; }
   window.castBonusOf = castBonus;
   const _cm = window.castMod;
   window.castMod = function (w, k, b) {
@@ -141,12 +146,12 @@
   window.openTitles = function () {
     const s = ST(), cur = (TITLES.find(t => t.id === PR.title && t.ok(s)) || TITLES[0]).id, cb = castBonus({ me: 1 });
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Titles</div>
-      <div class="ssub" style="margin:0">Shown under your name. Level ${PR.lvl}: ${cb > 0 ? '+' + Math.round(cb * 1000) / 10 + '% cast speed' : 'cast speed bonus starts at level 5'} (2.5% every 5 levels).</div>
+      <div class="ssub" style="margin:0">Shown under your name. Level ${PR.lvl}: ${cb > 0 ? '+' + Math.round(cb * 100) + '% cast speed, +' + Math.round(hpBonus({ me: 1 }) * 100) + '% health' : 'bonuses start at level 3'} (from level 3, every other level alternates +5% cast speed and +5% health).</div>
       <div class="ttl">${TITLES.map(t => { const ok = t.ok(s), pr = !ok && t.p ? t.p(s) : null;
         return `<div class="trow ${ok ? '' : 'lk'} ${t.id === cur ? 'on' : ''}" ${ok ? `onclick="PR.title='${t.id}';save();refreshMeta();openTitles()"` : ''}><b>${t.n}</b><small>${t.d}${pr ? ` <em>${Math.min(pr[0], pr[1])}/${pr[1]}</em>` : ''}</small>${ok ? (t.id === cur ? '<i>✓</i>' : '') : `<span class="tlk">${SVG.lock}</span>`}</div>`; }).join('')}</div>`;
     $('sheet').classList.add('on');
   };
-  function titleHTML() { const cb = castBonus({ me: 1 }); return `<span class="tn">${titleName()}</span>${cb > 0 ? `<span class="cs">⚡ +${Math.round(cb * 1000) / 10}% cast</span>` : ''}`; }
+  function titleHTML() { const cb = castBonus({ me: 1 }), hb = hpBonus({ me: 1 }); return `<span class="tn">${titleName()}</span>${cb > 0 ? `<span class="cs">⚡ +${Math.round(cb * 100)}% cast${hb > 0 ? ` · ♥ +${Math.round(hb * 100)}%` : ''}</span>` : ''}`; }
   const _rm = refreshMeta;
   window.refreshMeta = refreshMeta = function () {
     const r = _rm.apply(this, arguments);
@@ -353,7 +358,7 @@
   try { ONE_COPY.add('chosen'); } catch (e) {}
 
   /* ---------------- daily challenges ----------------
-     Five a day from a pool. Finishing one pays skill points to a random unlocked ability; a finished one can be swapped for coins. */
+     Five a day from a pool. Finishing one pays gold; a finished one can be swapped for coins. */
   const CH_POOL = [
     { id: 'deal', n: 'Deal 300 damage', key: 'dealt', need: 300 }, { id: 'take', n: 'Take 250 damage', key: 'taken', need: 250 }, { id: 'win2', n: 'Win 2 matches', key: 'wins', need: 2 },
     { id: 'flawless', n: 'Win a match without losing a round', key: 'flawless', need: 1 }, { id: 'play3', n: 'Play 3 matches', key: 'matches', need: 3 }, { id: 'rounds', n: 'Win 6 rounds', key: 'rounds', need: 6 },
@@ -361,17 +366,17 @@
     { id: 'spell', n: 'Cast spells 25 times', key: 'spellCasts', need: 25 }, { id: 'ups', n: 'Take 6 upgrades in drafts', key: 'ups', need: 6 }, { id: 'big', n: 'Deal 150 damage in one match', key: 'dealtMax', need: 150, max: 1 },
     { id: 'tank', n: 'Win a match after taking 100 damage', key: 'tankWin', need: 1 }, { id: 'streak', n: 'Win 2 matches in a row', key: 'streakNow', need: 2, max: 1 },
   ];
-  const CH_COST = 60, CH_PTS = 5, today = () => new Date().toISOString().slice(0, 10);
+  const CH_COST = 60, CH_GOLD = 50, today = () => new Date().toISOString().slice(0, 10);
   function chState() { if (!PR.ch || PR.ch.day !== today()) { PR.ch = { day: today(), list: CH_POOL.slice().sort(() => Math.random() - .5).slice(0, 5).map(c => ({ id: c.id, p: 0, done: 0 })) }; try { save(); } catch (e) {} } return PR.ch; }
   function chProgress(d) { const st = chState(), got = [];
     for (const c of st.list) { if (c.done) continue; const def = CH_POOL.find(q => q.id === c.id); if (!def) continue; const v = d[def.key] || 0; c.p = def.max ? Math.max(c.p, v) : c.p + v;
-      if (c.p >= def.need) { c.done = 1; const un = unlockedSpells(), k = un[Math.random() * un.length | 0]; PR.spells[k].cards += CH_PTS; c.rk = k; got.push(def.n + ': +' + CH_PTS + ' ' + SP[k].n); } }
+      if (c.p >= def.need) { c.done = 1; PR.coins = (PR.coins || 0) + CH_GOLD; c.gold = CH_GOLD; got.push(def.n + ': +' + CH_GOLD + ' gold'); } }
     try { save(); } catch (e) {} if (got.length) setTimeout(() => toast('Challenge done! ' + got[0] + (got.length > 1 ? ' (+' + (got.length - 1) + ' more)' : '')), 4200); chDot(); }
   function chDot() { const st = chState(), el = document.getElementById('chDot'); if (el) el.textContent = st.list.filter(c => c.done).length + '/5'; }
   window.swapChallenge = function (i) { const st = chState(), c = st.list[i]; if (!c || !c.done || PR.coins < CH_COST) return; const free = CH_POOL.filter(q => !st.list.some(l => l.id === q.id)); if (!free.length) return; PR.coins -= CH_COST; st.list[i] = { id: free[Math.random() * free.length | 0].id, p: 0, done: 0 }; try { save(); } catch (e) {} refreshMeta(); openChallenges(); };
   window.openChallenges = function () { const st = chState();
-    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Daily Challenges</div><div class="ssub" style="margin:0">New set every day. Each one pays ${CH_PTS} skill points to a random ability you own.</div><div class="chl">${st.list.map((c, i) => { const def = CH_POOL.find(q => q.id === c.id) || { n: c.id, need: 1 };
-      return `<div class="chrow ${c.done ? 'done' : ''}"><div class="cg"><b>${def.n}</b><div class="chbar"><i style="width:${Math.min(100, c.p / def.need * 100)}%"></i><span>${c.done ? 'Done' : Math.floor(Math.min(c.p, def.need)) + ' / ' + def.need}</span></div>${c.done && c.rk ? `<small>+${CH_PTS} skill points to ${SP[c.rk].n}</small>` : ''}</div>${c.done ? `<button onclick="swapChallenge(${i})" ${PR.coins < CH_COST ? 'disabled' : ''}>New<small><span class="ci coin-i"></span>${CH_COST}</small></button>` : ''}</div>`; }).join('')}</div>`;
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Daily Challenges</div><div class="ssub" style="margin:0">New set every day. Each one pays ${CH_GOLD} gold.</div><div class="chl">${st.list.map((c, i) => { const def = CH_POOL.find(q => q.id === c.id) || { n: c.id, need: 1 };
+      return `<div class="chrow ${c.done ? 'done' : ''}"><div class="cg"><b>${def.n}</b><div class="chbar"><i style="width:${Math.min(100, c.p / def.need * 100)}%"></i><span>${c.done ? 'Done' : Math.floor(Math.min(c.p, def.need)) + ' / ' + def.need}</span></div>${c.done ? `<small>+${c.gold || CH_GOLD} gold</small>` : ''}</div>${c.done ? `<button onclick="swapChallenge(${i})" ${PR.coins < CH_COST ? 'disabled' : ''}>New<small><span class="ci coin-i"></span>${CH_COST}</small></button>` : ''}</div>`; }).join('')}</div>`;
     $('sheet').classList.add('on'); };
   window.CH_DEBUG = { chProgress, chState };
   const _rmC = refreshMeta; window.refreshMeta = refreshMeta = function () { const r = _rmC.apply(this, arguments); try { chDot(); } catch (e) {} return r; };
@@ -563,5 +568,86 @@
   window.openSpell = openSpell = function (k) { const r = _os.apply(this, arguments); try { const P = document.getElementById('sheetP'); if (P && !P.querySelector('.trials') && (typeof isUnl !== 'function' || isUnl(k))) { const at = P.querySelector('.ctrs') || P.querySelector('.ups')?.parentElement || P.querySelector('.shd'); if (at) at.insertAdjacentHTML('afterend', trialHTML(k)); } } catch (e) {} return r; };
   const css = document.createElement('style');
   css.textContent = `.trials{margin:10px 0 4px;background:#0006;border:2px solid #000;border-radius:12px;padding:8px 10px}.trh{font:13px 'Lilita One';letter-spacing:1px;color:#ffd75e;margin-bottom:4px}.trw{margin:6px 0}.trt{display:flex;justify-content:space-between;font:12px Nunito;font-weight:800;color:#e8e0ff}.trt b{color:#b9a6ee;font-weight:800}.trw.done .trt b{color:#7dffa8}.trb{height:7px;background:#000;border-radius:5px;overflow:hidden;margin:3px 0}.trb i{display:block;height:100%;background:linear-gradient(90deg,#7a5cff,#c48cff)}.trw.done .trb i{background:linear-gradient(90deg,#2fd08a,#7dffa8)}.trp{display:flex;gap:6px}.trp em{font:10px 'Lilita One';font-style:normal;color:#8d7fbf;background:#1a1236;border:1.5px solid #000;border-radius:6px;padding:1px 6px}.trp em.on{color:#0b2a14;background:#7dffa8}`;
+  document.head.appendChild(css);
+})();
+
+/* ---------------- Starting upgrades (F-455, F-462) ----------------
+   Every 5 levels an ability earns a slot. Fill it with one of its upgrades that doesn't need another upgrade first;
+   that ability then starts every match with it. Tap a chosen one to clear the slot. Rivals get the same number of
+   random starting upgrades for their levels, so it stays fair. */
+(function () {
+  const slotsOf = lvl => Math.floor((lvl || 1) / 5);
+  const eligible = k => (UPG[k] || []).filter(u => !u.req && k !== 'chosen');
+  const startOf = k => { const s = PR.spells && PR.spells[k]; if (!s) return []; s.start = (s.start || []).filter(id => eligible(k).some(u => u.id === id)); return s.start; };
+  const blocked = (k, list, u) => u.grp && list.some(id => { const o = UPG[k].find(q => q.id === id); return o && o.grp === u.grp; });
+  window.startUps = startOf;
+  const _nm = newMatch;
+  window.newMatch = newMatch = function () {
+    const r = _nm.apply(this, arguments);
+    try { if (M && !window.ONB_ACTIVE) {
+      for (const k of (PR.hand || [])) for (const id of startOf(k)) M.me.up.add(k + '.' + id);
+      const fl = M.foeLv || {}; for (const k of (M.foe.pool || [])) { const n = slotsOf(fl[k]), pool = eligible(k).sort(() => Math.random() - .5), got = [];
+        for (const u of pool) { if (got.length >= n) break; if (blocked(k, got, u)) continue; got.push(u.id); M.foe.up.add(k + '.' + u.id); } }
+    } } catch (e) {}
+    return r;
+  };
+  window.pickStart = function (k, id) { const s = PR.spells[k], list = startOf(k);
+    if (list.includes(id)) s.start = list.filter(q => q !== id);
+    else if (list.length < slotsOf(s.lvl)) { const u = UPG[k].find(q => q.id === id); if (!u || blocked(k, list, u)) return; s.start = list.concat(id); }
+    try { save(); } catch (e) {} openSpell(k); };
+  function startHTML(k) { const s = PR.spells[k], n = slotsOf(s.lvl), list = startOf(k), el = eligible(k);
+    if (!el.length) return '';
+    const next = n < 4 ? `Next slot at level ${(n + 1) * 5}.` : '';
+    const chips = el.map(u => { const on = list.includes(u.id), can = on || (list.length < n && !blocked(k, list, u));
+      return `<button class="stc ${on ? 'on' : ''}" ${can ? `onclick="event.stopPropagation();pickStart('${k}','${u.id}')"` : 'disabled'}>${on ? '✓ ' : ''}${u.n}</button>`; }).join('');
+    return `<div class="starts"><div class="trh">Starting upgrades <small>${list.length} / ${n}</small></div><div class="ssub2">Every 5 levels, pick an upgrade this ability always starts a match with while it's in your battle hand. ${next}</div><div class="stl">${chips}</div></div>`; }
+  const _os = window.openSpell;
+  window.openSpell = openSpell = function (k) { const r = _os.apply(this, arguments); try { const P = document.getElementById('sheetP'); if (P && !P.querySelector('.starts') && (typeof isUnl !== 'function' || isUnl(k))) { const at = P.querySelector('.trials') || P.querySelector('.ctrs'); if (at) at.insertAdjacentHTML('afterend', startHTML(k)); } } catch (e) {} return r; };
+  const css = document.createElement('style');
+  css.textContent = `.starts{margin:8px 0 4px;background:#0006;border:2px solid #000;border-radius:12px;padding:8px 10px}.starts .trh small{color:#b9a6ee;font:11px Nunito;font-weight:800;margin-left:6px}.ssub2{font:11px Nunito;font-weight:700;color:#b9a6ee;margin:2px 0 6px}.stl{display:flex;flex-wrap:wrap;gap:5px}.stc{font:12px 'Lilita One';padding:5px 9px;border-radius:9px;border:2px solid #000;background:#2a1f52;color:#e8e0ff;cursor:pointer}.stc.on{background:linear-gradient(#ffd75e,#e0a91c);color:#3a1d00}.stc:disabled{opacity:.38;cursor:default}`;
+  document.head.appendChild(css);
+})();
+
+/* ---------------- every menu screen scrolls (F-452, F-453) ---------------- */
+(function () {
+  const css = document.createElement('style');
+  css.textContent = `.screen:not(#battle):not(#vs)>.content{overflow-y:auto;overflow-x:hidden;min-height:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:none}.screen:not(#battle):not(#vs)>.content::-webkit-scrollbar{display:none}.screen:not(#battle):not(#vs)>.content>*{flex-shrink:0}.mc,.rwwrap{min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-width:none}.rwwrap::-webkit-scrollbar,.mc::-webkit-scrollbar{display:none}.mc>*,.rwwrap>*{flex-shrink:0}`;
+  document.head.appendChild(css);
+})();
+
+/* ---------------- music picker (F-456) ----------------
+   Options get a Menu music and a Battle music choice from every track made so far; switching crossfades. */
+(function () {
+  const TRACKS = [['bgm_menu', 'Late Night Lounge'], ['bgm_menu_whimsy', 'Whimsical Tower'], ['bgm_battle', 'Offbeat Duel'], ['bgm_battle_take2', 'Offbeat Duel (take 2)'], ['bgm_battle_dark', 'Dark Ostinato'], ['bgm_battle_calm', 'Still Water']];
+  window.MUSIC_TRACKS = TRACKS;
+  const pick = slot => (SET()[slot === 'menu' ? 'bgmMenu' : 'bgmBattle']) || (slot === 'menu' ? 'bgm_menu' : 'bgm_battle');
+  let slot = null;
+  const _mu = window.music;
+  window.music = music = function (id) { if (id === 'bgm_menu') { slot = 'menu'; id = pick('menu'); } else if (id === 'bgm_battle') { slot = 'battle'; id = pick('battle'); } else slot = null; return _mu(id); };
+  window.setBgm = function (which, id) { SET()[which === 'menu' ? 'bgmMenu' : 'bgmBattle'] = id; try { save(); } catch (e) {}
+    // hear it right away: crossfade to the new choice (back to the right track when the screen changes)
+    try { auInit(); } catch (e) {} _mu(id); };
+  const _sh = settingsHTML;
+  window.settingsHTML = settingsHTML = function () {
+    const h = _sh.apply(this, arguments);
+    const sel = (which) => `<div class="opt"><span>${which === 'menu' ? 'Menu music' : 'Battle music'}</span><select class="bgmsel" onchange="setBgm('${which}',this.value)">${TRACKS.map(([id, n]) => `<option value="${id}" ${pick(which) === id ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
+    return h.replace(/<\/div>$/, sel('menu') + sel('battle') + '</div>');
+  };
+  const css = document.createElement('style');
+  css.textContent = `.bgmsel{font:13px 'Lilita One';background:#1a1236;color:#e8e0ff;border:2px solid #000;border-radius:9px;padding:5px 8px;max-width:58%}`;
+  document.head.appendChild(css);
+})();
+
+/* ---------------- Options button on the home screen (F-456) ---------------- */
+(function () {
+  window.openOptions = function () {
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Options</div>${settingsHTML()}`;
+    $('sheet').classList.add('on');
+  };
+  const add = () => { const st = document.querySelector('#home .stage'); if (!st || st.querySelector('.optbtn')) return;
+    st.insertAdjacentHTML('beforeend', `<button class="optbtn" onclick="openOptions()" aria-label="Options"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.4-2.5 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.4 2.7a7.6 7.6 0 0 0-1.7 1l-2.5-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.4 2.5-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.4-2.7a7.6 7.6 0 0 0 1.7-1l2.5 1 2-3.4zM13 15.5A3.5 3.5 0 1 1 13 8.5a3.5 3.5 0 0 1 0 7z"/></svg></button>`); };
+  add(); document.addEventListener('DOMContentLoaded', add);
+  const css = document.createElement('style');
+  css.textContent = `#chBtn{top:88px!important}.optbtn{position:absolute;top:10px;left:10px;z-index:2;width:34px;height:34px;display:grid;place-items:center;border-radius:11px;border:2px solid #000;background:linear-gradient(#4a3a80,#2b2050);color:#fff;cursor:pointer;box-shadow:0 3px 0 #000;padding:0}`;
   document.head.appendChild(css);
 })();

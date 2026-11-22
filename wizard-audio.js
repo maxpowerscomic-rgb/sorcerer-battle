@@ -45,10 +45,10 @@ function sfx(id, o = {}) {
 }
 function music(id) {
   AU.want = id; if (!AU.ctx || !AU.man) return; if (AU.musId === id) return;
-  const old = AU.mus; if (old) { old.g.gain.setTargetAtTime(0, AU.ctx.currentTime, .35); setTimeout(() => { try { old.src.stop(); } catch (e) {} }, 1600); }
+  const XF = 1.6, now0 = AU.ctx.currentTime, old = AU.mus; if (old) { const g = old.g.gain; g.cancelScheduledValues(now0); g.setValueAtTime(g.value, now0); g.linearRampToValueAtTime(0, now0 + XF); setTimeout(() => { try { old.src.stop(); } catch (e) {} }, XF * 1000 + 200); }   /* crossfade out */
   AU.mus = null; AU.musId = id; if (!id) return;
   const e = AU.man[id]; if (!e) return; const f = e.files[0];
-  const start = b => { if (!b || AU.musId !== id) return; const src = AU.ctx.createBufferSource(), g = AU.ctx.createGain(); src.buffer = b; src.loop = true; g.gain.value = 0; g.gain.setTargetAtTime(e.vol || 1, AU.ctx.currentTime, .6); src.connect(g).connect(AU.g.music); src.start(); AU.mus = { src, g }; };
+  const start = b => { if (!b || AU.musId !== id) return; const src = AU.ctx.createBufferSource(), g = AU.ctx.createGain(); src.buffer = b; src.loop = true; const t0 = AU.ctx.currentTime; g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(e.vol || 1, t0 + 1.6);   /* crossfade in */ src.connect(g).connect(AU.g.music); src.start(); AU.mus = { src, g }; };
   if (AU.buf[f]) start(AU.buf[f]); else Promise.resolve(auLoad(f)).then(() => start(AU.buf[f]));
 }
 // phones only allow audio after a tap
