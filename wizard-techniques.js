@@ -324,9 +324,14 @@
         text(w.x, w.y - 90 * HS, 'COLLAPSE', '#c48cff', true); shake = Math.max(shake, 12);
       } else if (w.polN % 2) { // Draw
         if (U(w, k, 'drag') && !ghosted(o) && !o.dead) { if (o.shell) { o.shell = null; o.shellDown = 1; shellShatter(o); text(o.x, o.y - 110 * HS, 'RIPPED OUT', '#9fb8ff', true); try { sfx('shatter', { x: o.x }); } catch (e) {} } const d0 = dist(w, o) || 1; o.drag = { by: w, t: 0, dur: .62, a0: Math.atan2(o.y - w.y, o.x - w.x), r0: d0, dir: Math.random() < .5 ? 1 : -1, dmg: S(w, k, 'dmg') }; if (o.rush) o.rush = null; text(o.x, o.y - 96 * HS, 'CRESCENT DRAG', '#6fd3ff', true); }
-        else o.pull = { by: w, t: .45, s: S(w, k, 'pull') * str };
-        enemyCreatures(w).forEach(c => { if (c.e.x !== undefined) c.e.pullBy = { by: w, t: .45, s: S(w, k, 'pull') * .8 * str }; });
-        addFx({ k: 'draw', w, life: .5, r: 120 * str }); text(w.x, w.y - 86 * HS, 'DRAW' + colTag(w), '#6fd3ff');
+        else {   // Draw: a blue orb forms on the enemy and hauls them (and their creatures) back to you, slamming them into any wall on the way
+          const a = rnd(0, 6.283), held = [];
+          if (!o.dead && !ghosted(o) && !anchored(o)) { held.push({ e: o, k: 'wiz' }); if (o.rush) o.rush = null; }
+          for (const c of enemyCreatures(w)) if (c.e.x !== undefined && c.k !== 'd' && Math.hypot(c.e.x - o.x, c.e.y - o.y) < 60) held.push({ e: c.e, k: c.k });
+          orbsC.push({ o: w, draw: 1, vx: 0, vy: 0, x: o.x + Math.cos(a) * 8, y: o.y + Math.sin(a) * 5, sp: 250 * str, life: 3, t: 0, dmg: S(w, k, 'dmg'), held, hitW: new Set(), hit: new Set() });
+          for (let i = 0; i < 18; i++) { const an = rnd(0, 6.283), v = rnd(40, 140); P({ x: o.x, y: o.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .7, color: ['#3b9bff', '#bfe6ff', '#061030'][i % 3], size: rnd(2, 4), life: rnd(.3, .6) }); }
+        }
+        text(w.x, w.y - 86 * HS, 'DRAW' + colTag(w), '#6fd3ff');
       } else { // Repel: an orb fired straight ahead that shoves back whatever it passes through
         const a = Math.atan2(o.y - w.y, o.x - w.x); w.repelT = 1.3 * str; addFx({ k: 'repel', x: w.x + Math.cos(a) * 16, y: w.y + Math.sin(a) * 16, life: .3, r: 44 }); shake = Math.max(shake, 5); text(w.x, w.y - 86 * HS, 'REPEL' + colTag(w), '#ff5a5a');
         orbsC.push({ o: w, repel: 1, late: U(w, k, 'late'), bounced: 0, str, x: w.x + Math.cos(a) * 22, y: w.y + Math.sin(a) * 22, vx: Math.cos(a) * 330, vy: Math.sin(a) * 330, life: 4.5, dmg: S(w, k, 'dmg'), hit: new Set(), t: 0, a });
@@ -841,6 +846,20 @@
     // Collapse orbs
     for (const c of orbsC) {
       SRC = 'polarity'; c.t += dt; c.life -= dt; c.x += c.vx * dt; c.y += c.vy * dt;
+      if (c.draw) {   // Draw orb: glides to its caster carrying whatever it caught; walls in the way take the hit, and so do those slammed into them
+        const w = c.o, dx = w.x - c.x, dy = w.y - c.y, d = Math.hypot(dx, dy) || 1, k2 = Math.min(1, c.t * 3);
+        c.x -= c.vx * dt || 0; c.y -= c.vy * dt || 0;   // undo the generic move: this orb steers itself
+        c.vx = dx / d * c.sp * k2; c.vy = dy / d * c.sp * k2; const nx = c.x + c.vx * dt, ny = c.y + c.vy * dt;
+        for (const wl of walls) if (wl.o !== w && wl.hp > 0 && !c.hitW.has(wl) && wallD(wl, nx, ny) < 18) { c.hitW.add(wl);
+          wl.hp -= c.dmg; wl.flash = .15; burst(nx, ny - 30 * HS, 12, ['#9fd8ff', '#fff', '#d8f6ff'], 160, 3, .4);   // the orb tears through the wall
+          for (const h of c.held) { if (h.gone) continue; const e = h.e; if (h.k === 'wiz') { if (!ghosted(e)) damage(e, c.dmg, 0, 0, '#bfe6ff'); } else hurtCreature(e, h.k, c.dmg, 'crush'); wl.hp -= c.dmg; shake = Math.max(shake, 9); addFx({ k: 'ping', x: e.x, y: e.y, life: .35 }); }
+          if (wl.hp > 0) { for (const h of c.held) { if (!h.gone) { h.gone = 1; text(h.e.x, h.e.y - 80 * HS, 'SLAMMED', '#bfe6ff'); } } } }
+        c.x = nx; c.y = ny;
+        for (const h of c.held) { if (h.gone) continue; const e = h.e; if ((h.k === 'wiz' && (e.dead || ghosted(e) || anchored(e))) || (h.k !== 'wiz' && !(e.hp > 0))) { h.gone = 1; continue; } const q = inArena(c.x, c.y); e.x += (q.x - e.x) * Math.min(1, dt * 14); e.y += (q.y - e.y) * Math.min(1, dt * 14); if (h.k === 'wiz') { e.vx = 0; e.vy = 0; } }
+        if (d < 56 || c.life <= .05) { c.life = 0; for (const h of c.held) h.gone = 1; burst(c.x, c.y - 36 * HS, 18, ['#3b9bff', '#bfe6ff', '#fff'], 160, 4, .45); inkRing(c.x, c.y, '#3b9bff', 1, 8, 40, .5); }
+        // ethereal smoke: soft red and dark wisps peel off as it travels
+        for (let i = 0; i < 3; i++) P({ x: c.x + rnd(-9, 9), y: c.y - 36 * HS + rnd(-9, 9), vx: -c.vx * .12 + rnd(-24, 24), vy: -c.vy * .12 - rnd(10, 40), color: ['#6fb8ff', '#0a1a5a', '#c8e6ff', '#061030'][Math.random() * 4 | 0], size: rnd(4, 8), life: rnd(.5, 1), glow: Math.random() < .5, shrink: false, grow: 2, drag: .9, fade: .5 });
+        continue; }
       if (c.repel) {
         const f = c.o.foe, sp = Math.hypot(c.vx, c.vy) || 1, ux = c.vx / sp, uy = c.vy / sp;
         if (!c.bounced) {   // first pass: everything it touches is hurt once and shoved along its path; enemy shots are turned around
@@ -1087,8 +1106,16 @@
     }
     // collapse orbs
     // Collapse: the arena dims and a violet singularity drags light into itself
-    if (orbsC.some(c => !c.repel)) { x.save(); x.fillStyle = 'rgba(10,2,30,.32)'; x.fillRect(0, 0, cv.width / dpr, cv.height / dpr); x.restore(); }
-    for (const c of orbsC) { if (c.repel) { x.save(); x.translate(c.x, c.y - 36 * HS); x.fillStyle = '#12020a'; x.beginPath(); x.arc(0, 0, (c.bounced ? 11 : 9), 0, 7); x.fill(); x.globalCompositeOperation = 'lighter'; const R3 = (c.bounced ? 14 : 11) + Math.sin(c.t * 22) * 1.5, g3 = x.createRadialGradient(0, 0, 0, 0, 0, R3 * 2.4); g3.addColorStop(0, '#ffffff'); g3.addColorStop(.35, c.bounced ? 'rgba(255,90,90,.95)' : 'rgba(255,150,150,.6)'); g3.addColorStop(1, 'rgba(255,40,40,0)'); x.fillStyle = g3; x.beginPath(); x.arc(0, 0, R3 * 2.4, 0, 7); x.fill();
+    if (orbsC.some(c => !c.repel && !c.draw)) { x.save(); x.fillStyle = 'rgba(10,2,30,.32)'; x.fillRect(0, 0, cv.width / dpr, cv.height / dpr); x.restore(); }
+    for (const c of orbsC) { if (c.draw) {   // Draw orb: a blue core inside a wavering, smoky halo that drags light in behind it
+        x.save(); x.translate(c.x, c.y - 36 * HS); const t = c.t, R = 13 + Math.sin(t * 16) * 1.5, grow = Math.min(1, t * 5); x.scale(grow, grow);
+        x.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 6; i++) { const a = t * (1.6 + i * .3) + i * 1.05, rx = R * (2.2 + .5 * Math.sin(t * 3 + i)), ry = R * (1.3 + .4 * Math.cos(t * 2.4 + i)); x.save(); x.rotate(a); x.globalAlpha = .16 + .08 * Math.sin(t * 5 + i); const g = x.createRadialGradient(0, 0, 0, 0, 0, rx); g.addColorStop(0, 'rgba(90,170,255,.9)'); g.addColorStop(.5, 'rgba(20,80,220,.4)'); g.addColorStop(1, 'rgba(0,30,120,0)'); x.fillStyle = g; x.beginPath(); x.ellipse(rx * .15, 0, rx, ry, 0, 0, 7); x.fill(); x.restore(); }
+        const g3 = x.createRadialGradient(0, 0, 0, 0, 0, R * 2.6); g3.addColorStop(0, '#ffffff'); g3.addColorStop(.3, 'rgba(110,190,255,.95)'); g3.addColorStop(.7, 'rgba(40,120,255,.35)'); g3.addColorStop(1, 'rgba(40,120,255,0)'); x.fillStyle = g3; x.beginPath(); x.arc(0, 0, R * 2.6, 0, 7); x.fill();
+        x.lineCap = 'round'; for (let i = 0; i < 8; i++) { const a0 = i * .785 + t * 3, r0 = R * 3 * (1 - ((t * 1.4 + i / 8) % 1)) + R * .6; x.strokeStyle = `rgba(${i % 2 ? 190 : 90},${i % 2 ? 225 : 170},255,${.55 * (1 - ((t * 1.4 + i / 8) % 1))})`; x.lineWidth = 2; x.beginPath(); x.arc(0, 0, r0, a0, a0 + .9); x.stroke(); }
+        x.globalCompositeOperation = 'source-over'; x.fillStyle = '#020a1a'; x.beginPath(); x.arc(0, 0, R * .55, 0, 7); x.fill(); x.strokeStyle = '#d6ecff'; x.lineWidth = 1.6; x.stroke();
+        x.restore(); continue; }
+      if (c.repel) { x.save(); x.translate(c.x, c.y - 36 * HS); x.fillStyle = '#12020a'; x.beginPath(); x.arc(0, 0, (c.bounced ? 11 : 9), 0, 7); x.fill(); x.globalCompositeOperation = 'lighter'; const R3 = (c.bounced ? 14 : 11) + Math.sin(c.t * 22) * 1.5, g3 = x.createRadialGradient(0, 0, 0, 0, 0, R3 * 2.4); g3.addColorStop(0, '#ffffff'); g3.addColorStop(.35, c.bounced ? 'rgba(255,90,90,.95)' : 'rgba(255,150,150,.6)'); g3.addColorStop(1, 'rgba(255,40,40,0)'); x.fillStyle = g3; x.beginPath(); x.arc(0, 0, R3 * 2.4, 0, 7); x.fill();
         if (c.bounced) { x.strokeStyle = '#fff'; x.lineWidth = 1.6; x.setLineDash([3, 4]); x.beginPath(); x.arc(0, 0, R3 * 1.7, c.t * 8, c.t * 8 + 6.283); x.stroke(); } x.restore(); continue; }
       x.save(); x.translate(c.x, c.y - 36 * HS); const R = 26 + Math.sin(c.t * 18) * 2.6, grow = Math.min(1, c.t * 4);
       x.scale(grow, grow); x.globalCompositeOperation = 'lighter';
