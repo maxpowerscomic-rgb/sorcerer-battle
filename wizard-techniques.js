@@ -160,6 +160,57 @@
     }
     pblasts = pblasts.filter(b => performance.now() - b.r0 < 900);
   }
+  /* Collapse wind-up. Where each orb is at wind-up progress kk (0..1): they hang either side of the charge point,
+     then circle it faster and tighter until they touch at .78. sd = +1 red, -1 blue. */
+  function collapsePos(c, kk, sd) {
+    let r = 64, th = c.a + sd * Math.PI / 2;
+    if (kk < .3) r = 64 * Math.min(1, kk / .1) + Math.sin(kk * 40) * 1.5;
+    else { const u = Math.min(1, (kk - .3) / .48); r = 64 * (1 - Math.pow(u, 1.6)); th += 1.9 * 6.283 * u * u; }
+    return [Math.cos(th) * r, Math.sin(th) * r * .72];
+  }
+  function drawCollapseWind(x, c) {
+    const k = Math.min(1, c.t / c.wind), t = c.t, W0 = cv.width / dpr, H0 = cv.height / dpr, gyo = 36 * HS;
+    const SIDES = [[1, '255,74,74', '#ff4a4a', '#ffd0d0'], [-1, '59,155,255', '#3b9bff', '#d0e6ff']];
+    x.save(); x.translate(c.x, c.y - gyo); x.lineCap = 'round'; x.lineJoin = 'round';
+    // a ward circle on the floor under the charge: red and blue halves chasing each other, tightening as it builds
+    { const gr = 74 * Math.min(1, k / .25) * (k > .78 ? 1 - (k - .78) / .22 * .6 : 1), spin = t * (3 + k * 14); x.save(); x.translate(0, gyo); x.scale(1, .42); x.globalAlpha = .55 + .3 * k;
+      for (const [sd, rgb] of SIDES) { x.strokeStyle = `rgba(${rgb},.9)`; x.lineWidth = 3 + 3 * k; x.beginPath(); x.arc(0, 0, gr, spin + (sd > 0 ? 0 : Math.PI), spin + (sd > 0 ? 0 : Math.PI) + 2.5); x.stroke(); }
+      x.strokeStyle = 'rgba(255,255,255,.5)'; x.lineWidth = 1.2; x.setLineDash([4, 6]); x.lineDashOffset = -t * 60; x.beginPath(); x.arc(0, 0, gr * .72, 0, 7); x.stroke(); x.setLineDash([]); x.restore(); }
+    if (k < .78) {
+      const u = k < .3 ? 0 : (k - .3) / .48, size = (k < .3 ? Math.min(1, k / .18) : 1 + .4 * u), pts = SIDES.map(sd => collapsePos(c, k, sd[0]));
+      x.globalCompositeOperation = 'lighter';
+      // comet tails: where each orb has just been
+      for (let si = 0; si < 2; si++) { const [sd, rgb] = SIDES[si]; for (let j = 14; j >= 1; j--) { const kk = k - j * .011; if (kk <= 0) continue; const q = collapsePos(c, kk, sd), f = 1 - j / 15; x.fillStyle = `rgba(${rgb},${.34 * f})`; x.beginPath(); x.arc(q[0], q[1], (4 + 7 * f) * size, 0, 7); x.fill(); } }
+      // the pull between them: a taut violet thread, then crackling arcs once they start to circle
+      { const [p0, p1] = pts; x.strokeStyle = `rgba(196,140,255,${.25 + .5 * u})`; x.lineWidth = 1.5 + 2 * u; x.beginPath(); x.moveTo(p0[0], p0[1]); x.lineTo(p1[0], p1[1]); x.stroke();
+        if (k > .3) for (let n = 0; n < 2; n++) { if (Math.sin(t * 61 + n * 2.1) < -.2) continue; x.strokeStyle = n ? 'rgba(255,255,255,.95)' : 'rgba(210,170,255,.9)'; x.lineWidth = n ? 1.4 : 3; x.beginPath(); x.moveTo(p0[0], p0[1]); for (let i = 1; i < 6; i++) { const f = i / 6, j = Math.sin(t * 97 + i * 12.9 + n * 5) * (10 + 8 * u) * Math.sin(f * 3.14); x.lineTo(p0[0] + (p1[0] - p0[0]) * f - (p1[1] - p0[1]) * .0 + j * .6, p0[1] + (p1[1] - p0[1]) * f + j); } x.lineTo(p1[0], p1[1]); x.stroke(); } }
+      // the orbs themselves
+      for (let si = 0; si < 2; si++) { const [sd, rgb, col, pale] = SIDES[si], [ox, oy] = pts[si], r = 10 * size;
+        const g = x.createRadialGradient(ox, oy, 0, ox, oy, r * 3.4); g.addColorStop(0, '#ffffff'); g.addColorStop(.28, col); g.addColorStop(.6, `rgba(${rgb},.35)`); g.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = g; x.beginPath(); x.arc(ox, oy, r * 3.4, 0, 7); x.fill();
+        if (sd > 0) { x.strokeStyle = `rgba(255,200,200,.9)`; x.lineWidth = 1.8; for (let i = 0; i < 7; i++) { const an = i * .9 + t * 5, l0 = r * 1.2, l1 = r * (1.9 + .7 * Math.sin(t * 30 + i * 2)); x.beginPath(); x.moveTo(ox + Math.cos(an) * l0, oy + Math.sin(an) * l0); x.lineTo(ox + Math.cos(an) * l1, oy + Math.sin(an) * l1); x.stroke(); } }    // red: jagged spikes pushing out
+        else { x.strokeStyle = `rgba(200,225,255,.85)`; x.lineWidth = 1.6; for (let i = 0; i < 4; i++) { const ph = (t * 2.2 + i / 4) % 1, rr = r * (2.6 - 1.7 * ph), a0 = i * 1.57 + t * 7; x.globalAlpha = ph; x.beginPath(); x.arc(ox, oy, rr, a0, a0 + 1.3); x.stroke(); } x.globalAlpha = 1; } }                                             // blue: arcs spiralling in
+      x.globalCompositeOperation = 'source-over';
+      for (let si = 0; si < 2; si++) { const [sd, rgb, col, pale] = SIDES[si], [ox, oy] = pts[si], r = 10 * size; x.fillStyle = sd > 0 ? '#1a0206' : '#020a1a'; x.beginPath(); x.arc(ox, oy, r * .5, 0, 7); x.fill(); x.strokeStyle = pale; x.lineWidth = 1.5; x.stroke(); }
+    } else if (k < .9) {   // the smash: a white core swelling out of the contact, shock rings, speed lines
+      const v = (k - .78) / .12, e = 1 - Math.pow(1 - v, 3), R = 14 + 44 * e;
+      x.globalCompositeOperation = 'lighter';
+      const g = x.createRadialGradient(0, 0, 0, 0, 0, R * 2.4); g.addColorStop(0, '#ffffff'); g.addColorStop(.35, 'rgba(255,255,255,.95)'); g.addColorStop(.6, 'rgba(196,140,255,.7)'); g.addColorStop(1, 'rgba(120,60,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, R * 2.4, 0, 7); x.fill();
+      for (let i = 0; i < 18; i++) { const an = i / 18 * 6.283 + Math.sin(i * 7.3) * .15, r0 = R * 1.3 + 30 * v, r1 = r0 + 26 + 40 * ((i * 37) % 10) / 10; x.strokeStyle = `rgba(255,255,255,${.9 * (1 - v)})`; x.lineWidth = 2 + (i % 3); x.beginPath(); x.moveTo(Math.cos(an) * r0, Math.sin(an) * r0 * .8); x.lineTo(Math.cos(an) * r1, Math.sin(an) * r1 * .8); x.stroke(); }
+      for (const [sd, rgb] of SIDES) { x.strokeStyle = `rgba(${rgb},${1 - v * .5})`; x.lineWidth = 5; const a0 = t * 26 + (sd > 0 ? 0 : Math.PI); x.beginPath(); x.ellipse(0, 0, R * 1.15, R * .95, 0, a0, a0 + 2.2); x.stroke(); }
+      x.save(); x.translate(0, gyo); x.scale(1, .42); for (let j = 0; j < 2; j++) { const vv = Math.max(0, v - j * .25); if (vv <= 0) continue; x.strokeStyle = j ? `rgba(196,140,255,${1 - vv})` : `rgba(255,255,255,${1 - vv})`; x.lineWidth = 7 * (1 - vv) + 1; x.beginPath(); x.arc(0, 0, 30 + 170 * vv, 0, 7); x.stroke(); } x.restore();
+      x.globalCompositeOperation = 'source-over';
+    } else {   // the implosion: everything folds into a point, a black bead with a burning rim, and then it goes
+      const z = (k - .9) / .1, R = 58 * (1 - z) * (1 - z) + 7;
+      x.globalCompositeOperation = 'lighter';
+      const g = x.createRadialGradient(0, 0, 0, 0, 0, R * 2.2 + 10); g.addColorStop(0, '#ffffff'); g.addColorStop(.4, 'rgba(230,200,255,.95)'); g.addColorStop(1, 'rgba(120,60,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, R * 2.2 + 10, 0, 7); x.fill();
+      for (let j = 0; j < 3; j++) { const zz = (z + j / 3) % 1, rr = 150 * (1 - zz); x.strokeStyle = `rgba(${j === 1 ? '255,110,110' : j === 2 ? '110,180,255' : '255,255,255'},${zz * .9})`; x.lineWidth = 1.5 + 4 * zz; x.beginPath(); x.ellipse(0, 0, rr, rr * .8, 0, 0, 7); x.stroke(); }
+      for (let i = 0; i < 20; i++) { const an = i / 20 * 6.283 + t * 3, r1 = 150 * (1 - z * .7), r0 = r1 * .55; x.strokeStyle = `rgba(255,255,255,${.25 + .6 * z})`; x.lineWidth = 1.4; x.beginPath(); x.moveTo(Math.cos(an) * r1, Math.sin(an) * r1 * .8); x.lineTo(Math.cos(an) * r0, Math.sin(an) * r0 * .8); x.stroke(); }
+      x.globalCompositeOperation = 'source-over';
+      x.fillStyle = '#05010f'; x.beginPath(); x.arc(0, 0, 5 + 9 * z, 0, 7); x.fill(); x.strokeStyle = '#ffffff'; x.lineWidth = 2.5; x.stroke();
+    }
+    x.restore();
+    if (k > .9) { x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.fillStyle = `rgba(255,255,255,${.22 * (k - .9) / .1})`; x.fillRect(0, 0, W0, H0); x.restore(); }   // the arena whites out just before it fires
+  }
   /* Rushdown crit impact frame: a split-second inverted black-and-white frame with manga speed lines on the hit point */
   let impacts = [];
   function drawImpacts(x) {
@@ -320,7 +371,7 @@
       w.polN = (w.polN || 0) + 1; const str = U(w, k, 'field') ? 1.4 : 1;
       if (U(w, k, 'collapse') && w.polN % (U(w, k, 'rapid') ? 3 : 5) === 0) {
         const a = Math.atan2(o.y - w.y, o.x - w.x); { let L = 0; for (let q = 0; q < 900; q += 6) { const px = w.x + Math.cos(a) * q, py = w.y + Math.sin(a) * q; if (px < F.x0 - 30 || px > F.x1 + 30 || py < F.y0 - 40 || py > F.y1 + 30) break; L = q; }   // journey to the edge, for Unrestrained Collapse
-          orbsC.push({ o: w, x: w.x + Math.cos(a) * 20, y: w.y + Math.sin(a) * 20, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 2.9 + .7, wind: .7, dmg: S(w, k, 'dmg') * 2.4, hit: new Set(), t: 0, a, sx: w.x + Math.cos(a) * 20, sy: w.y + Math.sin(a) * 20, L, unbound: U(w, k, 'unbound') }); }
+          orbsC.push({ o: w, x: w.x + Math.cos(a) * 20, y: w.y + Math.sin(a) * 20, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 2.9 + 1, wind: 1, dmg: S(w, k, 'dmg') * 2.4, hit: new Set(), t: 0, a, sx: w.x + Math.cos(a) * 20, sy: w.y + Math.sin(a) * 20, L, unbound: U(w, k, 'unbound') }); }
         text(w.x, w.y - 90 * HS, 'COLLAPSE', '#c48cff', true); shake = Math.max(shake, 4);
       } else if (w.polN % 2) { // Draw
         if (U(w, k, 'drag') && !ghosted(o) && !o.dead) { if (o.shell) { o.shell = null; o.shellDown = 1; shellShatter(o); text(o.x, o.y - 110 * HS, 'RIPPED OUT', '#9fb8ff', true); try { sfx('shatter', { x: o.x }); } catch (e) {} } const d0 = dist(w, o) || 1; o.drag = { by: w, t: 0, dur: .62, a0: Math.atan2(o.y - w.y, o.x - w.x), r0: d0, dir: Math.random() < .5 ? 1 : -1, dmg: S(w, k, 'dmg') }; if (o.rush) o.rush = null; text(o.x, o.y - 96 * HS, 'CRESCENT DRAG', '#6fd3ff', true); }
@@ -849,12 +900,30 @@
     // Collapse orbs
     for (const c of orbsC) {
       SRC = 'polarity'; c.t += dt; c.life -= dt;
-      if (c.wind && !c.launched) {   // wind-up: red and blue swing in from either side; at contact, a flash and it fires
-        if (c.t >= c.wind) { c.launched = 1; c.t0 = c.t; c.sx = c.x; c.sy = c.y; shake = Math.max(shake, 16); slow = Math.min(slow, .08); setTimeout(() => { if (!ended) slow = 1; }, 160); if (typeof flashScreen === 'function') flashScreen();
-          addFx({ k: 'collapse0', x: c.x, y: c.y - 36 * HS, life: .5 }); inkRing(c.x, c.y, '#ffffff', 2, 8, 110, .5); inkRing(c.x, c.y, '#c48cff', 2, 14, 150, .5);
-          for (let i = 0; i < 46; i++) { const an = rnd(0, 6.283), v = rnd(180, 520); P({ x: c.x, y: c.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .75, color: ['#ff4a4a', '#3b9bff', '#ffffff', '#c48cff'][i % 4], size: rnd(1.8, 4), life: rnd(.35, .8), grav: 120, drag: .95 }); }
+      if (c.wind && !c.launched) {   // wind-up in four beats: the two orbs form, spiral in, smash, then implode and fire
+        const w = c.o, k = c.t / c.wind;
+        if (!w.dead) { c.x = w.x + Math.cos(c.a) * 22; c.y = w.y + Math.sin(c.a) * 22; }   // the charge rides with the caster
+        if (c.t >= c.wind) { c.launched = 1; c.t0 = c.t;
+          const f = w.foe; if (f && !f.dead) c.a = Math.atan2(f.y - c.y, f.x - c.x);   // it fires at where the enemy is now
+          c.vx = Math.cos(c.a) * 150; c.vy = Math.sin(c.a) * 150; c.sx = c.x; c.sy = c.y;
+          { let L = 0; for (let q = 0; q < 900; q += 6) { const px = c.x + Math.cos(c.a) * q, py = c.y + Math.sin(c.a) * q; if (px < F.x0 - 30 || px > F.x1 + 30 || py < F.y0 - 40 || py > F.y1 + 30) break; L = q; } c.L = L; }
+          shake = Math.max(shake, 18); slow = Math.min(slow, .06); setTimeout(() => { if (!ended) slow = 1; }, 170); if (typeof flashScreen === 'function') flashScreen();
+          impacts.push({ x: c.x, y: c.y - 36 * HS, t: 0, r0: performance.now(), a: c.a, seed: Math.random() * 99 });
+          addFx({ k: 'collapse0', x: c.x, y: c.y - 36 * HS, life: .5 }); inkRing(c.x, c.y, '#ffffff', 2, 8, 120, .5); inkRing(c.x, c.y, '#c48cff', 2, 14, 170, .5);
+          for (let i = 0; i < 56; i++) { const an = c.a + rnd(-1.2, 1.2) + (i % 3 ? 0 : Math.PI), v = rnd(180, 560); P({ x: c.x, y: c.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .75, color: ['#ff4a4a', '#3b9bff', '#ffffff', '#c48cff'][i % 4], size: rnd(1.8, 4.2), life: rnd(.35, .85), grav: 120, drag: .95 }); }
           try { sfx('boom', { x: c.x, vol: 1.1 }); } catch (e) {} }
-        else { const k = c.t / c.wind; if (Math.random() < .7) { const side = Math.random() < .5 ? 1 : -1, pa = c.a + side * Math.PI / 2, rr = 60 * (1 - k) + 6; P({ x: c.x + Math.cos(pa) * rr, y: c.y - 36 * HS + Math.sin(pa) * rr * .7, vx: -Math.cos(pa) * 120, vy: -Math.sin(pa) * 90, color: side > 0 ? '#ff6b6b' : '#6fb8ff', size: rnd(2, 3.5), life: .3 }); } }
+        else {
+          const beat = k < .3 ? 0 : k < .78 ? 1 : k < .9 ? 2 : 3; if (c.beat !== beat) { c.beat = beat; try { sfx(beat === 2 ? 'shatter' : 'ui_deal', { x: c.x, rate: 1 + beat * .25, vol: beat === 2 ? .7 : .9 }); } catch (e) {} if (beat === 2) { shake = Math.max(shake, 10); inkRing(c.x, c.y, '#ffffff', 2, 6, 90, .5); } }
+          const cy = c.y - 36 * HS;
+          if (beat < 2) { shake = Math.max(shake, 1 + 5 * k);
+            for (const sd of [1, -1]) { const q = collapsePos(c, k, sd), ox = c.x + q[0], oy = cy + q[1];
+              if (sd > 0) { if (Math.random() < .8) { const an = rnd(0, 6.283), v = rnd(60, 190); P({ x: ox, y: oy, vx: Math.cos(an) * v, vy: Math.sin(an) * v, color: Math.random() < .3 ? '#ffffff' : '#ff6b6b', size: rnd(1.6, 3), life: rnd(.18, .34) }); } }       // red throws sparks outward
+              else if (Math.random() < .8) { const an = rnd(0, 6.283), rr = rnd(20, 34); P({ x: ox + Math.cos(an) * rr, y: oy + Math.sin(an) * rr, vx: -Math.cos(an) * rr * 4.5, vy: -Math.sin(an) * rr * 4.5, color: Math.random() < .3 ? '#ffffff' : '#6fb8ff', size: rnd(1.6, 3), life: .2 }); } } }   // blue drinks light inward
+          else if (beat === 2) { shake = Math.max(shake, 8);
+            for (let i = 0; i < 3; i++) { const an = rnd(0, 6.283), rr = rnd(10, 70); P({ x: c.x + Math.cos(an) * rr, y: c.y + Math.sin(an) * rr * .5, vx: rnd(-20, 20), vy: -rnd(90, 240), color: ['#3a2a4a', '#c48cff', '#ffffff'][i], size: rnd(2, 4.5), life: rnd(.3, .6), glow: i > 0 }); } }   // the floor lifts
+          else { shake = Math.max(shake, 12);
+            for (let i = 0; i < 4; i++) { const an = rnd(0, 6.283), rr = rnd(70, 130); P({ x: c.x + Math.cos(an) * rr, y: cy + Math.sin(an) * rr * .75, vx: -Math.cos(an) * rr * 9, vy: -Math.sin(an) * rr * 6.7, color: ['#ffffff', '#c48cff', '#ff8a8a', '#8ac4ff'][i], size: rnd(1.6, 3), life: .11 }); } }   // everything is sucked to a point
+        }
         continue; }
       c.x += c.vx * dt; c.y += c.vy * dt;
       if (c.draw) {   // Draw orb: glides to its caster carrying whatever it caught; walls in the way take the hit, and so do those slammed into them
@@ -1132,14 +1201,7 @@
         x.restore(); continue; }
       if (c.repel) { x.save(); x.translate(c.x, c.y - 36 * HS); x.fillStyle = '#12020a'; x.beginPath(); x.arc(0, 0, (c.bounced ? 11 : 9), 0, 7); x.fill(); x.globalCompositeOperation = 'lighter'; const R3 = (c.bounced ? 14 : 11) + Math.sin(c.t * 22) * 1.5, g3 = x.createRadialGradient(0, 0, 0, 0, 0, R3 * 2.4); g3.addColorStop(0, '#ffffff'); g3.addColorStop(.35, c.bounced ? 'rgba(255,90,90,.95)' : 'rgba(255,150,150,.6)'); g3.addColorStop(1, 'rgba(255,40,40,0)'); x.fillStyle = g3; x.beginPath(); x.arc(0, 0, R3 * 2.4, 0, 7); x.fill();
         if (c.bounced) { x.strokeStyle = '#fff'; x.lineWidth = 1.6; x.setLineDash([3, 4]); x.beginPath(); x.arc(0, 0, R3 * 1.7, c.t * 8, c.t * 8 + 6.283); x.stroke(); } x.restore(); continue; }
-      if (c.wind && !c.launched) {   // two orbs, red and blue, swing in along an arc and smash together
-        const k = Math.min(1, c.t / c.wind), e = k * k * (3 - 2 * k), px = -Math.sin(c.a), py = Math.cos(c.a);
-        x.save(); x.translate(c.x, c.y - 36 * HS); x.globalCompositeOperation = 'lighter';
-        for (const [sd, col, rgb] of [[1, '#ff4a4a', '255,74,74'], [-1, '#3b9bff', '59,155,255']]) { const d = 70 * (1 - e), sw = Math.sin(e * 3.14) * 26, ox = px * d * sd - Math.cos(c.a) * sw, oy = (py * d * sd - Math.sin(c.a) * sw) * .75, r = 9 + 5 * e;
-          const g = x.createRadialGradient(ox, oy, 0, ox, oy, r * 3.2); g.addColorStop(0, '#ffffff'); g.addColorStop(.3, col); g.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = g; x.beginPath(); x.arc(ox, oy, r * 3.2, 0, 7); x.fill();
-          x.strokeStyle = `rgba(${rgb},.6)`; x.lineWidth = 3; x.beginPath(); x.arc(0, 0, Math.hypot(ox, oy), Math.atan2(oy, ox) - sd * .9, Math.atan2(oy, ox)); x.stroke(); }
-        if (k > .8) { const f = (k - .8) / .2; x.fillStyle = `rgba(255,255,255,${f * .9})`; x.beginPath(); x.arc(0, 0, 20 + f * 50, 0, 7); x.fill(); }
-        x.restore(); continue; }
+      if (c.wind && !c.launched) { drawCollapseWind(x, c); continue; }
       // rainbow wake from the launch point to the singularity, cycling like Desperate Output
       { const L0 = Math.hypot(c.x - c.sx, c.y - c.sy); if (L0 > 4) { const N = 24, yo = -36 * HS, age = c.t - (c.t0 || 0), fadeIn = Math.min(1, age * 4); x.save(); x.lineCap = 'round';
           x.globalAlpha = .5 * fadeIn; x.strokeStyle = '#07020d'; x.lineWidth = 26; x.beginPath(); x.moveTo(c.sx + (c.x - c.sx) * .15, c.sy + (c.y - c.sy) * .15 + yo); x.lineTo(c.x, c.y + yo); x.stroke();   // ink underlay so the colours read on light floors
