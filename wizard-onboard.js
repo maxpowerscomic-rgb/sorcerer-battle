@@ -46,13 +46,26 @@ function onbBuild() {
   const el = ONB.el = document.createElement('div'); el.className = 'onb hide';
   el.innerHTML = `<div class="spot none"></div><div class="blk"></div><div class="blk"></div><div class="blk"></div><div class="blk"></div><div class="bub"></div><svg class="tapme" viewBox="0 0 40 40" style="display:none"><path d="M14 4c2 0 3.5 1.6 3.5 3.5v11l2-.3c1.6 0 2.8 1 3 2.3l.2.1c1.5-.4 3 .5 3.3 2l.3.1c1.4-.3 2.8.6 3 2 .9 5-1 10-5 12.3H16c-3-2-6-6-8-10-.6-1.4.4-3 2-3.2 1-.1 2 .4 2.6 1.3l.4.6V7.5C10.5 5.6 12 4 14 4z" fill="#fff" stroke="#000" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
   document.querySelector('.phone').appendChild(el);
+  // a Skip button that stays up for the whole tour, not just the first screen
+  if (!document.getElementById('onbSkipAll')) { const b = document.createElement('button'); b.id = 'onbSkipAll'; b.textContent = 'Skip tutorial'; b.onclick = e => { e.stopPropagation(); onbAskSkip(); }; document.querySelector('.phone').appendChild(b);
+    const css = document.createElement('style'); css.textContent = `#onbSkipAll{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:8px;z-index:9999;font:12px 'Lilita One';letter-spacing:.5px;padding:6px 11px;border-radius:11px;border:2px solid #000;background:#150f27e6;color:#e8e0ff;cursor:pointer;box-shadow:0 3px 0 #000;display:none}html.onb-on #onbSkipAll{display:block}`; document.head.appendChild(css); }
 }
+function onbAskSkip() {
+  try { $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Skip the tutorial?</div><div class="ssub" style="margin:0">You can replay it any time from Options.</div><button class="upbtn" onclick="closeSheet();onbFinish(true)">Skip it</button><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="closeSheet()">Keep going</button>`; $('sheet').classList.add('on'); } catch (e) { if (confirm('Skip the tutorial? You can replay it from Options.')) onbFinish(true); } }
 function owlCanvas() {
   const c = document.createElement('canvas'); c.width = c.height = 148; c.className = 'owl';
   const x = c.getContext('2d'); let t = 0;
   const draw = () => { if (!c.isConnected) return; t += 1 / 60; x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, 148, 148); x.translate(74, 136 + Math.sin(t * 2.4) * 2); x.scale(2.75, 2.75); try { drawPet(x, 'owl', t, 1); } catch (e) {} requestAnimationFrame(draw); };
   requestAnimationFrame(draw); return c;
 }
+/* keep what the tour is pointing at on screen: scroll its scrolling parent so the target sits in view,
+   and keep it there while the step is up (a scrolled-away page used to strand the player) */
+function onbAnchor(sel) {
+  try { const list = Array.isArray(sel) ? sel : [sel], el = list.map(q => typeof q === 'string' ? document.querySelector(q) : q).find(Boolean); if (!el) return;
+    let sc = el.parentElement; while (sc && sc !== document.body) { const st = getComputedStyle(sc); if (/(auto|scroll)/.test(st.overflowY) && sc.scrollHeight > sc.clientHeight + 1) break; sc = sc.parentElement; }
+    if (!sc || sc === document.body) return; const r = el.getBoundingClientRect(), b = sc.getBoundingClientRect(), pad = 70;
+    if (r.top < b.top + pad || r.bottom > b.bottom - pad) { const want = sc.scrollTop + (r.top - b.top) - Math.max(pad, (b.height - Math.min(r.height, b.height * .6)) / 2); sc.scrollTop = Math.max(0, want); }
+  } catch (e) {} }
 function onbRect(sel) {
   const els = (Array.isArray(sel) ? sel : [sel]).map(s => typeof s === 'string' ? document.querySelector(s) : s).filter(e => e && e.offsetParent !== null);
   if (!els.length) return null;
@@ -131,6 +144,7 @@ function onbStart(fromStep) {
   clearInterval(ONB.tick); ONB.tick = setInterval(onbTick, 120);
 }
 function onbEnter() {
+  document.documentElement.classList.add('onb-on');
   const s = onbCur(); if (ONB.won === undefined && PR.onb) ONB.won = PR.onb.won; PR.onb = { step: s.id, won: ONB.won }; save(); ONB.t0 = performance.now();
   if (s.enter) s.enter();
   onbRenderBubble(); onbTick();
@@ -144,12 +158,13 @@ function onbRenderBubble(html, placeOverride) {
   b.appendChild(owlCanvas()); const say = document.createElement('div'); say.className = 'say'; say.innerHTML = h; b.appendChild(say);
   if (s.dot >= 0 && !html) { const d = document.createElement('div'); d.className = 'dots'; d.innerHTML = DOT_STEPS.map((_, i) => `<i class="${i <= s.dot ? 'on' : ''}"></i>`).join(''); (say.querySelector('.row') || say).appendChild(d); }
   say.querySelectorAll('[data-next]').forEach(e => e.onclick = () => { sfx('ui_click'); onbNext(); });
-  say.querySelectorAll('[data-skip]').forEach(e => e.onclick = () => { if (confirm('Skip the tutorial? You can replay it from Settings.')) onbFinish(true); });
+  say.querySelectorAll('[data-skip]').forEach(e => e.onclick = () => onbAskSkip());
   say.querySelectorAll('[data-finish]').forEach(e => e.onclick = () => onbFinish());
   ONB.place = placeOverride || s.place; if (s.after) s.after();
 }
 function onbLayout(target, place, opts = {}) {
   const el = ONB.el, spot = el.querySelector('.spot'), blk = el.querySelectorAll('.blk'), bub = el.querySelector('.bub'), tap = el.querySelector('.tapme');
+  if (target) onbAnchor(typeof target === 'function' ? target() : target);
   const P = document.querySelector('.phone').getBoundingClientRect(), r = target ? onbRect(typeof target === 'function' ? target() : target) : null;
   const wasNone = spot.classList.contains('none');
   spot.classList.toggle('none', !r && !opts.clear); spot.classList.toggle('clear', !!opts.clear);
@@ -204,6 +219,7 @@ function onbPrepUpgrade() {
   s.cards = Math.max(s.cards, CARDS[s.lvl]); PR.coins = Math.max(PR.coins, COST[s.lvl] + 60); ONB.upFrom = s.lvl; save(); refreshMeta();
 }
 function onbFinish(skipped) {
+  document.documentElement.classList.remove('onb-on');
   clearInterval(ONB.tick); window.ONB_ACTIVE = 0; window.ONB_SLOW = 0; ONB.i = -1;
   if (!skipped && !(PR.onb && PR.onb.gifted)) { PR.gems += 100; PR.onb = { done: 1, gifted: 1 }; toast('+100 gems! Good luck out there.'); sfx('ui_coin'); }
   else PR.onb = Object.assign({}, PR.onb, { done: 1 });

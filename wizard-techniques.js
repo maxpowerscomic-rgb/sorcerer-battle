@@ -237,13 +237,13 @@
     const m = .33 * Math.pow(.5, ds.length - 1);
     const lists = () => [typeof projs !== 'undefined' && projs, typeof runes !== 'undefined' && runes, typeof arrows !== 'undefined' && arrows, typeof meteors !== 'undefined' && meteors, typeof swarms !== 'undefined' && swarms, typeof clouds !== 'undefined' && clouds, zombies, golems, archers, typeof firerings !== 'undefined' && firerings, typeof totems !== 'undefined' && totems, typeof pits !== 'undefined' && pits, typeof wells !== 'undefined' && wells, typeof bubbles !== 'undefined' && bubbles, typeof cannons !== 'undefined' && cannons, typeof patches !== 'undefined' && patches, slashes, orbsC, muds, cleaves].filter(Boolean);
     for (const d of ds) {
-      const keep = { x: w.x, y: w.y, face: w.face, cleaveN: w.cleaveN, zn: w.zn, polN: w.polN }, before = lists().map(L => new Set(L));
+      const keep = { x: w.x, y: w.y, face: w.face, cleaveN: w.cleaveN, zn: w.zn, polN: w.polN, ceaseT: w.ceaseT, viviT: w.viviT }, before = lists().map(L => new Set(L));
       const st = window.setTimeout; copying = true; window.CLONE_SCALE = m;
       window.setTimeout = (f, ms) => st(() => { const o = window.CLONE_SCALE; window.CLONE_SCALE = m; try { f(); } finally { window.CLONE_SCALE = o; } }, ms);
       w.x = d.x; w.y = d.y; w.face = w.foe.x > d.x ? 1 : -1;
       try { _cast(w, k); if (TECH[k]) techCast(w, k); }
       catch (e) {}
-      finally { window.setTimeout = st; window.CLONE_SCALE = 0; copying = false; w.x = keep.x; w.y = keep.y; w.face = keep.face; w.cleaveN = keep.cleaveN; w.zn = keep.zn; w.polN = keep.polN; }
+      finally { window.setTimeout = st; window.CLONE_SCALE = 0; copying = false; w.x = keep.x; w.y = keep.y; w.face = keep.face; w.cleaveN = keep.cleaveN; w.zn = keep.zn; w.polN = keep.polN; w.ceaseT = keep.ceaseT; w.viviT = keep.viviT; }
       // everything the decoy just made is weaker
       lists().forEach((L, i) => { for (const o of L) { if (before[i] && before[i].has(o)) continue; o.clone = 1;
         for (const f of ['dmg', 'dps', 'wallDps', 'bodyDps']) if (typeof o[f] === 'number') o[f] *= m;
@@ -284,6 +284,11 @@
       // Grand Cleave: two casts build charge, the third is one enormous chop
       if (U(w, k, 'cleave')) { w.cleaveN = (w.cleaveN || 0) + 1; if (w.cleaveN >= cleaveNeed(w)) { w.cleaveN = 0; grandCleave(w, aim); return; } if (w.cleaveN === 1) text(w.x, w.y - 98 * HS, 'CHARGE I', '#ff8a96'); w.cdNum = 0; inkRing(w.x, w.y, '#ff3b4a', w.cleaveN, 34, 8, .5); }
       if (U(w, k, 'ceaseless')) { w.ceaseT = 1.6; w.ceaseCd = 0; }
+      // Vivisection: once every other loop, cuts burst out and rebound around a Sanctum-sized area around you for 1.6s
+      if (U(w, k, 'vivisect')) { const loop = Math.floor(((w.castN || 1) - 1) / Math.max(1, w.book.length));
+        if (w.viviLoop === undefined || loop - w.viviLoop >= 2) { w.viviLoop = loop; const R = Math.max(96, S(w, 'sanctum', 'radius')), arms = U(w, k, 'vivi2') ? 8 : 4, a0 = rnd(0, 6.283);
+          for (let j = 0; j < arms; j++) { const a = a0 + j * 6.283 / arms; mkSlash(w, w.x + Math.cos(a) * 14, w.y + Math.sin(a) * 9, a, 360, .3, .65); const sl = slashes[slashes.length - 1]; sl.vivi = { x: w.x, y: w.y, R }; sl.life = 1.6; }
+          text(w.x, w.y - 112 * HS, 'VIVISECTION', '#ff8a96', true); } }
       if (U(w, k, 'triple')) [-.3, 0, .3].forEach(d => mkSlash(w, hx, hy, aim + d, 380, .65, .8)); else mkSlash(w, hx, hy, aim, 380, 1, 1);
     }
     if (k === 'sanctum') {
@@ -371,7 +376,7 @@
   /* ---------------- Dissection ---------------- */
   function mkSlash(w, x0, y0, a, sp, mult, sz) {
     const tier = tierOf(w, 'dissect');
-    slashes.push({ o: w, x: x0, y: y0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.1, dmg: S(w, 'dissect', 'dmg') * mult, hit: new Set(), keen: U(w, 'dissect', 'keen'), cut: U(w, 'dissect', 'cutter'), sting: U(w, 'dissect', 'sting'), tested: new Set(), sz: sz * (1 + (tier - 1) * .16) * (U(w, 'dissect', 'broad') ? 1.3 : 1), wd: U(w, 'dissect', 'broad') ? 1.3 : 1, tier });
+    slashes.push({ o: w, x: x0, y: y0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.1, dmg: S(w, 'dissect', 'dmg') * mult, hit: new Set(), keen: U(w, 'dissect', 'keen'), cut: U(w, 'dissect', 'cutter'), sting: U(w, 'dissect', 'sting'), tested: new Set(), pierce: U(w, 'dissect', 'rend') ? 2 : 0, sz: sz * (1 + (tier - 1) * .16) * (U(w, 'dissect', 'broad') ? 1.3 : 1), wd: U(w, 'dissect', 'broad') ? 1.3 : 1, tier });
   }
   // a spell sliced in two: both halves drift apart and fizzle
   function cutSpell(x0, y0, cols, a) {
@@ -382,7 +387,7 @@
   /* Grand Bisection: no beam. After a short wind-up one giant crescent launches and travels down the arena,
      cutting each thing as the blade reaches it. The first cut triggers an impact frame. */
   function grandCleave(w, a) {
-    cleaves.push({ o: w, x: w.x, y: w.y, a, t: 0, wind: .24, d: 0, pd: 0, L: 660, spd: 1050, hit: new Set(), dmg: S(w, 'dissect', 'dmg') * 3.5, sting: U(w, 'dissect', 'sting'), sure: U(w, 'dissect', 'fated') });
+    cleaves.push({ o: w, x: w.x, y: w.y, a, t: 0, wind: .24, d: 0, pd: 0, L: 660, spd: 1050, hit: new Set(), dmg: S(w, 'dissect', 'dmg') * 3.5 * (U(w, 'dissect', 'narrow') ? 1.5 : 1), sting: U(w, 'dissect', 'sting'), sure: U(w, 'dissect', 'fated'), narrow: U(w, 'dissect', 'narrow'), trail: [] });
     text(w.x, w.y - 104 * HS, 'GRAND BISECTION', '#ffffff', true); w.recoil = .5; shake = Math.max(shake, 5);
   }
   function cleaveStep(c, dt) {
@@ -390,11 +395,11 @@
     if (!c.go) { if (w.dead) { c.d = c.L; c.end = c.t; return; } c.go = 1; shake = Math.max(shake, 8); try { sfx('c_dissect', { x: w.x }); } catch (e) {} }
     if (c.d >= c.L) { if (!c.end) c.end = c.t; return; }
     c.pd = c.d; c.d = Math.min(c.L, c.d + c.spd * dt);
-    const ca = Math.cos(c.a), sa = Math.sin(c.a), W = 40;
+    const ca = Math.cos(c.a), sa = Math.sin(c.a), W = c.narrow ? 14 : 40;
     const reach = (px, py, wd) => { const dx = px - c.x, dy = py - c.y, al = dx * ca + dy * sa; return al > c.pd - 10 && al <= c.d + 8 && Math.abs(dx * sa - dy * ca) < (wd || W); };
     const cut = () => { if (!c.impT) { c.impT = c.t; shake = Math.max(shake, 18); slow = Math.min(slow, .06); setTimeout(() => { if (!ended) slow = 1; }, 130); } };
     SRC = 'dissect';
-    const sureHit = c.sure && !f.dead && !c.hit.has(f) && (() => { const al = (f.x - c.x) * ca + (f.y - c.y) * sa; return (al > c.pd - 10 && al <= c.d + 8) || c.d >= c.L; })();   // Inevitable Cut: lands when the blade draws level, wherever they stand
+    const sureHit = c.sure && !c.narrow && !f.dead && !c.hit.has(f) && (() => { const al = (f.x - c.x) * ca + (f.y - c.y) * sa; return (al > c.pd - 10 && al <= c.d + 8) || c.d >= c.L; })();   // Inevitable Cut: lands when the blade draws level, wherever they stand
     if (!f.dead && !c.hit.has(f) && (reach(f.x, f.y) || sureHit)) { c.hit.add(f); if (ghosted(f) && !c.sure) text(f.x, f.y - 70 * HS, 'PHASED', '#bff'); else { if (c.sure) text(f.x, f.y - 112 * HS, 'INEVITABLE', '#ff8a96', true); cut(); if (w.me && typeof PR !== 'undefined') { PR.stats = PR.stats || {}; PR.stats.cleaves = (PR.stats.cleaves || 0) + 1; } const h0 = f.hp; damage(f, c.dmg, ca * 420, sa * 420, '#c9fff4'); if (c.sting && f.hp < h0) addBleed(f); scar('splash', f.x, f.y + 6, { s: 1.4 }); if (window.bloodSplat && f.hp < h0) bloodSplat(f, c.a); } }
     for (const e of enemyCreatures(w)) if (!c.hit.has(e.e) && reach(e.e.x, e.e.y, W + 4)) { c.hit.add(e.e); cut(); hurtCreature(e.e, e.k, c.dmg, 'slash'); }
     for (const z of zombies) if (z.o !== w && z.hp > 0 && z.rise < 1 && !c.hit.has(z) && reach(z.x, z.y, W + 4)) { c.hit.add(z); cut(); hurtCreature(z, 'z', c.dmg, 'slash'); }
@@ -417,8 +422,10 @@
   function splitUnit(z) {
     const big = z.beast ? z.beast.sz : 1, cutH = (z.beast ? 20 : 24) * big * SC, snap = Object.assign({}, z, { x: 0, y: 0, hp: z.mx || 1, mx: z.mx || 1, rise: 1, flash: 0, lunge: 0, sink: 0, shockT: 0, frozen: 0, noFx: 1 });
     const a = rnd(0, 6.283), v = rnd(110, 230);
-    halves.push({ z: snap, part: 'bot', x: z.x, y: z.y, vx: 0, vy: 0, h: 0, vh: 0, rot: 0, vr: (Math.random() < .5 ? 1 : -1) * 3.2, cutH, t: 0, life: 1.3 });
-    halves.push({ z: snap, part: 'top', x: z.x, y: z.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .6, h: 2, vh: rnd(150, 240), rot: 0, vr: rnd(-11, 11), cutH, t: 0, life: 1.5 });
+    const wav = Array.from({ length: 9 }, () => rnd(-1, 1)), wide = (z.beast ? 13 : 10) * big * SC;
+    halves.push({ z: snap, part: 'bot', x: z.x, y: z.y, vx: 0, vy: 0, h: 0, vh: 0, rot: 0, vr: (Math.random() < .5 ? 1 : -1) * 3.2, cutH, t: 0, life: 1.3, wav, wide });
+    if (window.bloodPool) bloodPool(z.x, z.y, z.beast ? 'shade' : 'blood', 1.3);
+    halves.push({ z: snap, part: 'top', x: z.x, y: z.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .6, h: 2, vh: rnd(150, 240), rot: 0, vr: rnd(-11, 11), cutH, t: 0, life: 1.5, wav, wide });
     addFx({ k: 'cut', x: z.x, y: z.y - cutH, a: rnd(-.4, .4), c: z.beast ? ['#8a6cff', '#140a30', '#fff'] : ['#9fe37a', '#2a5a1c', '#fff'], life: .35 });
     for (let i = 0; i < 12; i++) P({ x: z.x + rnd(-8, 8), y: z.y - cutH + rnd(-3, 3), vx: rnd(-120, 120), vy: rnd(-150, -20), color: z.beast ? ['#8a6cff', '#3a2a6a'][i % 2] : ['#5a8a3a', '#3a5a24', '#7a1a1a'][i % 3], size: rnd(2.5, 4.5), life: rnd(.35, .7), grav: 420, glow: false });
   }
@@ -429,12 +436,17 @@
     if (alive && z.hp <= 0 && kind === 'slash' && halves.length < 40) { splitUnit(z); for (const c of corpses) if (!c._seen && Math.hypot(c.x - z.x, c.y - z.y) < 4 && c.t < .05) c.t = 9; }
     return r;
   };
-  function halvesUpdate(dt) { for (const h of halves) { h.t += dt; h.x += h.vx * dt; h.y += h.vy * dt; h.vx *= .985; h.vy *= .985; if (h.part === 'top') { h.vh -= 620 * dt; h.h += h.vh * dt; if (h.h <= 0) { h.h = 0; h.vh = 0; h.vx *= .6; h.vy *= .6; h.vr *= .5; } h.rot += h.vr * dt; } else h.rot = Math.min(1.45, Math.abs(h.rot) + Math.abs(h.vr) * dt) * Math.sign(h.vr); } halves = halves.filter(h => h.t < h.life); }
+  function halvesUpdate(dt) { for (const h of halves) { h.t += dt; h.x += h.vx * dt; h.y += h.vy * dt; h.vx *= .985; h.vy *= .985; if (h.part === 'top') { h.vh -= 620 * dt; h.h += h.vh * dt; if (h.h <= 0) { if (!h.landed) { h.landed = 1; if (window.bloodPool) bloodPool(h.x, h.y, h.z.beast ? 'shade' : 'blood', 1.1); } h.h = 0; h.vh = 0; h.vx *= .6; h.vy *= .6; h.vr *= .5; } h.rot += h.vr * dt; } else h.rot = Math.min(1.45, Math.abs(h.rot) + Math.abs(h.vr) * dt) * Math.sign(h.vr); } halves = halves.filter(h => h.t < h.life); }
   function drawHalves(x) {
     for (const h of halves) { const al = h.t > h.life - .4 ? (h.life - h.t) / .4 : 1; x.save(); x.globalAlpha = Math.max(0, al); x.translate(h.x, h.y - h.h);
       if (h.part === 'top') { x.translate(0, -h.cutH); x.rotate(h.rot); x.translate(0, h.cutH); x.beginPath(); x.rect(-70, -160, 140, 160 - h.cutH); }
       else { x.rotate(h.rot); x.beginPath(); x.rect(-70, -h.cutH, 140, h.cutH + 14); }
-      x.clip(); try { drawZombie(h.z); } catch (e) {} x.restore(); }
+      x.save(); x.clip(); try { drawZombie(h.z); } catch (e) {} x.restore();
+      // the cut face: a wavy, glistening red edge (dark ink for shadow-beasts)
+      if (h.wav) { const W2 = h.wide, y0 = -h.cutH, n = h.wav.length - 1, beast = h.z.beast, path = () => { x.beginPath(); for (let i = 0; i <= n; i++) { const u = i / n, px = -W2 + u * W2 * 2, py = y0 + h.wav[i] * 2.4 + Math.sin(u * 9 + h.t * 6) * .8; i ? x.lineTo(px, py) : x.moveTo(px, py); } };
+        x.lineCap = 'round'; x.lineJoin = 'round'; path(); x.strokeStyle = '#07020d'; x.lineWidth = 5.5; x.stroke(); path(); x.strokeStyle = beast ? '#3a1470' : '#9a0f1f'; x.lineWidth = 3.6; x.stroke(); path(); x.strokeStyle = beast ? '#8a6cff' : '#e8303f'; x.lineWidth = 1.4; x.stroke();
+        if (h.t < .9 && Math.random() < .35) P({ x: h.x + rnd(-W2, W2) * .8, y: h.y - h.h + y0, vx: rnd(-20, 20), vy: rnd(-10, 40), color: beast ? '#5a3aa0' : '#8a0f1c', size: rnd(1.4, 2.6), life: rnd(.3, .6), grav: 600, glow: false }); }
+      x.restore(); }
   }
 
   /* ---------------- Rushdown ---------------- */
@@ -771,14 +783,19 @@
         for (const q of arrows) if (q.o !== s.o && q.life > 0 && Math.hypot(q.x - s.x, q.y + 40 * HS - s.y) < 22 && roll(q)) { q.life = 0; cutSpell(q.x, q.y, ['#e0fffb', '#5fe0d0', '#fff'], a); }
         for (const q of slashes) if (q.o !== s.o && q.life > 0 && Math.hypot(q.x - s.x, q.y - s.y) < 22 && roll(q)) { q.life = 0; cutSpell(q.x, q.y - 36 * HS, ['#ffd6d2', '#ff3b4a', '#fff'], a); }
         for (const q of orbsC) if (q.o !== s.o && q.life > 0 && Math.hypot(q.x - s.x, q.y - s.y) < 26 && roll(q)) { q.life = 0; cutSpell(q.x, q.y - 36 * HS, ['#c48cff', '#6fd3ff', '#fff'], a); } }
-      if (s.x < F.x0 - 20 || s.x > F.x1 + 20 || s.y < F.y0 - 30 || s.y > F.y1 + 20) s.life = 0;
-      for (const c of enemyCreatures(s.o)) { if (s.hit.has(c.e)) continue; if (Math.hypot(c.e.x - s.x, c.e.y - s.y) < 22 * (s.wd || 1)) { s.hit.add(c.e); hurtCreature(c.e, c.k, s.dmg, 'slash'); burst(c.e.x, c.e.y - 20 * HS, 8, ['#fff', '#ff3b4a'], 140, 3, .3); } }
+      // Vivisection cuts stay inside their area and rebound off its edge, free to cut everything again after each bounce
+      if (s.vivi) { const v = s.vivi, dx = s.x - v.x, dy = (s.y - v.y) * 1.4, d = Math.hypot(dx, dy);
+        if (d > v.R) { const nx = dx / d, ny = dy / d, vy2 = s.vy * 1.4, dot = s.vx * nx + vy2 * ny; s.vx -= 2 * dot * nx; const ry = vy2 - 2 * dot * ny; s.vy = ry / 1.4; const k2 = (v.R - 2) / d; s.x = v.x + dx * k2; s.y = v.y + dy * k2 / 1.4; s.hit = new Set(); s.tested = new Set(); burst(s.x, s.y - 36 * HS, 5, ['#ffd6d2', '#ff3b4a', '#fff'], 120, 2.5, .25); } }
+      else if (s.x < F.x0 - 20 || s.x > F.x1 + 20 || s.y < F.y0 - 30 || s.y > F.y1 + 20) s.life = 0;
+      for (const c of enemyCreatures(s.o)) { if (s.hit.has(c.e)) continue; if (Math.hypot(c.e.x - s.x, c.e.y - s.y) < 22 * (s.wd || 1)) { s.hit.add(c.e); hurtCreature(c.e, c.k, s.dmg, 'slash'); burst(c.e.x, c.e.y - 20 * HS, 8, ['#fff', '#ff3b4a'], 140, 3, .3);
+        // a cut stops at the first thing it hits; Rending Cut lets it carry on through two more, losing half its damage each time (Vivisection cuts keep rebounding)
+        if (!s.vivi) { if (s.pierce > 0) { s.pierce--; s.dmg *= .5; inkRing(c.e.x, c.e.y, '#ff3b4a', 1, 5, 22); } else { s.life = 0; break; } } } }
       for (const wl of walls) if (wl.o !== s.o && s.life > 0 && wallD(wl, s.x, s.y) < 12 * (s.wd || 1)) {
         { const mud = wl.mud, k3 = s.keen ? 3 : 1; wl.hp -= s.dmg * k3; wl.flash = .12; s.life = 0; burst(s.x, s.y - 25 * HS, s.keen ? 16 : 10, mud ? ['#d8c09a', '#8a6a48', '#fff'] : ['#d8f6ff', '#fff'], s.keen ? 170 : 120, 3, .35); if (s.keen) text(s.x, s.y - 40 * HS, Math.round(s.dmg * k3), mud ? '#f0d6a6' : '#d8f6ff'); }   // slashes stop at walls; Keen Edge hits them 3x
       }
       // enemy domes stop slashes
       for (const dm of domes) if (dm.o !== s.o && s.life > 0 && Math.hypot(s.x - dm.x, (s.y - dm.y) * 1.4) < dm.r) { s.life = 0; dm.hp -= s.dmg * (Math.hypot(s.o.x - dm.x, (s.o.y - dm.y) * 1.4) < dm.r ? .5 : 1); dm.hit = .15; addFx({ k: 'ping', x: s.x, y: s.y, life: .3 }); }
-      const f = s.o.foe; if (s.life > 0 && !s.hit.has(f) && !f.dead && Math.hypot(f.x - s.x, f.y - s.y) < 24 * (s.wd || 1)) { s.hit.add(f); if (ghosted(f)) text(f.x, f.y - 70 * HS, 'PHASED', '#bff'); else { const h0 = f.hp; damage(f, s.dmg, s.vx * .12, s.vy * .12, '#c9fff4'); scar('splash', f.x, f.y + 6, { s: .6 }); if (s.sting && f.hp < h0) addBleed(f); } s.life = 0; }
+      const f = s.o.foe; if (s.life > 0 && !s.hit.has(f) && !f.dead && Math.hypot(f.x - s.x, f.y - s.y) < 24 * (s.wd || 1)) { s.hit.add(f); if (ghosted(f)) text(f.x, f.y - 70 * HS, 'PHASED', '#bff'); else { const h0 = f.hp; damage(f, s.dmg, s.vx * .12, s.vy * .12, '#c9fff4'); scar('splash', f.x, f.y + 6, { s: .6 }); if (s.sting && f.hp < h0) addBleed(f); } if (!s.vivi) s.life = 0; }
     }
     slashes = slashes.filter(s => s.life > 0);
     for (const c of cleaves) cleaveStep(c, dt);
@@ -884,7 +901,7 @@
   window.startDuel = startDuel = function () {
     slashes = []; domes = []; orbsC = []; halves = []; tarrows = []; fx = []; springs = []; motes = []; cleaves = []; muds = []; flames = []; EYE = null;
     const r = _startDuel.apply(this, arguments);
-    if (typeof ents !== 'undefined') ents.forEach(w => { w.shell = null; w.shellDown = 0; w.copyArmed = 0; w.copyGlow = 0; w.sanctNext = null; w.rush = null; w.jump = 0; w.infused = 0; w.cleaveN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].c) || 0; w.counter = null; w.qdSpent = 0; w.polN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].p) || 0; w.zn = 0; w.zbag = null; w.ceaseT = 0; w.pull = null; w.sw = null; w.swPause = 0; w.healAcc = 0; w.qdFill = 0; w.infArm = 0; w.repelT = 0; w.cdNum = 0; w.bleeds = null; w.braceT = 0; w.mom = 0; w.dmgSince = 0; w.finalUsed = 0; w.finalBoost = 0; w.fate = 0; w.fateUsed = 0; w.castN = 0; w.flyN = 0; w.dtLoop = -1; w.polLoop = -1; w.once = {}; w.mirN = 0; w.sancLoop = -9; w.chosenSaid = 0; w.dizzyT = 0; w.drag = null; w.boundary = undefined; w.bndSpent = 0; w._hpLast = w.hp; w._hpSeen = w.hp;
+    if (typeof ents !== 'undefined') ents.forEach(w => { w.shell = null; w.shellDown = 0; w.copyArmed = 0; w.copyGlow = 0; w.sanctNext = null; w.rush = null; w.jump = 0; w.infused = 0; w.cleaveN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].c) || 0; w.counter = null; w.qdSpent = 0; w.polN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].p) || 0; w.zn = 0; w.zbag = null; w.ceaseT = 0; w.viviT = 0; w.viviLoop = undefined; w.pull = null; w.sw = null; w.swPause = 0; w.healAcc = 0; w.qdFill = 0; w.infArm = 0; w.repelT = 0; w.cdNum = 0; w.bleeds = null; w.braceT = 0; w.mom = 0; w.dmgSince = 0; w.finalUsed = 0; w.finalBoost = 0; w.fate = 0; w.fateUsed = 0; w.castN = 0; w.flyN = 0; w.dtLoop = -1; w.polLoop = -1; w.once = {}; w.mirN = 0; w.sancLoop = -9; w.chosenSaid = 0; w.dizzyT = 0; w.drag = null; w.boundary = undefined; w.bndSpent = 0; w._hpLast = w.hp; w._hpSeen = w.hp;
       if (U(w, 'rush', 'oath') && w.book.includes('rush')) { w.hp = Math.round(w.hp * .5); w.lag = w.hp; w._ph = w.hp; w.oathT = 1.6; } });
     return r;
   };
@@ -1028,11 +1045,15 @@
         }
       // (no wake line: only the blade itself travels)
       if (!done) { // afterimages, then the blade: ink edge, crimson body, white core, hatch texture
-        for (let i = 4; i >= 1; i--) { const dd = c.d - i * 30; if (dd < 0) continue; x.save(); x.translate(c.x + ca * dd, c.y + sa * dd + yo); x.rotate(c.a); x.scale(4.6, 6.6); x.globalAlpha = .22 * (5 - i) / 4; x.fillStyle = i % 2 ? '#ff3b4a' : '#12060c'; crescentPath(x, 18, 1.2); x.fill(); x.restore(); }
-        x.save(); x.translate(fx0, fy0); x.rotate(c.a); x.scale(4.8, 6.9);
+        const sy = c.narrow ? 2.6 : 6.9, sx = c.narrow ? 5.4 : 4.8;
+        // ghosting: a string of fading copies of the blade left where it has been, each a little smaller and offset
+        c.trail = c.trail || []; if (!c.trail.length || c.d - c.trail[c.trail.length - 1] > 22) c.trail.push(c.d); if (c.trail.length > 9) c.trail.shift();
+        for (let i = 0; i < c.trail.length - 1; i++) { const dd = c.trail[i], age = (c.trail.length - 1 - i) / 9, jit = Math.sin(c.t * 70 + i * 2.3) * 3; x.save(); x.translate(c.x + ca * dd - sa * jit, c.y + sa * dd + yo + ca * jit); x.rotate(c.a); x.scale(sx * (1 - age * .25), sy * (1 - age * .25)); x.globalAlpha = .55 * (1 - age); x.globalCompositeOperation = 'lighter'; x.fillStyle = i % 2 ? 'rgba(255,60,80,.9)' : 'rgba(255,255,255,.75)'; crescentPath(x, 18, 1.2); x.fill(); x.globalCompositeOperation = 'source-over'; x.globalAlpha = .35 * (1 - age); x.strokeStyle = '#12060c'; x.lineWidth = .6; crescentPath(x, 18, 1.2); x.stroke(); x.restore(); }
+        const fl = Math.floor(c.t * 40) % 3, flick = fl === 0 ? 1 : fl === 1 ? .7 : .9;   // the blade flickers
+        x.save(); x.translate(fx0, fy0); x.rotate(c.a); x.scale(sx, sy); x.globalAlpha = flick;
         x.fillStyle = '#07020a'; crescentPath(x, 22.5, 1.3); x.fill();
-        x.fillStyle = '#ff2d45'; crescentPath(x, 19.5, 1.22); x.fill();
-        x.fillStyle = '#ffffff'; crescentPath(x, 16.5, 1.12); x.fill();
+        x.fillStyle = fl === 1 ? '#ffffff' : '#ff2d45'; crescentPath(x, 19.5, 1.22); x.fill();
+        x.fillStyle = fl === 1 ? '#ff2d45' : '#ffffff'; crescentPath(x, 16.5, 1.12); x.fill();
         x.save(); crescentPath(x, 16.5, 1.12); x.clip(); x.strokeStyle = '#07020a'; x.lineWidth = .5; for (let i = -6; i < 8; i++) { const o = i * 3.4 + (c.t * 60 % 3.4); x.beginPath(); x.moveTo(4, o - 9); x.lineTo(20, o + 5); x.stroke(); } x.restore();   // hatching sweeps across the blade
         x.fillStyle = '#ffe08a'; crescentPath(x, 10.5, .8); x.fill();
         x.globalCompositeOperation = 'lighter'; x.fillStyle = 'rgba(255,60,80,.45)'; crescentPath(x, 25, 1.34); x.fill(); x.restore();

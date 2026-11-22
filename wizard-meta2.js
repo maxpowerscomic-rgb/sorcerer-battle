@@ -367,7 +367,8 @@
     { id: 'spell', n: 'Cast spells 25 times', key: 'spellCasts', need: 25 }, { id: 'ups', n: 'Take 6 upgrades in drafts', key: 'ups', need: 6 }, { id: 'big', n: 'Deal 150 damage in one match', key: 'dealtMax', need: 150, max: 1 },
     { id: 'tank', n: 'Win a match after taking 100 damage', key: 'tankWin', need: 1 }, { id: 'streak', n: 'Win 2 matches in a row', key: 'streakNow', need: 2, max: 1 },
   ];
-  const CH_COST = 60, CH_GOLD = 50, today = () => new Date().toISOString().slice(0, 10);
+  const CH_COST = 10, CH_GOLD = 50, today = () => new Date().toISOString().slice(0, 10);
+  window.ECON = Object.assign(window.ECON || {}, { challengeGold: CH_GOLD, challengeSwap: CH_COST });
   function chState() { if (!PR.ch || PR.ch.day !== today()) { PR.ch = { day: today(), list: CH_POOL.slice().sort(() => Math.random() - .5).slice(0, 5).map(c => ({ id: c.id, p: 0, done: 0 })) }; try { save(); } catch (e) {} } return PR.ch; }
   function chProgress(d) { const st = chState(), got = [];
     for (const c of st.list) { if (c.done) continue; const def = CH_POOL.find(q => q.id === c.id); if (!def) continue; const v = d[def.key] || 0; c.p = def.max ? Math.max(c.p, v) : c.p + v;
@@ -616,29 +617,38 @@
   document.head.appendChild(css);
 })();
 
-/* ---------------- music picker (F-456) ----------------
-   Options get a Menu music and a Battle music choice from every track made so far; switching crossfades. */
+/* ---------------- music picker (F-456, F-517) ----------------
+   Every track has a name, can be starred as a favourite, and each slot (menus, battles) can play one chosen track or
+   Shuffle: a random pick every time, from your favourites in that slot if you have any. Switching crossfades. */
 (function () {
-  const TRACKS = [['bgm_menu', 'Late Night Lounge'], ['bgm_menu_whimsy', 'Whimsical Tower'], ['bgm_menu_tavern', 'Tavern Hearth'], ['bgm_menu_lofi', 'Arcane Lo-fi'], ['bgm_menu_synth', 'Starlit Arcade'], ['bgm_battle', 'Offbeat Duel'], ['bgm_battle_take2', 'Offbeat Duel (take 2)'], ['bgm_battle_dark', 'Dark Ostinato'], ['bgm_battle_calm', 'Still Water'], ['bgm_battle_final', 'Final Stretch'], ['bgm_battle_finale', 'Last Stand']];
-  const MENU_POOL = ['bgm_menu', 'bgm_menu_whimsy', 'bgm_menu_tavern', 'bgm_menu_lofi', 'bgm_menu_synth']; let curMenu = null;
-  // shuffle: a different menu song every time you come back to the menus, and after every restart
-  const nextMenu = () => { let last = null; try { last = localStorage.getItem('sb.lastMenuSong'); } catch (e) {} const pool = MENU_POOL.filter(k => k !== last && k !== curMenu); curMenu = (pool.length ? pool : MENU_POOL)[Math.random() * (pool.length ? pool.length : MENU_POOL.length) | 0]; try { localStorage.setItem('sb.lastMenuSong', curMenu); } catch (e) {} return curMenu; };
+  const TRACKS = [['bgm_menu', 'Moonlit Study', 'menu'], ['bgm_menu_whimsy', 'Tower of Whimsy', 'menu'], ['bgm_menu_tavern', 'The Copper Kettle Inn', 'menu'], ['bgm_menu_lofi', 'Candlelit Grimoire', 'menu'], ['bgm_menu_synth', 'Starfall Arcade', 'menu'],
+    ['bgm_battle', "Duelist's Pulse", 'battle'], ['bgm_battle_take2', "Duelist's Pulse (Reprise)", 'battle'], ['bgm_battle_dark', 'Hexed Ostinato', 'battle'], ['bgm_battle_calm', 'Still Waters', 'battle'],
+    ['bgm_battle_final', 'The Turning Tide', 'final'], ['bgm_battle_finale', 'Last Spell Standing', 'final']];
   window.MUSIC_TRACKS = TRACKS;
-  const pick = slot => { const v = SET()[slot === 'menu' ? 'bgmMenu' : 'bgmBattle']; if (slot === 'menu') return !v || v === 'shuffle' ? (curMenu || nextMenu()) : v; return v || 'bgm_battle'; };
+  const favs = () => (SET().bgmFav = SET().bgmFav || []);
+  const poolOf = cat => { const all = TRACKS.filter(t => t[2] === cat).map(t => t[0]), f = all.filter(k => favs().includes(k)); return f.length ? f : all; };
+  const cur = { menu: null, battle: null };
+  const roll = cat => { let last = null; try { last = localStorage.getItem('sb.last.' + cat); } catch (e) {} const p = poolOf(cat), q = p.filter(k => k !== last && k !== cur[cat]); cur[cat] = (q.length ? q : p)[Math.random() * (q.length ? q.length : p.length) | 0]; try { localStorage.setItem('sb.last.' + cat, cur[cat]); } catch (e) {} return cur[cat]; };
+  const choice = slot => { const v = SET()[slot === 'menu' ? 'bgmMenu' : 'bgmBattle']; return !v || v === 'shuffle' || v === 'random' ? 'shuffle' : v; };
+  const pick = slot => { const c = choice(slot); return c === 'shuffle' ? (cur[slot] || roll(slot)) : c; };
   let slot = null;
   const _mu = window.music;
-  window.music = music = function (id) { if (id === 'bgm_menu') { if (slot !== 'menu') nextMenu(); slot = 'menu'; id = pick('menu'); } else if (id === 'bgm_battle') { slot = 'battle'; id = pick('battle'); } else slot = null; return _mu(id); };
-  window.setBgm = function (which, id) { SET()[which === 'menu' ? 'bgmMenu' : 'bgmBattle'] = id; try { save(); } catch (e) {} if (id === 'shuffle') id = nextMenu();
-    // hear it right away: crossfade to the new choice (back to the right track when the screen changes)
-    try { auInit(); } catch (e) {} _mu(id); };
+  window.music = music = function (id) { if (id === 'bgm_menu') { if (slot !== 'menu') roll('menu'); slot = 'menu'; id = pick('menu'); } else if (id === 'bgm_battle') { slot = 'battle'; id = pick('battle'); } else slot = null; return _mu(id); };
+  // a new battle song each match when battle music is on shuffle
+  const _nm = newMatch; window.newMatch = newMatch = function () { if (choice('battle') === 'shuffle') roll('battle'); return _nm.apply(this, arguments); };
+  window.setBgm = function (which, id) { SET()[which === 'menu' ? 'bgmMenu' : 'bgmBattle'] = id; try { save(); } catch (e) {} if (id === 'shuffle') id = roll(which); try { auInit(); } catch (e) {} _mu(id); };
+  window.toggleFav = function (id) { const f = favs(), i = f.indexOf(id); if (i >= 0) f.splice(i, 1); else f.push(id); try { save(); } catch (e) {} openMusic(); };
+  window.playTrack = function (id) { try { auInit(); } catch (e) {} _mu(id); };
+  window.openMusic = function () { const row = ([id, n, cat]) => `<div class="mrow"><button class="mplay" onclick="playTrack('${id}')">▶</button><span>${n}<small>${cat === 'menu' ? 'Menus' : cat === 'battle' ? 'Battles' : cat === 'final' && id === 'bgm_battle_finale' ? 'Round 7' : 'Rounds 5 and 6'}</small></span><button class="mfav ${favs().includes(id) ? 'on' : ''}" onclick="toggleFav('${id}')" aria-label="Favourite">${favs().includes(id) ? '★' : '☆'}</button></div>`;
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Music</div><div class="ssub" style="margin:0">Tap ▶ to listen, ★ to favourite. Shuffle picks from your favourites.</div>${sel('menu')}${sel('battle')}<div class="mlist">${TRACKS.map(row).join('')}</div><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="openOptions()">Back</button>`;
+    $('sheet').classList.add('on'); };
+  const sel = which => { const c = choice(which), list = TRACKS.filter(t => t[2] === which); if (c === 'shuffle' && !cur[which]) roll(which);   /* so Random can name the song that is (or will be) playing */ return `<div class="opt"><span>${which === 'menu' ? 'Menu music' : 'Battle music'}</span><select class="bgmsel" onchange="setBgm('${which}',this.value)"><option value="shuffle" ${c === 'shuffle' ? 'selected' : ''}>${(() => { const now = cur[which] && TRACKS.find(t => t[0] === cur[which]); return 'Random' + (favs().some(k => list.some(t => t[0] === k)) ? ' ★' : '') + (now ? ': ' + now[1] : ''); })()}</option>${list.map(([id, n]) => `<option value="${id}" ${c === id ? 'selected' : ''}>${favs().includes(id) ? '★ ' : ''}${n}</option>`).join('')}</select></div>`; };
   const _sh = settingsHTML;
-  window.settingsHTML = settingsHTML = function () {
-    const h = _sh.apply(this, arguments);
-    const sel = (which) => { const v = SET()[which === 'menu' ? 'bgmMenu' : 'bgmBattle'], cur = which === 'menu' ? (!v ? 'shuffle' : v) : (v || 'bgm_battle'); return `<div class="opt"><span>${which === 'menu' ? 'Menu music' : 'Battle music'}</span><select class="bgmsel" onchange="setBgm('${which}',this.value)">${which === 'menu' ? `<option value="shuffle" ${cur === 'shuffle' ? 'selected' : ''}>Shuffle (a new one each time)</option>` : ''}${TRACKS.map(([id, n]) => `<option value="${id}" ${cur === id ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`; };
-    return h.replace(/<\/div>$/, sel('menu') + sel('battle') + '</div>');
-  };
+  window.settingsHTML = settingsHTML = function () { const h = _sh.apply(this, arguments); return h.replace(/<\/div>$/, sel('menu') + sel('battle') + `<button class="hbtn out" style="width:100%;margin-top:6px" onclick="openMusic()">♫ All music and favourites</button></div>`); };
   const css = document.createElement('style');
-  css.textContent = `.bgmsel{font:13px 'Lilita One';background:#1a1236;color:#e8e0ff;border:2px solid #000;border-radius:9px;padding:5px 8px;max-width:58%}`;
+  css.textContent = `.bgmsel{font:13px 'Lilita One';background:#1a1236;color:#e8e0ff;border:2px solid #000;border-radius:9px;padding:5px 8px;max-width:58%}
+  .mlist{display:flex;flex-direction:column;gap:5px}.mrow{display:flex;align-items:center;gap:8px;background:#0006;border:2px solid #000;border-radius:12px;padding:6px 8px}.mrow span{flex:1;font:14px 'Lilita One';color:#e8e0ff;display:flex;flex-direction:column}.mrow small{font:11px Nunito;font-weight:800;color:#9a8cc4}
+  .mplay,.mfav{width:34px;height:34px;border-radius:10px;border:2px solid #000;background:#2a1f52;color:#fff;font-size:15px;cursor:pointer;padding:0}.mfav{font-size:19px;color:#9a8cc4}.mfav.on{color:#ffd75e;background:#3a2c10}`;
   document.head.appendChild(css);
 })();
 
@@ -906,6 +916,7 @@
 (function () {
   const dayStr = d => { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   const PAY = [50, 75, 100, 150, 200, 250, 400];
+  window.ECON = Object.assign(window.ECON || {}, { loginPay: PAY });
   const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayStr(d); };
   function loginDue() { const L = PR.login || {}; return L.day !== dayStr(); }
   window.claimLogin = function () { const L = PR.login = PR.login || { day: null, streak: 0 }; if (L.day === dayStr()) return closeSheet();
@@ -914,7 +925,8 @@
     try { save(); sfx('ui_coin'); } catch (e) {} closeSheet(); refreshMeta(); toast(`Day ${L.streak} streak: +${gold} gold${extra}`); };
   window.openLogin = function () { const L = PR.login || { streak: 0 }, cont = L.day === yesterday(), next = cont ? (L.streak || 0) + 1 : 1, idx = (next - 1) % 7, due = loginDue();
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Daily Login</div><div class="ssub" style="margin:0">${due ? (cont ? `Day ${next} of your streak. Keep it going!` : (L.streak ? 'Your streak reset. Day 1 starts now.' : 'Come back every day for bigger rewards.')) : `Claimed today. Streak: ${L.streak} day${L.streak === 1 ? '' : 's'}. Come back tomorrow!`}</div>
-      <div class="lgrid">${PAY.map((g, i) => { const cur = due ? i === idx : false, done = due ? i < idx : i <= ((L.streak - 1) % 7); return `<div class="lday ${done ? 'done' : ''} ${cur ? 'cur' : ''}"><small>Day ${i + 1}</small><span class="ci coin-i"></span><b>${g}</b>${i === 6 ? '<em>+ Echo Rune</em>' : ''}</div>`; }).join('')}</div>
+      <div class="lgrid">${PAY.map((g, i) => { const cur = due ? i === idx : false, done = due ? i < idx : i <= ((L.streak - 1) % 7); return `<div class="lday ${done ? 'done' : ''} ${cur ? 'lcur' : ''}"><small>Day ${i + 1}</small><span class="ci coin-i"></span><b>${g}</b>${i === 6 ? '<em>+ Rune</em>' : ''}</div>`; }).join('')}</div>
+      <div class="lgnote">Day 7 adds an Echo Rune: after a match, spend it to double one ability's skill points.</div>
       ${due ? `<button class="upbtn" onclick="claimLogin()">Claim ${PAY[idx]} gold</button>` : `<button class="upbtn" onclick="closeSheet()">OK</button>`}`;
     $('sheet').classList.add('on'); };
   // season: 30 days each, counted from a fixed start so every player sees the same clock
@@ -933,7 +945,7 @@
   const mc = document.querySelector('#ranks .mc'); if (mc && !document.getElementById('seasonRk')) mc.insertAdjacentHTML('afterbegin', '<div id="seasonRk" class="seasonrk"></div>');
   const css = document.createElement('style');
   css.textContent = `#lgBtn{top:124px!important;background:linear-gradient(#8a6bff,#5b3bd1)!important;color:#fff!important}#lgBtn i{display:none;width:9px;height:9px;border-radius:50%;background:#ff4a5a;border:1.5px solid #000}#lgBtn.due i{display:block}
-  .lgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0}.lday{background:#1a1236;border:2px solid #000;border-radius:12px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px}.lday small{font:10px 'Lilita One';color:#b9a6ee;letter-spacing:.5px}.lday b{font:15px 'Lilita One';font-weight:400;color:#ffd75e}.lday em{font:9px Nunito;font-style:normal;font-weight:800;color:#c9b8ff}.lday .ci{width:20px;height:20px}.lday.done{opacity:.45}.lday.cur{background:linear-gradient(#4a3a80,#2b2050);border-color:#ffd75e;box-shadow:0 0 0 2px #ffd75e55}.lday:last-child{grid-column:span 2}
+  .lgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0}.lday{background:#1a1236;border:2px solid #000;border-radius:12px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;aspect-ratio:1;min-width:0;box-sizing:border-box}.lday small{font:10px 'Lilita One';color:#b9a6ee;letter-spacing:.5px}.lday b{font:15px 'Lilita One';font-weight:400;color:#ffd75e}.lday em{font:9px Nunito;font-style:normal;font-weight:800;color:#c9b8ff}.lday .ci{width:20px;height:20px}.lday.done{opacity:.45}.lday.lcur{background:linear-gradient(#4a3a80,#2b2050);border-color:#ffd75e;box-shadow:inset 0 0 0 2px #ffd75e55}.lgnote{font:11px Nunito;font-weight:800;color:#c9b8ff;text-align:center;margin-top:-2px}
   .seasonrk{font:13px 'Lilita One';letter-spacing:.5px;color:#ffd75e;text-align:center;background:#0006;border:2px solid #000;border-radius:12px;padding:7px}`;
   document.head.appendChild(css);
   try { refreshMeta(); } catch (e) {}
@@ -1064,3 +1076,156 @@
   window.beamScar = beamScar = function (O, E, wide, sc) { const d = _bs.apply(this, arguments);
     try { if (!ended && window.addEmitter && d && d.L > 30 && (sc === undefined || sc >= 1)) { const n = Math.max(1, Math.min(4, d.L / 110 | 0)); for (let i = 0; i < n; i++) { const u = (i + .5) / n; addEmitter(d.x0 + (d.x1 - d.x0) * u, d.y0 + (d.y1 - d.y0) * u, 'smoke', 16, { embers: 1 }); } } } catch (e) {}
     return d; }; })();
+
+/* ---------------- App Store screenshot mode (only when the DEBUG iOS build sets window.SB_SHOT) ---------------- */
+(function () {
+  const shot = window.SB_SHOT; if (!shot) return;
+  setTimeout(() => {
+    try {
+      window.ONB_ACTIVE = false; document.querySelectorAll('[id^=onb],[class*=onb]').forEach(e => e.style.display = 'none'); document.documentElement.classList.remove('onb-on');
+      Object.assign(PR, { name: 'Starweaver', lvl: 14, trophies: 620, coins: 2450, gems: 180, onbDone: 1, title: 'flawless' });
+      PR.stats = Object.assign(PR.stats || {}, { matches: 60, wins: 42, flawless: 3, wizW: 22, sorcW: 20, streak: 2, best: 6 });
+      PR.chosen = ['meteor', 'mirror', 'rush', 'dissect', 'sanctum', 'polarity', 'storm', 'beam', 'titan', 'zodiac'].filter(k => SP[k]);
+      PR.unlocked = Array.from(new Set((PR.unlocked || []).concat(PR.chosen)));
+      for (const k in PR.spells) { PR.spells[k].lvl = Math.max(PR.spells[k].lvl, 3 + (k.length % 5)); PR.spells[k].cards = 12; }
+      PR.look = Object.assign({}, PR.look, { cls: shot === 'battle' || shot === 'abilities' ? 'sorc' : 'wiz', robe: 'royal', hat: 'pointy', beard: 'white', aura: 'violet', pet: 'owl' });
+      PR.hand = shot === 'battle' ? ['dissect', 'rush', 'sanctum', 'polarity'] : ['fireball', 'meteor', 'mirror', 'storm'];
+      PR.login = { day: new Date().toISOString().slice(0, 10), streak: 4 };
+      refreshMeta();
+      const sa = setArena;
+      if (shot === 'home') { nav('home'); }
+      else if (shot === 'abilities') { window.abTab = 'sorc'; nav('spells'); setTimeout(() => openSpell('dissect'), 600); }
+      else if (shot === 'wardrobe') { nav('wardrobe'); }
+      else if (shot === 'draft') { newMatch({ arena: 'castle', mode: 'ranked' }); M.round = 3; M.me.book = ['fireball', 'meteor']; M.me.up = new Set(['fireball.twin']); show('draft'); try { M.offer = genOffer(M.me, 3); renderDraft(); } catch (e) {} }
+      else if (shot === 'battle') {
+        newMatch({ arena: 'frost', mode: 'ranked' }); M.round = 4; M.score = { me: 2, foe: 1 };
+        M.me.book = ['dissect', 'rush', 'polarity', 'dissect']; M.me.up = new Set(['dissect.triple', 'rush.flow', 'polarity.collapse']);
+        M.foe.book = ['fireball', 'meteor', 'zombies', 'storm']; M.foe.up = new Set(['fireball.twin', 'zombies.horde']);
+        M.foeLv = Object.fromEntries(Object.keys(SP).map(k => [k, 6]));
+        show('battle'); startDuel(); introT = 0; const ri = document.getElementById('rintro'); if (ri) ri.style.display = 'none';
+      }
+    } catch (e) { console.log('shot error ' + e.message); }
+    // no reward pop-ups in screenshots
+    const clean = () => { try { if (typeof MQ !== 'undefined') MQ.length = 0; mOpen = false; ['upm', 'lvup', 'chestOv'].forEach(id => { const e = document.getElementById(id); if (e) { e.classList.remove('on'); e.style.display = 'none'; } }); if (shot !== 'abilities') { const sh = document.getElementById('sheet'); if (sh) sh.classList.remove('on'); } } catch (e) {} };
+    clean(); let n = 0; const iv = setInterval(() => { clean(); if (++n > 40) clearInterval(iv); }, 150);
+  }, 2500);
+})();
+
+/* ---------------- zombies bleed: a few small, random blood spots under them on every hit (F-515) ---------------- */
+(function () {
+  const _hz = hurtZ;
+  window.hurtZ = hurtZ = function (z, d) { const alive = z && z.hp > 0; const r = _hz.apply(this, arguments);
+    try { if (alive && d > 0 && !z.beast && typeof M !== 'undefined' && M) { M.drips = M.drips || []; const n = 2 + (Math.random() * 4 | 0), spots = [];
+      for (let i = 0; i < n; i++) { const an = rnd(0, 6.283), dd = rnd(2, 16); spots.push({ x: Math.cos(an) * dd, y: Math.sin(an) * dd * .5, rx: rnd(1.4, 4.2), ry: rnd(1, 2.6), rot: rnd(0, 3.14) }); }
+      M.drips.push({ x: z.x + rnd(-6, 6), y: z.y + 2, spots, rd: M.round, t: 0 }); if (M.drips.length > 90) M.drips.shift();
+      for (let i = 0; i < 5; i++) P({ x: z.x + rnd(-5, 5), y: z.y - rnd(14, 30) * HS, vx: rnd(-60, 60), vy: rnd(-90, -20), color: i % 2 ? '#8a0f1c' : '#5a0610', size: rnd(1.4, 2.8), life: rnd(.35, .6), grav: 600, glow: false }); } } catch (e) {}
+    return r; };
+  const _dd = drawDecals;
+  window.drawDecals = drawDecals = function (x) { const r = _dd.apply(this, arguments); if (x !== ctx) return r;
+    try { if (typeof M !== 'undefined' && M && M.drips) for (const d of M.drips) { d.t += 1 / 60; const old = d.rd !== M.round, g = Math.min(1, d.t * 6); x.save(); x.translate(d.x, d.y); x.globalAlpha = old ? .32 : .8; x.fillStyle = old ? '#4a4347' : d.shade ? '#2a1450' : '#6e0a16'; for (const s of d.spots) { x.beginPath(); x.ellipse(s.x * g, s.y * g, s.rx * g, s.ry * g, s.rot, 0, 7); x.fill(); } x.restore(); } } catch (e) {}
+    return r; };
+})();
+
+/* Scorched Earth (Meteor) burns with the new flame art instead of the old cartoon flame ring (F-519) */
+(function () {
+  const _up = update;
+  window.update = update = function (dt) { const r = _up.apply(this, arguments);
+    try { if (window.addFlame && !ended) for (const d of decals) if (d.k === 'fire' && d.t < d.life) { d._fa = (d._fa || 0) + dt * (6 + d.r * .08); while (d._fa >= 1) { d._fa -= 1; const an = rnd(0, 6.283), rr = Math.sqrt(Math.random()) * d.r * .8; addFlame(d.x + Math.cos(an) * rr, d.y + Math.sin(an) * rr * .45); } } } catch (e) {}
+    return r; };
+})();
+
+/* ---------------- Shop: turn a Technique Token into 5 skill points for a technique you own (F-520) ---------------- */
+(function () {
+  const RATE = 5;
+  window.convertTok = function (k) { if (!(PR.tokS > 0) || !PR.spells[k]) return; PR.tokS--; PR.spells[k].cards += RATE; try { save(); sfx('ui_coin'); } catch (e) {} closeSheet(); refreshMeta(); try { renderShop(); } catch (e) {} toast(`+${RATE} skill points to ${SP[k].n}`); };
+  window.openConvert = function () { const own = Object.keys(SP).filter(k => SCHOOL_OF(k) === 'sorc' && isUnl(k) && PR.spells[k]);
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Convert a Technique Token</div><div class="ssub" style="margin:0">One token becomes ${RATE} skill points for the technique you pick. You have ${PR.tokS || 0}.</div>
+      ${own.length ? `<div class="cvgrid">${own.map(k => `<button class="cvb" onclick="convertTok('${k}')"><img src="${ICON[k]}"><span>${SP[k].n}</span><small>Lv ${PR.spells[k].lvl} · +${RATE}</small></button>`).join('')}</div>` : '<div class="ssub">Unlock a technique first.</div>'}`;
+    $('sheet').classList.add('on'); };
+  const _rs = renderShop;
+  window.renderShop = renderShop = function () { const r = _rs.apply(this, arguments);
+    try { const host = document.getElementById('mtkShop'); if (host) { let el = document.getElementById('tokConv'); if (!el) { el = document.createElement('div'); el.id = 'tokConv'; host.after(el); }
+      const n = PR.tokS || 0; el.innerHTML = `<div class="mtkbuy"><img src="${tokenImg('sorc')}" style="width:40px;height:40px"><div><b>Technique Tokens → skill points</b><small>Turn one token into ${RATE} skill points for a technique you own. You have ${n}.</small></div><button onclick="openConvert()" ${n > 0 ? '' : 'disabled'}>Convert</button></div>`; } } catch (e) {}
+    return r; };
+  const css = document.createElement('style');
+  css.textContent = `.cvgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.cvb{display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 3px;border-radius:12px;border:2px solid #000;background:#1a1236;color:#e8e0ff;cursor:pointer}.cvb img{width:40px;height:40px}.cvb span{font:11px 'Lilita One';text-align:center;line-height:1.1}.cvb small{font:10px Nunito;font-weight:800;color:#ffd75e}`;
+  document.head.appendChild(css);
+})();
+
+/* ---------------- Notifications and match history (F-533) ----------------
+   A bell under Login opens a record of every toast and event (newest first, last 150), with a Match history tab:
+   each match keeps the rival, result, both spellbooks and upgrades, and damage by ability for every round. */
+(function () {
+  const now = () => Date.now();
+  const log = (msg, kind) => { if (!msg) return; PR.notes = PR.notes || []; const last = PR.notes[0]; if (last && last.m === msg && now() - last.t < 4000) return; PR.notes.unshift({ t: now(), m: String(msg), k: kind || 'info' }); if (PR.notes.length > 150) PR.notes.length = 150; PR.unread = (PR.unread || 0) + 1; try { save(); } catch (e) {} badge(); };
+  window.logNote = log;
+  const _to = toast;
+  window.toast = toast = function (t) { const r = _to.apply(this, arguments); try { if (!window.SB_SHOT) log(t); } catch (e) {} return r; };
+  // events that don't always show a toast
+  const _us = unlockSpell; window.unlockSpell = unlockSpell = function (k) { const had = isUnl(k); const r = _us.apply(this, arguments); try { if (!had && isUnl(k)) log(`Unlocked ${SP[k].n}`, 'unlock'); } catch (e) {} return r; };
+  const _up = upgrade; window.upgrade = upgrade = function (k) { const lv = PR.spells[k] && PR.spells[k].lvl; const r = _up.apply(this, arguments); setTimeout(() => { try { if (PR.spells[k].lvl > lv) log(`${SP[k].n} reached level ${PR.spells[k].lvl}`, 'level'); } catch (e) {} }, 2200); return r; };
+  const _lu = window.showLevelUp; if (typeof _lu === 'function') window.showLevelUp = showLevelUp = function () { try { log(`You reached account level ${PR.lvl}`, 'level'); } catch (e) {} return _lu.apply(this, arguments); };
+
+  // ---- match history ----
+  let rounds = [];
+  const _nm = newMatch; window.newMatch = newMatch = function () { rounds = []; return _nm.apply(this, arguments); };
+  const _er = endRound;
+  window.endRound = endRound = function (winner) {
+    try { if (!ended && M && !window.ONB_ACTIVE) { const d = M.rdmg || { me: {}, foe: {} }, r2 = o => Object.fromEntries(Object.entries(o || {}).filter(([k, v]) => v >= .5).map(([k, v]) => [k, Math.round(v)]));
+      rounds.push({ n: M.round, w: winner, me: r2(d.me), foe: r2(d.foe), hpMe: Math.max(0, Math.round(ents[0].hp)), hpFoe: Math.max(0, Math.round(ents[1].hp)), t: Math.round(typeof LIMIT !== 'undefined' && typeof clock !== 'undefined' ? LIMIT - clock : 0) }); } } catch (e) {}
+    return _er.apply(this, arguments); };
+  const _sr = showRewards;
+  window.showRewards = showRewards = function () {
+    try { if (M && !M._histDone && !window.ONB_ACTIVE && rounds.length) { M._histDone = 1; const won = M.score.me > M.score.foe;
+      PR.history = PR.history || []; PR.history.unshift({ t: now(), won, mode: M.mode, score: [M.score.me, M.score.foe], foe: String(M.foeName || 'Rival').replace(/ · AI$/, ''), title: (M.profile && M.profile.n) || '', arena: M.arena,
+        myBook: M.me.book.slice(), foeBook: M.foe.book.slice(), myUps: [...M.me.up], foeUps: [...M.foe.up], rounds: rounds.slice() });
+      if (PR.history.length > 30) PR.history.length = 30; log(`${won ? 'Won' : 'Lost'} ${M.score.me}–${M.score.foe} vs ${PR.history[0].foe}`, won ? 'win' : 'loss'); } } catch (e) {}
+    return _sr.apply(this, arguments); };
+
+  // ---- the screen ----
+  const ago = t => { const s = Math.floor((now() - t) / 1000); if (s < 60) return 'just now'; const m = Math.floor(s / 60); if (m < 60) return m + 'm ago'; const h = Math.floor(m / 60); if (h < 24) return h + 'h ago'; return Math.floor(h / 24) + 'd ago'; };
+  const ICONS = { unlock: '🔓', level: '⬆️', win: '🏆', loss: '💀', info: '🔔' };
+  const icon = k => `<img src="${ICON[k]}" title="${SP[k] ? SP[k].n : k}">`;
+  const nameOf = id => { const [k, u] = id.split('.'); const o = UPG[k] && UPG[k].find(q => q.id === u); return o ? o.n : u; };
+  let tab = 'notes';
+  window.openNotes = function (t) { if (t) tab = t; PR.unread = 0; try { save(); } catch (e) {} badge();
+    const tabs = `<div class="ntabs"><button class="${tab === 'notes' ? 'on' : ''}" onclick="openNotes('notes')">Notifications</button><button class="${tab === 'hist' ? 'on' : ''}" onclick="openNotes('hist')">Match history</button></div>`;
+    let body = '';
+    if (tab === 'notes') { const L = PR.notes || []; body = L.length ? `<div class="nlist">${L.map(n => `<div class="nrow"><span class="ni">${ICONS[n.k] || '🔔'}</span><span class="nm">${n.m.replace(/</g, '&lt;')}</span><small>${ago(n.t)}</small></div>`).join('')}</div>` : '<div class="ssub">Nothing yet. Unlocks, level-ups, rewards and match results will show up here.</div>'; }
+    else { const H = PR.history || []; body = H.length ? `<div class="nlist">${H.map((h, i) => `<button class="hrow ${h.won ? 'w' : 'l'}" onclick="openMatch(${i})"><b>${h.won ? 'WIN' : 'LOSS'}</b><span><em>vs ${h.foe}</em><small>${h.score[0]}–${h.score[1]} · ${h.mode === 'ranked' ? 'Ranked' : 'Casual'} · ${ago(h.t)}</small></span><span class="hbk">${h.myBook.map(icon).join('')}</span></button>`).join('')}</div>` : '<div class="ssub">Play a match and it will be recorded here.</div>'; }
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">${tab === 'notes' ? 'Notifications' : 'Match history'}</div>${tabs}${body}`; $('sheet').classList.add('on'); };
+  window.openMatch = function (i) { const h = (PR.history || [])[i]; if (!h) return;
+    const tot = side => { const o = {}; h.rounds.forEach(r => { for (const k in r[side]) o[k] = (o[k] || 0) + r[side][k]; }); return o; };
+    const bars = (o, max) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="dbar">${icon(k)}<i style="width:${Math.max(6, v / max * 100)}%"></i><b>${v}</b></div>`).join('') || '<small class="none">No damage</small>';
+    const tm = tot('me'), tf = tot('foe'), mx = Math.max(1, ...Object.values(tm), ...Object.values(tf)), sum = o => Object.values(o).reduce((a, b) => a + b, 0);
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">${h.won ? 'Win' : 'Loss'} ${h.score[0]}–${h.score[1]}</div><div class="ssub" style="margin:0">vs ${h.foe}${h.title ? ' · ' + h.title : ''} · ${new Date(h.t).toLocaleString()}</div>
+      <div class="mgrid"><div><div class="mh">You</div><div class="hbk">${h.myBook.map(icon).join('')}</div><div class="mups">${h.myUps.map(nameOf).join(' · ') || 'No upgrades'}</div><div class="mt">Total damage ${sum(tm)}</div>${bars(tm, mx)}</div>
+        <div><div class="mh f">${h.foe}</div><div class="hbk">${h.foeBook.map(icon).join('')}</div><div class="mups">${h.foeUps.map(nameOf).join(' · ') || 'No upgrades'}</div><div class="mt">Total damage ${sum(tf)}</div>${bars(tf, mx)}</div></div>
+      <div class="mh" style="margin-top:6px">Round by round</div>
+      ${h.rounds.map(r => `<div class="rrow ${r.w === 'me' ? 'w' : 'l'}"><div class="rh"><b>Round ${r.n}</b><span>${r.w === 'me' ? 'Won' : 'Lost'}${r.t ? ' · ' + r.t + 's' : ''} · HP left ${r.hpMe} / ${r.hpFoe}</span></div><div class="rcols"><div>${Object.entries(r.me).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class="rc">${icon(k)}${v}</span>`).join('') || '<small class="none">–</small>'}</div><div>${Object.entries(r.foe).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class="rc f">${icon(k)}${v}</span>`).join('') || '<small class="none">–</small>'}</div></div></div>`).join('')}
+      <button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="openNotes('hist')">Back to history</button>`;
+    $('sheet').classList.add('on'); };
+  function badge() { const b = document.getElementById('bellBtn'); if (b) { const n = PR.unread || 0; b.querySelector('i').textContent = n > 99 ? '99+' : n; b.classList.toggle('has', n > 0); } }
+  const st = document.querySelector('#home .stage'); if (st && !document.getElementById('bellBtn')) st.insertAdjacentHTML('beforeend', `<button class="chbtn" id="bellBtn" onclick="openNotes('notes')" aria-label="Notifications">🔔<i></i></button>`);
+  const _rm = refreshMeta; window.refreshMeta = refreshMeta = function () { const r = _rm.apply(this, arguments); try { badge(); } catch (e) {} return r; };
+  const css = document.createElement('style');
+  css.textContent = `#bellBtn{top:160px!important;background:linear-gradient(#4a3a80,#2b2050)!important;color:#fff!important;font-size:15px;padding:4px 9px!important}#bellBtn i{display:none;font:10px 'Lilita One';font-style:normal;background:#ff4a5a;color:#fff;border:1.5px solid #000;border-radius:8px;padding:0 4px;margin-left:2px}#bellBtn.has i{display:inline-block}
+  .ntabs{display:flex;gap:4px;background:#000a;border:2px solid #000;border-radius:12px;padding:3px}.ntabs button{flex:1;font:13px 'Lilita One';padding:7px;border-radius:9px;border:none;background:none;color:#8d7fbf;cursor:pointer}.ntabs button.on{background:linear-gradient(#4a3a80,#33275e);color:#fff}
+  .nlist{display:flex;flex-direction:column;gap:5px}.nrow{display:flex;align-items:center;gap:8px;background:#0006;border:2px solid #000;border-radius:11px;padding:7px 9px}.nrow .ni{font-size:16px}.nrow .nm{flex:1;font:13px Nunito;font-weight:800;color:#e8e0ff}.nrow small{font:11px Nunito;font-weight:700;color:#8d7fbf;white-space:nowrap}
+  .hrow{display:flex;align-items:center;gap:8px;text-align:left;border:2px solid #000;border-radius:12px;padding:7px 9px;background:#0006;color:#e8e0ff;cursor:pointer}.hrow b{font:12px 'Lilita One';font-weight:400;padding:3px 7px;border-radius:7px;border:1.5px solid #000}.hrow.w b{background:#2fd08a;color:#062a16}.hrow.l b{background:#d63a4a;color:#fff}.hrow span{flex:1;display:flex;flex-direction:column;min-width:0}.hrow em{font:13px 'Lilita One';font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hrow small{font:11px Nunito;font-weight:700;color:#9a8cc4}
+  .hbk{display:flex;gap:2px;flex:none}.hbk img{width:24px;height:24px}.hrow .hbk{flex-direction:row}
+  .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mgrid>div{background:#0006;border:2px solid #000;border-radius:12px;padding:7px;min-width:0}.mh{font:13px 'Lilita One';color:#ffd75e}.mh.f{color:#ff9aa6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mups{font:10px Nunito;font-weight:700;color:#b9a6ee;margin:4px 0}.mt{font:11px 'Lilita One';color:#e8e0ff;margin-bottom:3px}
+  .dbar{display:flex;align-items:center;gap:4px;margin:2px 0}.dbar img{width:18px;height:18px}.dbar i{height:8px;border-radius:4px;background:linear-gradient(90deg,#7a5cff,#c48cff);border:1px solid #000}.dbar b{font:11px 'Lilita One';font-weight:400;color:#fff}.none{font:11px Nunito;color:#8d7fbf}
+  .rrow{background:#0006;border:2px solid #000;border-left-width:5px;border-radius:11px;padding:6px 8px}.rrow.w{border-left-color:#2fd08a}.rrow.l{border-left-color:#d63a4a}.rh{display:flex;justify-content:space-between;align-items:center;gap:6px}.rh b{font:12px 'Lilita One';font-weight:400;color:#fff}.rh span{font:11px Nunito;font-weight:700;color:#9a8cc4}
+  .rcols{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}.rcols>div{display:flex;flex-wrap:wrap;gap:4px}.rc{display:flex;align-items:center;gap:2px;font:11px 'Lilita One';color:#ffd75e}.rc.f{color:#ff9aa6}.rc img{width:18px;height:18px}`;
+  document.head.appendChild(css);
+  try { badge(); } catch (e) {}
+})();
+
+/* blood pools where sliced pieces land (F-535): an uneven pool of a few overlapping blobs, different every time */
+(function () {
+  window.bloodPool = function (x, y, kind, sc) { if (typeof M === 'undefined' || !M) return; sc = sc || 1; M.drips = M.drips || []; const n = 4 + (Math.random() * 4 | 0), spots = [];
+    for (let i = 0; i < n; i++) { const an = rnd(0, 6.283), dd = rnd(0, 10) * sc; spots.push({ x: Math.cos(an) * dd, y: Math.sin(an) * dd * .5, rx: rnd(5, 11) * sc, ry: rnd(2.6, 5) * sc, rot: rnd(-.4, .4) }); }
+    for (let i = 0; i < 6; i++) { const an = rnd(0, 6.283), dd = rnd(12, 22) * sc; spots.push({ x: Math.cos(an) * dd, y: Math.sin(an) * dd * .5, rx: rnd(1.2, 2.6), ry: rnd(1, 2), rot: 0 }); }
+    M.drips.push({ x, y: y + 2, spots, rd: M.round, t: 0, shade: kind === 'shade' }); if (M.drips.length > 90) M.drips.shift(); };
+})();
