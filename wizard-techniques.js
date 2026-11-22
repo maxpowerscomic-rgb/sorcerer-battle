@@ -320,9 +320,8 @@
       w.polN = (w.polN || 0) + 1; const str = U(w, k, 'field') ? 1.4 : 1;
       if (U(w, k, 'collapse') && w.polN % (U(w, k, 'rapid') ? 3 : 5) === 0) {
         const a = Math.atan2(o.y - w.y, o.x - w.x); { let L = 0; for (let q = 0; q < 900; q += 6) { const px = w.x + Math.cos(a) * q, py = w.y + Math.sin(a) * q; if (px < F.x0 - 30 || px > F.x1 + 30 || py < F.y0 - 40 || py > F.y1 + 30) break; L = q; }   // journey to the edge, for Unrestrained Collapse
-          orbsC.push({ o: w, x: w.x + Math.cos(a) * 20, y: w.y + Math.sin(a) * 20, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 2.9, dmg: S(w, k, 'dmg') * 2.4, hit: new Set(), t: 0, a, sx: w.x, sy: w.y, L, unbound: U(w, k, 'unbound') }); }
-        addFx({ k: 'collapse0', x: w.x, y: w.y - 40 * HS, life: .5 }); slow = Math.min(slow, .35); setTimeout(() => { if (!ended) slow = 1; }, 180); if (typeof flashScreen === 'function') flashScreen();
-        text(w.x, w.y - 90 * HS, 'COLLAPSE', '#c48cff', true); shake = Math.max(shake, 12);
+          orbsC.push({ o: w, x: w.x + Math.cos(a) * 20, y: w.y + Math.sin(a) * 20, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 2.9 + .7, wind: .7, dmg: S(w, k, 'dmg') * 2.4, hit: new Set(), t: 0, a, sx: w.x + Math.cos(a) * 20, sy: w.y + Math.sin(a) * 20, L, unbound: U(w, k, 'unbound') }); }
+        text(w.x, w.y - 90 * HS, 'COLLAPSE', '#c48cff', true); shake = Math.max(shake, 4);
       } else if (w.polN % 2) { // Draw
         if (U(w, k, 'drag') && !ghosted(o) && !o.dead) { if (o.shell) { o.shell = null; o.shellDown = 1; shellShatter(o); text(o.x, o.y - 110 * HS, 'RIPPED OUT', '#9fb8ff', true); try { sfx('shatter', { x: o.x }); } catch (e) {} } const d0 = dist(w, o) || 1; o.drag = { by: w, t: 0, dur: .62, a0: Math.atan2(o.y - w.y, o.x - w.x), r0: d0, dir: Math.random() < .5 ? 1 : -1, dmg: S(w, k, 'dmg') }; if (o.rush) o.rush = null; text(o.x, o.y - 96 * HS, 'CRESCENT DRAG', '#6fd3ff', true); }
         else {   // Draw: a blue orb forms on the enemy and hauls them (and their creatures) back to you, slamming them into any wall on the way
@@ -723,6 +722,9 @@
         if (k >= 1) { w.drag = null; SRC = 'polarity'; damage(w, g.dmg, 0, 0, '#bfe9ff'); dazeW(w, .5); shake = Math.max(shake, 8); inkRing(w.x, w.y, '#6fd3ff', 2, 8, 46, .6); } }
       // Boundary: one shot stopped just before it lands
       if (w.boundary === undefined && U(w, 'polarity', 'boundary')) w.boundary = 1;
+      // Boundary also stops a summon about to hit you: it freezes in place for a second
+      if (w.boundary) { const near = zombies.find(z => z.o !== w && z.hp > 0 && z.rise >= 1 && !(z.stun > 0) && Math.hypot(z.x - w.x, z.y - w.y) < 30) || golems.find(g => g.o !== w && g.hp > 0 && !(g.bndT > 0) && Math.hypot(g.x - w.x, g.y - w.y) < 40);
+        if (near) { w.boundary = 0; w.bndSpent = 1; near.bndT = 1; if (zombies.includes(near)) near.stun = 1; text(near.x, near.y - 70 * HS, 'BOUNDARY', '#bcd2ff', true); inkRing(w.x, w.y, '#bcd2ff', 2, 30, 36, .6); addFx({ k: 'ping', x: near.x, y: near.y - 20 * HS, life: .4 }); burst(near.x, near.y - 30 * HS, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); } }
       if (w.boundary) for (const p of projs) if (p.o !== w && p.life > 0 && p.held === undefined && Math.hypot(p.x - w.x, p.y + 40 * HS - w.y) < 36) { const fa = Math.atan2(o.y - w.y, o.x - w.x) + (Math.random() < .5 ? 1 : -1) * Math.PI / 2; p.held = 1; p.vx = 0; p.vy = 0; p.home = 0; p.flingA = fa; p.life = 2; w.boundary = 0; w.bndSpent = 1; text(w.x, w.y - 96 * HS, 'BOUNDARY', '#bcd2ff', true); addFx({ k: 'ping', x: p.x, y: p.y + 40 * HS, life: .4 }); inkRing(w.x, w.y, '#bcd2ff', 2, 30, 36, .6); burst(p.x, p.y, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); break; }
       // Spirit Arrow: the shell shoots while it stands
       if (w.shell && U(w, 'titan', 'arrow') && o && !o.dead) { w.shell.acd = (w.shell.acd === undefined ? 1 : w.shell.acd) - dt; if (w.shell.acd <= 0) { w.shell.acd = 2; const a = Math.atan2(o.y - w.y, o.x - w.x); tarrows.push({ o: w, x: w.x + Math.cos(a) * 24, y: w.y + Math.sin(a) * 24, vx: Math.cos(a) * 430, vy: Math.sin(a) * 430, life: 1.6, dmg: 7 }); } }
@@ -846,7 +848,15 @@
     domes = domes.filter(d => d.t < d.dur);
     // Collapse orbs
     for (const c of orbsC) {
-      SRC = 'polarity'; c.t += dt; c.life -= dt; c.x += c.vx * dt; c.y += c.vy * dt;
+      SRC = 'polarity'; c.t += dt; c.life -= dt;
+      if (c.wind && !c.launched) {   // wind-up: red and blue swing in from either side; at contact, a flash and it fires
+        if (c.t >= c.wind) { c.launched = 1; c.t0 = c.t; c.sx = c.x; c.sy = c.y; shake = Math.max(shake, 16); slow = Math.min(slow, .08); setTimeout(() => { if (!ended) slow = 1; }, 160); if (typeof flashScreen === 'function') flashScreen();
+          addFx({ k: 'collapse0', x: c.x, y: c.y - 36 * HS, life: .5 }); inkRing(c.x, c.y, '#ffffff', 2, 8, 110, .5); inkRing(c.x, c.y, '#c48cff', 2, 14, 150, .5);
+          for (let i = 0; i < 46; i++) { const an = rnd(0, 6.283), v = rnd(180, 520); P({ x: c.x, y: c.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .75, color: ['#ff4a4a', '#3b9bff', '#ffffff', '#c48cff'][i % 4], size: rnd(1.8, 4), life: rnd(.35, .8), grav: 120, drag: .95 }); }
+          try { sfx('boom', { x: c.x, vol: 1.1 }); } catch (e) {} }
+        else { const k = c.t / c.wind; if (Math.random() < .7) { const side = Math.random() < .5 ? 1 : -1, pa = c.a + side * Math.PI / 2, rr = 60 * (1 - k) + 6; P({ x: c.x + Math.cos(pa) * rr, y: c.y - 36 * HS + Math.sin(pa) * rr * .7, vx: -Math.cos(pa) * 120, vy: -Math.sin(pa) * 90, color: side > 0 ? '#ff6b6b' : '#6fb8ff', size: rnd(2, 3.5), life: .3 }); } }
+        continue; }
+      c.x += c.vx * dt; c.y += c.vy * dt;
       if (c.draw) {   // Draw orb: glides to its caster carrying whatever it caught; walls in the way take the hit, and so do those slammed into them
         const w = c.o, dx = w.x - c.x, dy = w.y - c.y, d = Math.hypot(dx, dy) || 1, k2 = Math.min(1, c.t * 3);
         c.x -= c.vx * dt || 0; c.y -= c.vy * dt || 0;   // undo the generic move: this orb steers itself
@@ -1120,6 +1130,19 @@
         x.restore(); continue; }
       if (c.repel) { x.save(); x.translate(c.x, c.y - 36 * HS); x.fillStyle = '#12020a'; x.beginPath(); x.arc(0, 0, (c.bounced ? 11 : 9), 0, 7); x.fill(); x.globalCompositeOperation = 'lighter'; const R3 = (c.bounced ? 14 : 11) + Math.sin(c.t * 22) * 1.5, g3 = x.createRadialGradient(0, 0, 0, 0, 0, R3 * 2.4); g3.addColorStop(0, '#ffffff'); g3.addColorStop(.35, c.bounced ? 'rgba(255,90,90,.95)' : 'rgba(255,150,150,.6)'); g3.addColorStop(1, 'rgba(255,40,40,0)'); x.fillStyle = g3; x.beginPath(); x.arc(0, 0, R3 * 2.4, 0, 7); x.fill();
         if (c.bounced) { x.strokeStyle = '#fff'; x.lineWidth = 1.6; x.setLineDash([3, 4]); x.beginPath(); x.arc(0, 0, R3 * 1.7, c.t * 8, c.t * 8 + 6.283); x.stroke(); } x.restore(); continue; }
+      if (c.wind && !c.launched) {   // two orbs, red and blue, swing in along an arc and smash together
+        const k = Math.min(1, c.t / c.wind), e = k * k * (3 - 2 * k), px = -Math.sin(c.a), py = Math.cos(c.a);
+        x.save(); x.translate(c.x, c.y - 36 * HS); x.globalCompositeOperation = 'lighter';
+        for (const [sd, col, rgb] of [[1, '#ff4a4a', '255,74,74'], [-1, '#3b9bff', '59,155,255']]) { const d = 70 * (1 - e), sw = Math.sin(e * 3.14) * 26, ox = px * d * sd - Math.cos(c.a) * sw, oy = (py * d * sd - Math.sin(c.a) * sw) * .75, r = 9 + 5 * e;
+          const g = x.createRadialGradient(ox, oy, 0, ox, oy, r * 3.2); g.addColorStop(0, '#ffffff'); g.addColorStop(.3, col); g.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = g; x.beginPath(); x.arc(ox, oy, r * 3.2, 0, 7); x.fill();
+          x.strokeStyle = `rgba(${rgb},.6)`; x.lineWidth = 3; x.beginPath(); x.arc(0, 0, Math.hypot(ox, oy), Math.atan2(oy, ox) - sd * .9, Math.atan2(oy, ox)); x.stroke(); }
+        if (k > .8) { const f = (k - .8) / .2; x.fillStyle = `rgba(255,255,255,${f * .9})`; x.beginPath(); x.arc(0, 0, 20 + f * 50, 0, 7); x.fill(); }
+        x.restore(); continue; }
+      // rainbow wake from the launch point to the singularity, cycling like Desperate Output
+      { const L0 = Math.hypot(c.x - c.sx, c.y - c.sy); if (L0 > 4) { const N = 24, yo = -36 * HS, age = c.t - (c.t0 || 0), fadeIn = Math.min(1, age * 4); x.save(); x.lineCap = 'round';
+          x.globalAlpha = .5 * fadeIn; x.strokeStyle = '#07020d'; x.lineWidth = 26; x.beginPath(); x.moveTo(c.sx + (c.x - c.sx) * .15, c.sy + (c.y - c.sy) * .15 + yo); x.lineTo(c.x, c.y + yo); x.stroke();   // ink underlay so the colours read on light floors
+          for (let i = 0; i < N; i++) { const u0 = i / N, u1 = (i + 1) / N; x.globalAlpha = (.25 + .7 * u1) * fadeIn; x.strokeStyle = `hsl(${(u0 * 360 - T * 420) % 360 + 360 | 0},100%,58%)`; x.lineWidth = 8 + 14 * u1; x.beginPath(); x.moveTo(c.sx + (c.x - c.sx) * u0, c.sy + (c.y - c.sy) * u0 + yo); x.lineTo(c.sx + (c.x - c.sx) * u1, c.sy + (c.y - c.sy) * u1 + yo); x.stroke(); }
+          x.globalAlpha = .7 * fadeIn; x.strokeStyle = '#ffffff'; x.lineWidth = 3; x.beginPath(); x.moveTo(c.sx + (c.x - c.sx) * .3, c.sy + (c.y - c.sy) * .3 + yo); x.lineTo(c.x, c.y + yo); x.stroke(); x.restore(); } }
       x.save(); x.translate(c.x, c.y - 36 * HS); const R = 26 + Math.sin(c.t * 18) * 2.6, grow = Math.min(1, c.t * 4);
       x.scale(grow, grow); x.globalCompositeOperation = 'lighter';
       const g = x.createRadialGradient(0, 0, 0, 0, 0, R * 3.2); g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(.25, 'rgba(196,140,255,.85)'); g.addColorStop(.6, 'rgba(110,40,220,.35)'); g.addColorStop(1, 'rgba(90,20,180,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, R * 3.2, 0, 7); x.fill();

@@ -1252,3 +1252,13 @@
     return out;
   };
 })();
+
+/* summons held by Boundary: a pale ward shell and "BOUNDARY" stay on them for the second they are frozen (F-542) */
+(function () {
+  const _up = update; window.update = update = function (dt) { const r = _up.apply(this, arguments); try { for (const z of zombies) if (z.bndT > 0) z.bndT -= dt; } catch (e) {} return r; };
+  const _dd = drawDecals;
+  window.drawDecals = drawDecals = function (x) { const r = _dd.apply(this, arguments); if (x !== ctx) return r;
+    try { for (const e of zombies.concat(golems)) if (e.bndT > 0 && e.hp > 0) { const k = Math.min(1, e.bndT * 3); x.save(); x.translate(e.x, e.y - 22 * HS); x.globalAlpha = .75 * k; x.strokeStyle = '#bcd2ff'; x.lineWidth = 2.5; x.setLineDash([5, 4]); x.lineDashOffset = -T * 30; x.beginPath(); x.ellipse(0, 0, 22, 30, 0, 0, 7); x.stroke(); x.setLineDash([]); x.fillStyle = 'rgba(188,210,255,.14)'; x.fill();
+      x.font = "12px 'Lilita One', system-ui"; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#07020d'; x.lineJoin = 'round'; x.strokeText('BOUNDARY', 0, -40); x.fillStyle = '#d6e4ff'; x.fillText('BOUNDARY', 0, -40); x.restore(); } } catch (e) {}
+    return r; };
+})();
