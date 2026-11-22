@@ -111,7 +111,7 @@
     { id: 'vet', n: 'Seasoned Duelist', d: 'Play 50 matches.', ok: s => s.matches >= 50, p: s => [s.matches, 50] },
     { id: 'cent', n: 'Centurion', d: 'Win 100 matches.', ok: s => s.wins >= 100, p: s => [s.wins, 100] },
   ];
-  window.TITLES = TITLES;
+  window.TITLES = TITLES; window.statsOf = ST; window.activeTitle = () => (TITLES.find(t => t.id === PR.title && t.ok(ST())) || TITLES[0]).id;
   const earned = () => TITLES.filter(t => t.ok(ST())).map(t => t.id);
   const titleName = () => (TITLES.find(t => t.id === PR.title && t.ok(ST())) || TITLES[0]).n;
   window.titleName = titleName;
@@ -175,9 +175,9 @@
 
   /* ---------------- sorcerer names in the wardrobe ---------------- */
   const SORC_NAMES = {
-    robe: { azure: 'Azure Gi', crimson: 'Crimson Gi', moss: 'Moss Gi', amethyst: 'Amethyst Gi', midnight: 'Midnight Gi', frost: 'Frostweave Gi', sunfire: 'Sunfire Gi', royal: 'Royal Dogi' },
+    robe: { azure: 'Azure Gi', crimson: 'Crimson Gi', moss: 'Moss Gi', amethyst: 'Amethyst Gi', midnight: 'Midnight Gi', frost: 'Frostweave Gi', sunfire: 'Sunfire Gi', royal: 'Royal Dogi', emerald: 'Emerald Gi', rosewood: 'Rosewood Gi', tide: 'Tidecaller Gi', ember: 'Emberweave Gi', stormcl: 'Stormcloud Gi', obsidian: 'Obsidian Gi', ivory: 'Ivory Dogi', voidweave: 'Voidweave Gi' },
     hat: { pointy: 'Headband', witch: 'Half Mask', hood: 'Cowl', feathered: 'Topknot', mushroom: 'Straw Hat', crown: 'Circlet' },
-    beard: { white: 'White Hair', brown: 'Brown Hair', ginger: 'Ginger Hair', pink: 'Pink Hair', none: 'Black Hair', long: 'Silver Hair' },
+    beard: { white: 'White Hair', brown: 'Brown Hair', ginger: 'Ginger Hair', pink: 'Pink Hair', none: 'Black Hair', long: 'Silver Hair', blue: 'Blue Hair', green: 'Moss Hair', teal: 'Teal Hair', violet: 'Violet Hair', red: 'Scarlet Hair', goldlong: 'Golden Hair' },
   };
   const SORC_CATS = { robe: 'Gi', hat: 'Headgear', beard: 'Hair' };
   const isSorc = () => PR.look && PR.look.cls === 'sorc';
@@ -706,7 +706,7 @@
 /* ---------------- a reward sound of its own when a spell or technique levels up (F-470) ---------------- */
 (function () {
   const _sm = showSpellModal;
-  window.showSpellModal = showSpellModal = function (k, from, to, unlockName) { const r = _sm.apply(this, arguments); if (!unlockName) try { setTimeout(() => sfx('ui_abilityup'), 120); } catch (e) {} return r; };
+  window.showSpellModal = showSpellModal = function (k, from, to, unlockName) { const r = _sm.apply(this, arguments); if (!unlockName) try { const cu = document.getElementById('curtain'), busy = cu && /\bon\b/.test(cu.className); setTimeout(() => sfx('ui_abilityup'), busy ? 1000 : 250); } catch (e) {} return r; };   /* waits until the reveal transition is at least half done */
 })();
 
 /* ---------------- your gold on every ability page, next to the upgrade button (F-476) ---------------- */
@@ -719,5 +719,254 @@
   if (typeof _up === 'function') window.upgrade = upgrade = function () { const r = _up.apply(this, arguments); try { const g = document.querySelector('#sheetP .goldnow b'); if (g) g.textContent = (PR.coins || 0).toLocaleString(); } catch (e) {} return r; };
   const css = document.createElement('style');
   css.textContent = `.goldnow{display:flex;align-items:center;justify-content:center;gap:6px;font:13px Nunito;font-weight:800;color:#e8e0ff;margin:2px 0 -2px}.goldnow b{color:#ffd75e;font-family:'Lilita One';font-weight:400;font-size:15px}.goldnow .ci{width:18px;height:18px}`;
+  document.head.appendChild(css);
+})();
+
+/* ---------------- Elemental Mirror: decoys burst into a random element when they pop (F-483);
+   bigger spell-collision explosions (F-484) ---------------- */
+(function () {
+  const sparks = (x, y, cols, n, v0, v1) => { for (let i = 0; i < n; i++) { const an = rnd(0, 6.283), v = rnd(v0, v1); P({ x, y, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .75 - 60, color: cols[i % cols.length], size: rnd(1.5, 3.4), life: rnd(.4, 1), grav: 420 }); } };
+  const embers = (x, y, R, n) => { for (let i = 0; i < n; i++) { const an = rnd(0, 6.283), rr = rnd(8, R); decals.push({ k: 'ember', x: x + Math.cos(an) * rr, y: y + Math.sin(an) * rr * .6, t: 0, life: rnd(2, 4), s: rnd(.7, 1.3) }); } };
+  const EL = {
+    fire:   { n: 'FIRE BURST', cols: ['#ffb347', '#ff5a1f', '#fff3c0'], fx: 'fire', hit(f) { f.burn = Math.max(f.burn || 0, 3); f.burnD = 2; f.burnSrc = 'mirror'; }, ground(x, y) { scar('scorch', x, y, { s: 2.2, a: .55 }); embers(x, y, 80, 26); } },
+    ice:    { n: 'FROST BURST', cols: ['#d8f6ff', '#7fd8ff', '#ffffff'], fx: 'frost', hit(f) { f.slowT = Math.max(f.slowT || 0, 2.5); }, ground(x, y) { scar('frostcrack', x, y, { r: 46 }); decals.push({ k: 'frost', x, y, r: 60, t: 0, life: 8 }); } },
+    storm:  { n: 'STORM BURST', cols: ['#fff7b0', '#ffd23a', '#ffffff'], fx: 'arcane', hit(f) { f.stunT = .5; }, ground(x, y) { scar('lich', x, y, { s: 2.4 }); for (let i = 0; i < 5; i++) { const an = rnd(0, 6.283), l = rnd(40, 90); bolts.push({ pts: [{ x, y: y - 40 * HS }, { x: x + Math.cos(an) * l * .5 + rnd(-8, 8), y: y - 40 * HS + Math.sin(an) * l * .3 + rnd(-8, 8) }, { x: x + Math.cos(an) * l, y: y - 20 * HS + Math.sin(an) * l * .6 }], life: .22, tier: 2 }); } } },
+    acid:   { n: 'ACID BURST', cols: ['#d8f070', '#9fd04a', '#f4ffc0'], fx: 'arcane', hit(f) { f.slowT = Math.max(f.slowT || 0, 1); }, ground(x, y) { scar('etch', x, y, { r: 44 }); for (let i = 0; i < 16; i++) P({ x: x + rnd(-40, 40), y: y - rnd(0, 30), vx: rnd(-40, 40), vy: -rnd(60, 180), color: '#9fd04a', size: rnd(3, 6), life: rnd(.5, .9), grav: 520, glow: false }); } },
+    arcane: { n: 'ARCANE BURST', cols: ['#f0d2ff', '#b06bff', '#ffffff'], fx: 'arcane', hit(f, x, y) { const d = Math.hypot(f.x - x, f.y - y) || 1; f.vx += (f.x - x) / d * 420; f.vy += (f.y - y) / d * 420; }, ground(x, y) { scar('glass', x, y); inkRing(x, y, '#b06bff', 2, 12, 110, .5); } },
+  };
+  function elementBurst(d) {
+    const keys = Object.keys(EL), e = EL[keys[Math.random() * keys.length | 0]], x = d.x, y = d.y, cy = y - 38 * HS, R = 95, w = d.o, f = w.foe, keep = SRC; SRC = 'mirror';
+    try { boom(x, cy, 1.25); const b = booms[booms.length - 1]; if (b) { b.cols = e.cols; b.style = Math.random() * 8 | 0; } } catch (er) {}
+    lights.push({ x, y: y + 6, r: 150, c: e.cols[1], t: 0, life: .6 }); shake = Math.max(shake, 12);
+    inkRing(x, y, e.cols[1], 2, 10, R, .5); inkRing(x, y, e.cols[0], 1, 6, R * .6, .5);
+    for (let i = 0; i < 26; i++) { const an = rnd(0, 6.283), rr = rnd(0, 30); fireFx.push({ x: x + Math.cos(an) * rr, y: cy + Math.sin(an) * rr * .7, vx: Math.cos(an) * rnd(40, 170), vy: Math.sin(an) * rnd(40, 170) - 50, t: 0, life: rnd(.3, .6), s: rnd(10, 18), seed: rnd(0, 99), el: e.fx === 'fire' ? undefined : e.fx, smoke: 0 }); }
+    sparks(x, cy, e.cols, 44, 160, 480); embers(x, y, 70, 14); e.ground(x, y);
+    text(x, y - 96 * HS, e.n, e.cols[1], true);
+    if (!f.dead && !(f.ghostT > 0) && Math.hypot(f.x - x, f.y - y) < R) { damage(f, 10, (f.x - x) * 1.5, (f.y - y) * 1.5, e.cols[0]); e.hit(f, x, y); }
+    for (const c of enemyCreatures(w)) if (c.e.x !== undefined && Math.hypot(c.e.x - x, c.e.y - y) < R) hurtCreature(c.e, c.k, 10, 'arcane');
+    SRC = keep;
+  }
+  window.elementBurst = elementBurst;
+  const _hd = hurtDecoy;
+  window.hurtDecoy = hurtDecoy = function (d) { const was = d && d.gone; const r = _hd.apply(this, arguments); try { if (d && !was && d.gone && d.echoT === undefined && U(d.o, 'mirror', 'elburst') && !ended) elementBurst(d); } catch (e) {} return r; };
+  try { UPG.mirror.push({ id: 'elburst', n: 'Elemental Mirror', d: 'A popped decoy bursts into a random element: fire, frost, storm, acid or arcane.' }); } catch (e) {}
+
+  // spell collisions: a harder flash, a hitstop, twin shock rings in both spells' colours, long sparks, embers and a scorch
+  const _cl = clash;
+  window.clash = clash = function (a, b) {
+    const live = a && b && a.life > 0 && b.life > 0, ay = live && typeof runes !== 'undefined' && runes.includes(a) ? a.y - 36 * HS : a && a.y, by = live && typeof runes !== 'undefined' && runes.includes(b) ? b.y - 36 * HS : b && b.y;
+    const x = live ? (a.x + b.x) / 2 : 0, y = live ? (ay + by) / 2 : 0, ka = live ? clashKind(a) : 0, kb = live ? clashKind(b) : 0, ang = live ? Math.atan2((b.vy || 0) - (a.vy || 0), (b.vx || 0) - (a.vx || 0)) : 0;
+    const r = _cl.apply(this, arguments); if (!live) return r;
+    try {
+      const ca = (CLASH_ELEM_FX[ka] || CLASH_ELEM_FX.fire).cols, cb = (CLASH_ELEM_FX[kb] || CLASH_ELEM_FX.fire).cols, gy = y + 40 * HS;
+      shake = Math.max(shake, 15); slow = Math.min(slow, .08); setTimeout(() => { if (!ended) slow = 1; }, 90); if (typeof flashScreen === 'function') flashScreen();
+      inkRing(x, gy, ca[0], 2, 8, 96, .5); inkRing(x, gy, cb[0], 2, 14, 130, .5); inkRing(x, gy, '#ffffff', 1, 4, 60, .5);
+      lights.push({ x, y: gy, r: 190, c: '#ffffff', t: 0, life: .35 });
+      // sparks fly out sideways from the line the two spells met on
+      for (let i = 0; i < 40; i++) { const side = i % 2 ? 1 : -1, an = ang + side * Math.PI / 2 + rnd(-.9, .9), v = rnd(220, 620); P({ x, y, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .8 - 40, color: (i % 4 < 2 ? ca : cb)[i % 3] || '#fff', size: rnd(1.6, 3.6), life: rnd(.45, 1.1), grav: 380, drag: .96 }); }
+      for (let i = 0; i < 18; i++) { const an = rnd(0, 6.283), rr = rnd(0, 22); fireFx.push({ x: x + Math.cos(an) * rr, y: y + Math.sin(an) * rr, vx: Math.cos(an) * rnd(60, 200), vy: Math.sin(an) * rnd(60, 200) - 40, t: 0, life: rnd(.3, .55), s: rnd(10, 17), seed: rnd(0, 99), el: i % 2 ? (ka === 'fire' ? undefined : ka) : (kb === 'fire' ? undefined : kb), smoke: 0 }); }
+      embers(x, gy, 70, 18); scar('scorch', x, gy, { s: 2, a: .5 }); scar('crack', x, gy, { s: 1.1 });
+    } catch (e) {}
+    return r;
+  };
+})();
+
+/* ---------------- cosmetics unlocked by titles or bought with gold (F-489) ---------------- */
+(function () {
+  const _ow = owns;
+  window.owns = owns = function (cat, it) { const u = (it && it.unlock) || {}; if (u.type === 'title') { const t = TITLES.find(q => q.id === u.v); return !!(t && t.ok(statsOf())); } return _ow.apply(this, arguments); };
+  const _ut = unlockText;
+  window.unlockText = unlockText = function (u) { if (u && u.type === 'title') { const t = TITLES.find(q => q.id === u.v); return 'Title: ' + (t ? t.n : '?'); } if (u && u.type === 'coins') return u.v + ' gold'; return _ut.apply(this, arguments); };
+  window.buyCoinItem = function (i) { const it = catItems(wCat)[i], u = it.unlock; if (!u || u.type !== 'coins' || PR.coins < u.v || PR.owned.includes(wCat + '.' + it.id)) return; PR.coins -= u.v; PR.owned.push(wCat + '.' + it.id); try { sfx('ui_unlock'); } catch (e) {} closeSheet(); equip(wCat, it.id); try { save(); } catch (e) {} toast((typeof cosN === 'function' ? cosN(wCat, it) : it.n) + ' unlocked!'); };
+  const _pi = pickItem;
+  window.pickItem = pickItem = function (i) { const it = catItems(wCat)[i], u = (it && it.unlock) || {};
+    if (it && u.type === 'coins' && !ownsItem(wCat, it)) { const nm = typeof cosN === 'function' ? cosN(wCat, it) : it.n, can = PR.coins >= u.v;
+      $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh" style="margin-top:4px">${nm}</div><div style="display:flex;justify-content:center"><canvas id="buyCv" width="180" height="180" style="width:140px;height:140px;border-radius:24px;border:3px solid #000"></canvas></div><div class="ssub" style="margin:0">${(it.r || 'common').toUpperCase()} · You have ${(PR.coins || 0).toLocaleString()} gold</div><button class="upbtn" ${can ? '' : 'disabled'} onclick="buyCoinItem(${i})">Buy · <span class="ci coin-i"></span>${u.v}</button>${can ? '' : '<div class="ssub" style="margin:0;color:#ff9aa6">Not enough gold yet.</div>'}`;
+      $('sheet').classList.add('on'); try { const c = $('buyCv'); if (wCat === 'aura') { const x = c.getContext('2d'); x.translate(90, 150); if (window.heroAura) { const keep = PR.look.aura; PR.look.aura = it.id; try { heroAura(x, 0, 0, 1.1, 1.3); } finally { PR.look.aura = keep; } } } else drawAva(c, lookWiz(Object.assign({}, PR.look, { [wCat]: it.id }))); } catch (e) {}
+      return; }
+    if (it && u.type === 'title' && !ownsItem(wCat, it)) return toast('Earn the ' + unlockText(u).replace('Title: ', '') + ' title to unlock');
+    return _pi.apply(this, arguments); };
+})();
+
+/* ---------------- title effects on your aura or hex (F-490) ----------------
+   Earned titles add a small moving effect around your fighter, in battle and on the home screen. */
+(function () {
+  const FX = { flawless: 'stars', streak: 'bolts', cent: 'gold', cutter: 'slashes', brawler: 'embers', warlock: 'runes', spellwright: 'runes', special: 'leaves', hedge: 'leaves', vet: 'motes', g1: 'embers', g3: 'motes' };
+  window.TITLE_FX = FX;
+  function titleFx(x, cx, cy, t, kind, col, s) {
+    if (!kind) return; s = s || 1; x.save(); x.translate(cx, cy); x.scale(s, s); x.lineCap = 'round'; x.lineJoin = 'round';
+    const N = kind === 'runes' ? 8 : 6;
+    for (let i = 0; i < N; i++) { const ph = i / N * 6.283, a = t * (kind === 'runes' ? .7 : 1.1) + ph, R = 30 + 5 * Math.sin(t * 2 + i), px = Math.cos(a) * R, py = Math.sin(a) * R * .38, up = ((t * .45 + i / N) % 1);
+      x.save();
+      if (kind === 'stars') { x.translate(px, py - 34 - 22 * Math.sin(t * 1.3 + i * 2)); const k = .5 + .5 * Math.sin(t * 5 + i * 1.9), r = 3 + 2.5 * k; x.globalAlpha = .5 + .5 * k; x.fillStyle = '#fff'; x.strokeStyle = '#07020d'; x.lineWidth = 1; x.beginPath(); for (let j = 0; j < 8; j++) { const rr = j % 2 ? r * .35 : r; x.lineTo(Math.cos(j * .785) * rr, Math.sin(j * .785) * rr); } x.closePath(); x.fill(); x.stroke(); }
+      else if (kind === 'bolts') { if (Math.sin(t * 9 + i * 2.3) > .2) { x.translate(px, py - 30 - i * 6); x.strokeStyle = '#07020d'; x.lineWidth = 3.2; const seg = () => { x.beginPath(); x.moveTo(0, -8); x.lineTo(4, -2); x.lineTo(-3, 1); x.lineTo(2, 8); x.stroke(); }; seg(); x.strokeStyle = '#fff36b'; x.lineWidth = 1.6; seg(); } }
+      else if (kind === 'gold') { x.translate(px, py - 4 - up * 70); x.globalAlpha = 1 - up; x.fillStyle = '#ffd75e'; x.strokeStyle = '#5a3a00'; x.lineWidth = 1; x.rotate(t * 2 + i); x.beginPath(); x.moveTo(0, -4); x.lineTo(2.6, 0); x.lineTo(0, 4); x.lineTo(-2.6, 0); x.closePath(); x.fill(); x.stroke(); }
+      else if (kind === 'slashes') { x.translate(px * 1.1, py - 36); x.rotate(a + 1.57); x.globalAlpha = .85; x.fillStyle = '#fff'; x.strokeStyle = '#2a0006'; x.lineWidth = 1.2; x.beginPath(); x.arc(0, 0, 7, -1.1, 1.1); x.arc(-3, 0, 6.4, .95, -.95, true); x.closePath(); x.fill(); x.stroke(); }
+      else if (kind === 'embers') { x.translate(px * .8 + Math.sin(t * 3 + i) * 4, py - up * 78); x.globalAlpha = 1 - up; x.globalCompositeOperation = 'lighter'; x.fillStyle = i % 2 ? '#ffb347' : '#ff5a1f'; x.beginPath(); x.arc(0, 0, 2.6 * (1 - up * .6), 0, 7); x.fill(); }
+      else if (kind === 'runes') { x.translate(px * 1.25, py * 1.25 + 2); x.globalAlpha = .55 + .35 * Math.sin(t * 3 + i); x.strokeStyle = col || '#c9b8ff'; x.lineWidth = 1.6; x.beginPath(); const g = i % 4; if (g === 0) { x.moveTo(0, -4); x.lineTo(0, 4); x.moveTo(-3, -1); x.lineTo(0, -4); x.lineTo(3, -1); } else if (g === 1) { x.moveTo(-3, -4); x.lineTo(3, 4); x.moveTo(3, -4); x.lineTo(-3, 4); } else if (g === 2) { x.moveTo(-3, 4); x.lineTo(0, -4); x.lineTo(3, 4); } else { x.moveTo(0, -4); x.lineTo(0, 4); x.moveTo(0, -1); x.lineTo(3, -4); x.moveTo(0, 1); x.lineTo(3, 4); } x.stroke(); }
+      else if (kind === 'leaves') { x.translate(px + Math.sin(t * 2 + i) * 6, py - 60 + up * 70); x.rotate(t * 2 + i * 1.3); x.globalAlpha = Math.min(1, (1 - up) * 2); x.fillStyle = i % 2 ? '#7ed35a' : '#c8f08a'; x.strokeStyle = '#0d3a14'; x.lineWidth = 1; x.beginPath(); x.ellipse(0, 0, 4.5, 2, 0, 0, 7); x.fill(); x.stroke(); }
+      else { x.translate(px, py - up * 64); x.globalAlpha = (1 - up) * .9; x.globalCompositeOperation = 'lighter'; x.fillStyle = col || '#cfe6ff'; x.beginPath(); x.arc(0, 0, 2.2, 0, 7); x.fill(); }
+      x.restore(); }
+    x.restore();
+  }
+  window.titleFx = titleFx;
+  const kindOf = w => w && w.me ? FX[activeTitle()] : (typeof M !== 'undefined' && M && M.rival && M.rival.fx);
+  window.titleFxHome = (x, cx, cy, sc, t) => { try { titleFx(x, cx, cy, t, FX[activeTitle()], auraOf({ me: 1 })[1], sc * 1.35); } catch (e) {} };
+  const _dd = drawDecals;
+  window.drawDecals = drawDecals = function (x) { const r = _dd.apply(this, arguments); if (x !== ctx) return r;
+    try { if (typeof ents !== 'undefined' && ents && document.getElementById('battle').classList.contains('on')) for (const w of ents) if (!w.dead) titleFx(x, w.x, w.y, T + (w.me ? 0 : 1.7), kindOf(w), auraOf(w)[1], 1); } catch (e) {}
+    return r; };
+})();
+
+/* ---------------- named rivals (F-491) ----------------
+   Recurring characters with a look, a title, a signature hand and a line they open with. About a third of matches. */
+(function () {
+  const R = [
+    { id: 'morwen', n: 'Morwen Ashgrave', title: 'The Bone Gardener', cls: 'wiz', hand: ['zombies', 'flies', 'thorns', 'golem'], look: { robe: 'moss', hat: 'hood', staff: 'skull', beard: 'none', skin: 'ashen', pet: 'cat' }, aura: 'venom', fx: 'leaves', line: 'Everything grows back.', mood: 'calm' },
+    { id: 'kaelix', n: 'Kaelix Stormrend', title: 'Sky-Splitter', cls: 'wiz', hand: ['lightning', 'storm', 'gale', 'blink'], look: { robe: 'stormcl', hat: 'feathered', staff: 'wand', beard: 'blue', skin: 'tan', pet: 'owl' }, aura: 'azure', fx: 'bolts', line: 'Try to keep up!', mood: 'cocky' },
+    { id: 'brakka', n: 'Brakka Ironknuckle', title: 'The Unbroken', cls: 'sorc', hand: ['rush', 'titan', 'counter', 'earthm'], look: { robe: 'ember', hat: 'pointy', staff: 'oak', beard: 'red', skin: 'umber', pet: 'none' }, aura: 'emberaura', fx: 'embers', line: 'Hit me. I dare you.', mood: 'cocky' },
+    { id: 'veyra', n: 'Sister Veyra', title: 'Keeper of the Dome', cls: 'sorc', hand: ['sanctum', 'polarity', 'secondwind', 'dissect'], look: { robe: 'ivory', hat: 'hood', staff: 'moon', beard: 'long', skin: 'moonlit', pet: 'wisp' }, aura: 'frost', fx: 'runes', line: 'Step inside. Be still.', mood: 'calm' },
+    { id: 'pyrrha', n: 'Pyrrha Cindermaw', title: 'The Kiln Witch', cls: 'wiz', hand: ['fireball', 'meteor', 'ringfire', 'burnbody'], look: { robe: 'sunfire', hat: 'witch', staff: 'crystal', beard: 'ginger', skin: 'emberskin', pet: 'dragon' }, aura: 'sunset', fx: 'embers', line: 'I love a warm welcome.', mood: 'wild' },
+    { id: 'nix', n: 'Old Nix', title: 'The Trickster', cls: 'wiz', hand: ['mirror', 'ghost', 'rift', 'ricochet'], look: { robe: 'amethyst', hat: 'mushroom', staff: 'wand', beard: 'violet', skin: 'goblin', pet: 'frog' }, aura: 'violet', fx: 'stars', line: 'Which one is me?', mood: 'wild' },
+    { id: 'jun', n: 'Jun the Quiet', title: 'Hundred Cuts', cls: 'sorc', hand: ['dissect', 'doubletake', 'copycast', 'chosen'], look: { robe: 'obsidian', hat: 'feathered', staff: 'oak', beard: 'none', skin: 'peach', pet: 'none' }, aura: 'bloodmoon', fx: 'slashes', line: '...', mood: 'calm' },
+    { id: 'thessaly', n: 'Thessaly Frost', title: 'The Long Winter', cls: 'wiz', hand: ['icewall', 'hourglass', 'beam', 'shield'], look: { robe: 'frost', hat: 'crown', staff: 'crystal', beard: 'white', skin: 'spirit', pet: 'owl' }, aura: 'frost', fx: 'motes', line: 'I can wait all day.', mood: 'calm' },
+    { id: 'vant', n: 'Oro Vant', title: 'The Beastcaller', cls: 'sorc', hand: ['zodiac', 'healspring', 'earthm', 'rush'], look: { robe: 'emerald', hat: 'witch', staff: 'skull', beard: 'green', skin: 'tan', pet: 'dragon' }, aura: 'jade', fx: 'leaves', line: 'Meet the family.', mood: 'wild' },
+    { id: 'gilda', n: 'Gilda Goldmantle', title: 'The Champion', cls: 'wiz', hand: ['beam', 'archer', 'orbs', 'sinkhole'], look: { robe: 'royal', hat: 'crown', staff: 'moon', beard: 'goldlong', skin: 'gilded', pet: 'dragon' }, aura: 'gold', fx: 'gold', line: 'Bow. Then begin.', mood: 'cocky' },
+  ];
+  window.RIVALS = R;
+  const _nm = newMatch;
+  window.newMatch = newMatch = function (o) {
+    o = o || {}; let rv = null;
+    if (!window.ONB_ACTIVE && !o.tut && !o.profile && !o.name && Math.random() < .35) { PR.metRivals = PR.metRivals || {}; const pool = R.filter(q => q.hand.every(k => SP[k])); const fresh = pool.filter(q => !PR.metRivals[q.id]); rv = (fresh.length ? fresh : pool)[Math.random() * (fresh.length ? fresh.length : pool.length) | 0]; }
+    if (rv) o = Object.assign({}, o, { name: rv.n, look: Object.assign({}, rv.look, { cls: rv.cls, aura: rv.aura }) });
+    const r = _nm.call(this, o);
+    try { if (rv && M) { M.rival = rv; M.foe.pool = rv.hand.slice(); M.profile = Object.assign({}, M.profile, { n: rv.title }); PR.metRivals[rv.id] = (PR.metRivals[rv.id] || 0) + 1; } } catch (e) {}
+    return r;
+  };
+  const _sd = startDuel;
+  window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); try { if (M && M.rival && ents[1]) { ents[1].auraId = M.rival.aura; if (M.round === 1 && window.emoteSay) setTimeout(() => { if (!ended && M && M.rival) emoteSay(ents[1], null, M.rival.line); }, 1100); } } catch (e) {} return r; };
+})();
+
+/* ---------------- emotes (F-492) ----------------
+   Tap the face button in a duel to send one. The rival answers, and sometimes starts: after a big hit, a round win or loss. */
+(function () {
+  const EM = [['hi', '👋'], ['nice', '👍'], ['ha', '😆'], ['wow', '😮'], ['grr', '😤'], ['think', '🤔'], ['cry', '😭'], ['gg', '🤝']];
+  const REPLY = { hi: ['hi', 'hi', 'nice'], nice: ['nice', 'gg', 'ha'], ha: ['grr', 'ha', 'think'], wow: ['ha', 'nice', 'think'], grr: ['ha', 'think', 'grr'], think: ['think', 'ha'], cry: ['ha', 'nice', 'gg'], gg: ['gg', 'gg', 'nice'] };
+  const MOOD = { cocky: { ha: 3, grr: 1 }, calm: { think: 3, nice: 2 }, wild: { ha: 2, wow: 2 } };
+  let bubbles = [], lastMine = -9, lastFoe = -9, hpPrev = null;
+  const glyph = id => (EM.find(e => e[0] === id) || [0, id])[1];
+  function say(w, id, txt) { if (!w || w.dead) return; bubbles = bubbles.filter(b => b.w !== w); bubbles.push({ w, e: id ? glyph(id) : null, txt: txt || null, t0: performance.now() }); try { sfx('ui_pick', { vol: .5 }); } catch (e) {} }
+  window.emoteSay = say;
+  const now = () => performance.now() / 1000;
+  function foeSay(id, delay) { if (now() - lastFoe < 2.2) return; lastFoe = now() + (delay || 0); setTimeout(() => { try { if (typeof ents !== 'undefined' && ents && ents[1] && running !== undefined && document.getElementById('battle').classList.contains('on')) say(ents[1], id); } catch (e) {} }, (delay || 0) * 1000); }
+  const pickFor = list => { const mood = M && M.rival && MOOD[M.rival.mood]; if (mood && Math.random() < .4) { const ks = Object.keys(mood), tot = ks.reduce((a, k) => a + mood[k], 0); let r = Math.random() * tot; for (const k of ks) { r -= mood[k]; if (r <= 0) return k; } } return list[Math.random() * list.length | 0]; };
+  window.sendEmote = function (id) { const row = document.getElementById('emoRow'); if (row) row.classList.remove('on'); if (now() - lastMine < 1.5 || typeof ents === 'undefined' || !ents || !ents[0]) return; lastMine = now(); say(ents[0], id);
+    if (Math.random() < .85) foeSay(pickFor(REPLY[id] || ['think']), rnd(.7, 1.6)); };
+  // the button and its tray
+  const host = document.getElementById('battle');
+  if (host) { host.insertAdjacentHTML('beforeend', `<button id="emoBtn" aria-label="Emotes">😀</button><div id="emoRow">${EM.map(([id, g]) => `<button onclick="sendEmote('${id}')">${g}</button>`).join('')}</div>`);
+    document.getElementById('emoBtn').onclick = e => { e.stopPropagation(); document.getElementById('emoRow').classList.toggle('on'); }; }
+  const css = document.createElement('style');
+  css.textContent = `#emoBtn{position:absolute;left:8px;bottom:112px;z-index:6;width:40px;height:40px;border-radius:50%;border:2px solid #000;background:linear-gradient(#4a3a80,#2b2050);font-size:20px;line-height:1;cursor:pointer;box-shadow:0 3px 0 #000;padding:0}
+  #emoRow{position:absolute;left:54px;bottom:108px;z-index:6;display:none;gap:4px;padding:5px;border-radius:16px;border:2px solid #000;background:#150f27f2;box-shadow:0 4px 0 #000;flex-wrap:wrap;max-width:calc(100% - 70px)}#emoRow.on{display:flex}
+  #emoRow button{width:38px;height:38px;border-radius:11px;border:2px solid #000;background:#2a1f52;font-size:20px;line-height:1;cursor:pointer;padding:0}html.onb-on #emoBtn{display:none}`;
+  document.head.appendChild(css);
+  // the rival reacts to the fight
+  const _up = update;
+  window.update = update = function (dt) { const r = _up.apply(this, arguments);
+    try { if (typeof ents !== 'undefined' && ents && ents[1] && !ended && !window.ONB_ACTIVE) { const a = ents[0], b = ents[1];
+      if (hpPrev && hpPrev.a === a && hpPrev.b === b) { const da = hpPrev.ha - a.hp, db = hpPrev.hb - b.hp;
+        if (da >= 16 && Math.random() < .35) foeSay(pickFor(['ha', 'nice', 'ha']), rnd(.3, .8));
+        else if (db >= 16 && Math.random() < .35) foeSay(pickFor(['wow', 'grr', 'think']), rnd(.3, .8)); }
+      hpPrev = { a, b, ha: a.hp, hb: b.hp }; } } catch (e) {}
+    return r; };
+  const _er = endRound;
+  window.endRound = endRound = function (winner) { try { if (!ended && !window.ONB_ACTIVE && typeof ents !== 'undefined' && ents && ents[1]) { const last = M && (M.score[winner] + 1 >= (typeof WIN !== 'undefined' ? WIN : 4)); if (winner === 'foe') say(ents[1], last ? 'gg' : pickFor(['ha', 'nice'])); else say(ents[1], last ? 'gg' : pickFor(['cry', 'grr', 'wow'])); } } catch (e) {} return _er.apply(this, arguments); };
+  const _sd = startDuel;
+  window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); bubbles = []; hpPrev = null; try { if (M && M.round === 1 && !M.rival && !window.ONB_ACTIVE && Math.random() < .5) foeSay('hi', 1.2); } catch (e) {} return r; };
+  // speech bubbles, drawn over everything
+  const _rn = render;
+  window.render = render = function () { const r = _rn.apply(this, arguments);
+    try { const t1 = performance.now(); bubbles = bubbles.filter(b => t1 - b.t0 < (b.txt ? 2800 : 2200) && !b.w.dead);
+      for (const b of bubbles) { const k = (t1 - b.t0) / 1000, life = b.txt ? 2.8 : 2.2, pop = k < .18 ? 1.25 - .25 * (k / .18) * (2 - k / .18) + (k < .09 ? -(1 - k / .09) * .9 : 0) : 1, al = k > life - .3 ? (life - k) / .3 : 1, x = ctx, w = b.w;
+        x.save(); x.translate(clamp(w.x + (w.me ? 30 : -30), 50, W - 50), w.y - 128 * HS); x.scale(Math.max(.1, pop), Math.max(.1, pop)); x.globalAlpha = Math.max(0, al);
+        x.font = b.txt ? "13px 'Lilita One', system-ui" : '24px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
+        const tw = b.txt ? Math.min(170, x.measureText(b.txt).width + 20) : 40, th = b.txt ? 28 : 38;
+        x.fillStyle = '#fff'; x.strokeStyle = '#000'; x.lineWidth = 2.5; x.beginPath(); if (x.roundRect) x.roundRect(-tw / 2, -th / 2, tw, th, 12); else x.rect(-tw / 2, -th / 2, tw, th); x.fill(); x.stroke();
+        const tx = w.me ? -10 : 10; x.beginPath(); x.moveTo(tx - 6, th / 2 - 1); x.lineTo(tx - (w.me ? 12 : -12), th / 2 + 11); x.lineTo(tx + 6, th / 2 - 1); x.closePath(); x.fill(); x.beginPath(); x.moveTo(tx - 6, th / 2); x.lineTo(tx - (w.me ? 12 : -12), th / 2 + 11); x.lineTo(tx + 6, th / 2); x.stroke();
+        x.fillStyle = '#1a1030'; if (b.txt) x.fillText(b.txt, 0, 1, 160); else x.fillText(b.e, 0, 2);
+        x.restore(); } } catch (e) {}
+    return r; };
+})();
+
+/* ---------------- daily login streak (F-493) and a season that counts down (F-494) ---------------- */
+(function () {
+  const dayStr = d => { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const PAY = [50, 75, 100, 150, 200, 250, 400];
+  const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return dayStr(d); };
+  function loginDue() { const L = PR.login || {}; return L.day !== dayStr(); }
+  window.claimLogin = function () { const L = PR.login = PR.login || { day: null, streak: 0 }; if (L.day === dayStr()) return closeSheet();
+    L.streak = L.day === yesterday() ? (L.streak || 0) + 1 : 1; L.day = dayStr(); const i = (L.streak - 1) % 7, gold = PAY[i]; PR.coins = (PR.coins || 0) + gold; let extra = '';
+    if (i === 6) { PR.mTok = (PR.mTok || 0) + 1; extra = ' and an Echo Rune'; }
+    try { save(); sfx('ui_coin'); } catch (e) {} closeSheet(); refreshMeta(); toast(`Day ${L.streak} streak: +${gold} gold${extra}`); };
+  window.openLogin = function () { const L = PR.login || { streak: 0 }, cont = L.day === yesterday(), next = cont ? (L.streak || 0) + 1 : 1, idx = (next - 1) % 7, due = loginDue();
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Daily Login</div><div class="ssub" style="margin:0">${due ? (cont ? `Day ${next} of your streak. Keep it going!` : (L.streak ? 'Your streak reset. Day 1 starts now.' : 'Come back every day for bigger rewards.')) : `Claimed today. Streak: ${L.streak} day${L.streak === 1 ? '' : 's'}. Come back tomorrow!`}</div>
+      <div class="lgrid">${PAY.map((g, i) => { const cur = due ? i === idx : false, done = due ? i < idx : i <= ((L.streak - 1) % 7); return `<div class="lday ${done ? 'done' : ''} ${cur ? 'cur' : ''}"><small>Day ${i + 1}</small><span class="ci coin-i"></span><b>${g}</b>${i === 6 ? '<em>+ Echo Rune</em>' : ''}</div>`; }).join('')}</div>
+      ${due ? `<button class="upbtn" onclick="claimLogin()">Claim ${PAY[idx]} gold</button>` : `<button class="upbtn" onclick="closeSheet()">OK</button>`}`;
+    $('sheet').classList.add('on'); };
+  // season: 30 days each, counted from a fixed start so every player sees the same clock
+  const S0 = Date.UTC(2026, 10, 15), LEN = 30, NAMES = ['Bog of Echoes', 'The Long Frost', 'Bonefield Rising', 'Siege of the Keep', 'Wild Hunt', 'Drowned Coast'];
+  const seasonNow = () => { const d = Math.max(0, Math.floor((Date.now() - S0) / 864e5)); return { n: Math.floor(d / LEN) + 1, left: LEN - (d % LEN), name: NAMES[Math.floor(d / LEN) % NAMES.length] }; };
+  window.seasonNow = seasonNow;
+  function seasonTick() { const s = seasonNow();
+    if (PR.season && PR.season < s.n && !window.ONB_ACTIVE) { const rk = rankOf(PR.trophies), gold = 150 * (rk + 1); PR.coins = (PR.coins || 0) + gold; PR.mTok = (PR.mTok || 0) + 1; setTimeout(() => { try { toast(`Season ${PR.season < s.n ? s.n - 1 : s.n} ended! Rank reward: +${gold} gold and an Echo Rune`); } catch (e) {} }, 1200); }
+    if (PR.season !== s.n) { PR.season = s.n; try { save(); } catch (e) {} }
+    const el = document.querySelector('#home .stage .st'); if (el) el.innerHTML = `SEASON ${s.n} · ${s.left} DAY${s.left === 1 ? '' : 'S'} LEFT<b>${s.name}</b>`;
+    const rk = document.getElementById('seasonRk'); if (rk) rk.textContent = `Season ${s.n}: ${s.name} · ${s.left} day${s.left === 1 ? '' : 's'} left`; }
+  const _rm = refreshMeta;
+  window.refreshMeta = refreshMeta = function () { const r = _rm.apply(this, arguments); try { seasonTick(); const b = document.getElementById('lgBtn'); if (b) b.classList.toggle('due', loginDue()); } catch (e) {} return r; };
+  // a Login button under Challenges, and an automatic prompt once a day on the home screen
+  const st = document.querySelector('#home .stage'); if (st && !document.getElementById('lgBtn')) st.insertAdjacentHTML('beforeend', `<button class="chbtn" id="lgBtn" onclick="openLogin()">Login<i></i></button>`);
+  const mc = document.querySelector('#ranks .mc'); if (mc && !document.getElementById('seasonRk')) mc.insertAdjacentHTML('afterbegin', '<div id="seasonRk" class="seasonrk"></div>');
+  const css = document.createElement('style');
+  css.textContent = `#lgBtn{top:124px!important;background:linear-gradient(#8a6bff,#5b3bd1)!important;color:#fff!important}#lgBtn i{display:none;width:9px;height:9px;border-radius:50%;background:#ff4a5a;border:1.5px solid #000}#lgBtn.due i{display:block}
+  .lgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0}.lday{background:#1a1236;border:2px solid #000;border-radius:12px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px}.lday small{font:10px 'Lilita One';color:#b9a6ee;letter-spacing:.5px}.lday b{font:15px 'Lilita One';font-weight:400;color:#ffd75e}.lday em{font:9px Nunito;font-style:normal;font-weight:800;color:#c9b8ff}.lday .ci{width:20px;height:20px}.lday.done{opacity:.45}.lday.cur{background:linear-gradient(#4a3a80,#2b2050);border-color:#ffd75e;box-shadow:0 0 0 2px #ffd75e55}.lday:last-child{grid-column:span 2}
+  .seasonrk{font:13px 'Lilita One';letter-spacing:.5px;color:#ffd75e;text-align:center;background:#0006;border:2px solid #000;border-radius:12px;padding:7px}`;
+  document.head.appendChild(css);
+  try { refreshMeta(); } catch (e) {}
+  const prompt = () => { try { if (!loginDue() || window.ONB_ACTIVE || !document.getElementById('home').classList.contains('on')) return; if (['sheet', 'upm', 'lvup', 'chestOv', 'pause'].some(id => { const e = document.getElementById(id); return e && (e.classList.contains('on') || (e.style.display && e.style.display !== 'none' && id !== 'sheet')); })) return; openLogin(); } catch (e) {} };
+  setTimeout(prompt, 2200); const _sh = show; window.show = show = function (s) { const r = _sh.apply(this, arguments); if (s === 'home') setTimeout(prompt, 2600); return r; };
+})();
+
+/* ---------------- the final stretch: from round 5 the battle music switches to a harder track (F-496)
+   and every draft offer holds one card picked to counter the build you are facing (F-497) ---------------- */
+(function () {
+  const FINAL = 5;
+  const _mu = window.music;
+  window.music = music = function (id) { try { if (id === 'bgm_battle' && typeof M !== 'undefined' && M && M.round >= FINAL && AU.man && AU.man.bgm_battle_final) return _mu('bgm_battle_final'); } catch (e) {} return _mu.apply(this, arguments); };
+  const _sd = startDuel;
+  window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); try { if (M && M.round >= FINAL) { music('bgm_battle'); if (M.round === FINAL && !M._finalSaid) { M._finalSaid = 1; setTimeout(() => { try { toast('Final stretch! Each draft now includes a counter card.'); } catch (e) {} }, 600); } } } catch (e) {} return r; };
+  // one counter card per offer from round 5
+  const _go = genOffer;
+  window.genOffer = genOffer = function (p, round) {
+    const out = _go.apply(this, arguments);
+    try { if (round >= FINAL && M && out && out.length && window.AI_DEBUG && AI_DEBUG.counterVs && !window.ONB_ACTIVE) {
+      const opp = p === M.me ? M.foe : M.me, ob = opp.book || []; if (!ob.length) return out;
+      const upsOn = k => [...opp.up].filter(u => u.startsWith(k + '.')).length, sc = k => AI_DEBUG.counterVs(k, ob, upsOn);
+      const full = p.book.length >= capOf(), cands = [];
+      for (const k of (p.pool || M.unlocked)) { const n = p.book.filter(b => b === k).length; if (ONE_COPY.has(k) && n) continue; if (n >= MAX_COPIES) continue; cands.push({ c: { type: full ? 'replace' : 'new', k }, s: sc(k) }); }
+      for (const k of new Set(p.book)) for (const u of UPG[k]) if (!p.up.has(k + '.' + u.id) && (!u.req || p.up.has(k + '.' + u.req)) && (typeof upGate !== 'function' || upGate(p, k, u))) cands.push({ c: { type: 'up', k, u }, s: sc(k) * .9 });
+      cands.sort((a, b) => b.s - a.s); const best = cands.find(q => q.s > 0); if (!best) return out;
+      const same = (a, b) => a.type === b.type && a.k === b.k && (a.type !== 'up' || a.u.id === b.u.id);
+      const have = out.findIndex(c => same(c, best.c));
+      if (have >= 0) out[have].counter = 1; else { let wi = 0, ws = 1e9; out.forEach((c, i) => { const s = sc(c.k); if (s < ws) { ws = s; wi = i; } }); out[wi] = Object.assign({ counter: 1 }, best.c); }
+    } } catch (e) {}
+    return out;
+  };
+  // mark the counter card in the player's draft
+  const _rd = renderDraft;
+  window.renderDraft = renderDraft = function () { const r = _rd.apply(this, arguments); try { (M.offer || []).forEach((c, i) => { if (!c.counter) return; const el = document.querySelector(`#cards .card[data-i="${i}"]`); if (el && !el.querySelector('.ctag')) el.insertAdjacentHTML('beforeend', '<span class="ctag">COUNTER</span>'); }); } catch (e) {} return r; };
+  const css = document.createElement('style');
+  css.textContent = `.card .ctag{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font:10px 'Lilita One';letter-spacing:1px;padding:2px 8px;border-radius:8px;border:2px solid #000;background:linear-gradient(#ff8a96,#d63a4a);color:#fff;z-index:3;white-space:nowrap}`;
   document.head.appendChild(css);
 })();

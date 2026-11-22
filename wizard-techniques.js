@@ -382,7 +382,7 @@
   /* Grand Bisection: no beam. After a short wind-up one giant crescent launches and travels down the arena,
      cutting each thing as the blade reaches it. The first cut triggers an impact frame. */
   function grandCleave(w, a) {
-    cleaves.push({ o: w, x: w.x, y: w.y, a, t: 0, wind: .24, d: 0, pd: 0, L: 660, spd: 1050, hit: new Set(), dmg: S(w, 'dissect', 'dmg') * 3.5, sting: U(w, 'dissect', 'sting') });
+    cleaves.push({ o: w, x: w.x, y: w.y, a, t: 0, wind: .24, d: 0, pd: 0, L: 660, spd: 1050, hit: new Set(), dmg: S(w, 'dissect', 'dmg') * 3.5, sting: U(w, 'dissect', 'sting'), sure: U(w, 'dissect', 'fated') });
     text(w.x, w.y - 104 * HS, 'GRAND BISECTION', '#ffffff', true); w.recoil = .5; shake = Math.max(shake, 5);
   }
   function cleaveStep(c, dt) {
@@ -394,7 +394,8 @@
     const reach = (px, py, wd) => { const dx = px - c.x, dy = py - c.y, al = dx * ca + dy * sa; return al > c.pd - 10 && al <= c.d + 8 && Math.abs(dx * sa - dy * ca) < (wd || W); };
     const cut = () => { if (!c.impT) { c.impT = c.t; shake = Math.max(shake, 18); slow = Math.min(slow, .06); setTimeout(() => { if (!ended) slow = 1; }, 130); } };
     SRC = 'dissect';
-    if (!f.dead && !c.hit.has(f) && reach(f.x, f.y)) { c.hit.add(f); if (ghosted(f)) text(f.x, f.y - 70 * HS, 'PHASED', '#bff'); else { cut(); if (w.me && typeof PR !== 'undefined') { PR.stats = PR.stats || {}; PR.stats.cleaves = (PR.stats.cleaves || 0) + 1; } const h0 = f.hp; damage(f, c.dmg, ca * 420, sa * 420, '#c9fff4'); if (c.sting && f.hp < h0) addBleed(f); scar('splash', f.x, f.y + 6, { s: 1.4 }); } }
+    const sureHit = c.sure && !f.dead && !c.hit.has(f) && (() => { const al = (f.x - c.x) * ca + (f.y - c.y) * sa; return (al > c.pd - 10 && al <= c.d + 8) || c.d >= c.L; })();   // Inevitable Cut: lands when the blade draws level, wherever they stand
+    if (!f.dead && !c.hit.has(f) && (reach(f.x, f.y) || sureHit)) { c.hit.add(f); if (ghosted(f) && !c.sure) text(f.x, f.y - 70 * HS, 'PHASED', '#bff'); else { if (c.sure) text(f.x, f.y - 112 * HS, 'INEVITABLE', '#ff8a96', true); cut(); if (w.me && typeof PR !== 'undefined') { PR.stats = PR.stats || {}; PR.stats.cleaves = (PR.stats.cleaves || 0) + 1; } const h0 = f.hp; damage(f, c.dmg, ca * 420, sa * 420, '#c9fff4'); if (c.sting && f.hp < h0) addBleed(f); scar('splash', f.x, f.y + 6, { s: 1.4 }); } }
     for (const e of enemyCreatures(w)) if (!c.hit.has(e.e) && reach(e.e.x, e.e.y, W + 4)) { c.hit.add(e.e); cut(); hurtCreature(e.e, e.k, c.dmg, 'slash'); }
     for (const z of zombies) if (z.o !== w && z.hp > 0 && z.rise < 1 && !c.hit.has(z) && reach(z.x, z.y, W + 4)) { c.hit.add(z); cut(); hurtCreature(z, 'z', c.dmg, 'slash'); }
     for (const wl of walls) if (wl.o !== w) { let n = 0; for (const cr of wl.cr) if (!cr.gone && reach(cr.x, cr.y, W - 6)) { cr.gone = 1; n++; burst(cr.x, cr.y - 25 * HS, 14, wl.mud ? ['#d8c09a', '#8a6a48', '#fff'] : ['#d8f6ff', '#fff'], 200, 4, .5); } if (n) { cut(); const live = wl.cr.filter(q => !q.gone).length; wl.hp = live ? Math.min(wl.hp, wl.max * live / wl.cr.length) : 0; } }
@@ -1024,12 +1025,8 @@
       // the world shifts apart along the cut, starting at the first thing it hits
       if (c.impT && c.t - c.impT < .34) { const k = (c.t - c.impT) / .34, off = 8 * (1 - k) * (1 - k), nx = -sa, ny = ca, Lb = 2400, ax = c.x - ca * Lb, ay = c.y + yo - sa * Lb, bx = c.x + ca * Lb, by = c.y + yo + sa * Lb;
         for (const sd of [1, -1]) { x.save(); x.beginPath(); x.moveTo(ax, ay); x.lineTo(bx, by); x.lineTo(bx + nx * sd * Lb, by + ny * sd * Lb); x.lineTo(ax + nx * sd * Lb, ay + ny * sd * Lb); x.closePath(); x.clip(); x.drawImage(cv, 0, 0, cv.width, cv.height, nx * sd * off, ny * sd * off, W, H); x.restore(); }
-        x.save(); x.lineCap = 'round'; x.strokeStyle = '#000'; x.lineWidth = off * 2 + 3; x.beginPath(); x.moveTo(c.x, c.y + yo); x.lineTo(fx0, fy0); x.stroke(); x.restore(); }
-      // the wake: an ink ribbon with a hot core that cools after the blade has passed
-      { const fade = done ? Math.max(0, 1 - age / 1.1) : 1; x.save(); x.lineCap = 'round';
-        x.strokeStyle = `rgba(8,2,6,${.55 * fade})`; x.lineWidth = 16; x.beginPath(); x.moveTo(c.x, c.y + yo); x.lineTo(fx0, fy0); x.stroke();
-        x.globalCompositeOperation = 'lighter'; const g = x.createLinearGradient(c.x, c.y + yo, fx0, fy0); g.addColorStop(0, `rgba(255,50,70,${.15 * fade})`); g.addColorStop(1, `rgba(255,70,90,${.95 * fade})`); x.strokeStyle = g; x.lineWidth = 7 * fade + 1.5; x.stroke();
-        x.strokeStyle = `rgba(255,255,255,${fade})`; x.lineWidth = 2.2 * fade + .4; x.stroke(); x.restore(); }
+        }
+      // (no wake line: only the blade itself travels)
       if (!done) { // afterimages, then the blade: ink edge, crimson body, white core, hatch texture
         for (let i = 4; i >= 1; i--) { const dd = c.d - i * 30; if (dd < 0) continue; x.save(); x.translate(c.x + ca * dd, c.y + sa * dd + yo); x.rotate(c.a); x.scale(4.6, 6.6); x.globalAlpha = .22 * (5 - i) / 4; x.fillStyle = i % 2 ? '#ff3b4a' : '#12060c'; crescentPath(x, 18, 1.2); x.fill(); x.restore(); }
         x.save(); x.translate(fx0, fy0); x.rotate(c.a); x.scale(4.8, 6.9);
@@ -1043,7 +1040,7 @@
         x.save(); x.strokeStyle = 'rgba(255,255,255,.7)'; x.lineWidth = 1.5; x.lineCap = 'round'; for (let i = 0; i < 7; i++) { const o = (i - 3) * 13 + Math.sin(c.t * 50 + i) * 4, l0 = 30 + (i * 37 % 50); x.beginPath(); x.moveTo(fx0 - sa * o - ca * 20, fy0 + ca * o - sa * 20); x.lineTo(fx0 - sa * o - ca * (20 + l0), fy0 + ca * o - sa * (20 + l0)); x.stroke(); } x.restore(); }
       // impact frame: one beat of inverted black-and-white with a white cut line
       if (c.impT && c.t - c.impT < .1) { x.save(); x.globalCompositeOperation = 'difference'; x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.globalCompositeOperation = 'saturation'; x.fillStyle = '#000'; x.fillRect(0, 0, W, H);
-        x.globalCompositeOperation = 'source-over'; x.strokeStyle = '#fff'; x.lineWidth = 5; x.lineCap = 'round'; x.beginPath(); x.moveTo(c.x - ca * 900, c.y + yo - sa * 900); x.lineTo(c.x + ca * 900, c.y + yo + sa * 900); x.stroke(); x.restore(); }
+        x.restore(); }
     }
     drawShards(x);
     drawPBlasts(x);

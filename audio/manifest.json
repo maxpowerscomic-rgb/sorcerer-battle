@@ -841,5 +841,16 @@
   "files": [
    "audio/ui_abilityup.mp3"
   ]
+ },
+ "bgm_battle_final": {
+  "kind": "music",
+  "prompt": "Original instrumental final-round battle theme for a wizard duel game, the climax version of a tense fight loop. Fast and relentless around 160 BPM: a dark hypnotic piano ostinato hammering in octaves, pounding taiko and kick drums, driving staccato strings, heavy pulsing synth bass, sharp choir stabs and rising brass swells, constant forward momentum, urgent and heroic, sudden-death last-stand energy with no breakdown and no fade. Instrumental only, no vocals, loopable.",
+  "ms": 90000,
+  "group": "music",
+  "vol": 0.75,
+  "loop": true,
+  "files": [
+   "audio/bgm_battle_final.mp3"
+  ]
  }
 }
