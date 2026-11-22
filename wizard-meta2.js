@@ -320,10 +320,10 @@
   };
   const _gx = gainXp;
   window.gainXp = gainXp = function () { const from = PR.lvl, r = _gx.apply(this, arguments); if (PR.lvl > from) { PR.mTok = (PR.mTok || 0) + (PR.lvl - from); PR.tokPick = (PR.tokPick || 0) + (PR.lvl - from); } return r; };
-  window.buyMastery = function () { if (PR.gems < 40) return toast('Not enough gems'); PR.gems -= 40; PR.mTok = (PR.mTok || 0) + 3; try { save(); } catch (e) {} refreshMeta(); renderShop(); toast('+3 Echo Runes'); };
+  window.buyMastery = function () { if (PR.gems < 20) return toast('Not enough gems'); PR.gems -= 20; PR.mTok = (PR.mTok || 0) + 3; try { save(); } catch (e) {} refreshMeta(); renderShop(); toast('+3 Echo Runes'); };
   const _rs = renderShop;
   window.renderShop = renderShop = function () { const r = _rs.apply(this, arguments); const host = document.getElementById('packs'); if (host && !document.getElementById('mtkShop')) host.insertAdjacentHTML('afterend', `<div id="mtkShop"></div>`);
-    const m = document.getElementById('mtkShop'); if (m) m.innerHTML = `<div class="mtkbuy">${TOK_SVG}<div><b>Echo Runes ×3</b><small>After a match, double one ability's skill points. You have ${PR.mTok}.</small></div><button onclick="buyMastery()" ${PR.gems < 40 ? 'disabled' : ''}>${SVG.gem}40</button></div>`; return r; };
+    const m = document.getElementById('mtkShop'); if (m) m.innerHTML = `<div class="mtkbuy">${TOK_SVG}<div><b>Echo Runes ×3</b><small>After a match, double one ability's skill points. You have ${PR.mTok}.</small></div><button onclick="buyMastery()" ${PR.gems < 20 ? 'disabled' : ''}>${SVG.gem}20</button></div>`; return r; };
 
   /* ---------------- path-aware wording ---------------- */
   const _rm2 = refreshMeta;
@@ -619,19 +619,22 @@
 /* ---------------- music picker (F-456) ----------------
    Options get a Menu music and a Battle music choice from every track made so far; switching crossfades. */
 (function () {
-  const TRACKS = [['bgm_menu', 'Late Night Lounge'], ['bgm_menu_whimsy', 'Whimsical Tower'], ['bgm_battle', 'Offbeat Duel'], ['bgm_battle_take2', 'Offbeat Duel (take 2)'], ['bgm_battle_dark', 'Dark Ostinato'], ['bgm_battle_calm', 'Still Water']];
+  const TRACKS = [['bgm_menu', 'Late Night Lounge'], ['bgm_menu_whimsy', 'Whimsical Tower'], ['bgm_menu_tavern', 'Tavern Hearth'], ['bgm_menu_lofi', 'Arcane Lo-fi'], ['bgm_menu_synth', 'Starlit Arcade'], ['bgm_battle', 'Offbeat Duel'], ['bgm_battle_take2', 'Offbeat Duel (take 2)'], ['bgm_battle_dark', 'Dark Ostinato'], ['bgm_battle_calm', 'Still Water'], ['bgm_battle_final', 'Final Stretch'], ['bgm_battle_finale', 'Last Stand']];
+  const MENU_POOL = ['bgm_menu', 'bgm_menu_whimsy', 'bgm_menu_tavern', 'bgm_menu_lofi', 'bgm_menu_synth']; let curMenu = null;
+  // shuffle: a different menu song every time you come back to the menus, and after every restart
+  const nextMenu = () => { let last = null; try { last = localStorage.getItem('sb.lastMenuSong'); } catch (e) {} const pool = MENU_POOL.filter(k => k !== last && k !== curMenu); curMenu = (pool.length ? pool : MENU_POOL)[Math.random() * (pool.length ? pool.length : MENU_POOL.length) | 0]; try { localStorage.setItem('sb.lastMenuSong', curMenu); } catch (e) {} return curMenu; };
   window.MUSIC_TRACKS = TRACKS;
-  const pick = slot => (SET()[slot === 'menu' ? 'bgmMenu' : 'bgmBattle']) || (slot === 'menu' ? 'bgm_menu' : 'bgm_battle');
+  const pick = slot => { const v = SET()[slot === 'menu' ? 'bgmMenu' : 'bgmBattle']; if (slot === 'menu') return !v || v === 'shuffle' ? (curMenu || nextMenu()) : v; return v || 'bgm_battle'; };
   let slot = null;
   const _mu = window.music;
-  window.music = music = function (id) { if (id === 'bgm_menu') { slot = 'menu'; id = pick('menu'); } else if (id === 'bgm_battle') { slot = 'battle'; id = pick('battle'); } else slot = null; return _mu(id); };
-  window.setBgm = function (which, id) { SET()[which === 'menu' ? 'bgmMenu' : 'bgmBattle'] = id; try { save(); } catch (e) {}
+  window.music = music = function (id) { if (id === 'bgm_menu') { if (slot !== 'menu') nextMenu(); slot = 'menu'; id = pick('menu'); } else if (id === 'bgm_battle') { slot = 'battle'; id = pick('battle'); } else slot = null; return _mu(id); };
+  window.setBgm = function (which, id) { SET()[which === 'menu' ? 'bgmMenu' : 'bgmBattle'] = id; try { save(); } catch (e) {} if (id === 'shuffle') id = nextMenu();
     // hear it right away: crossfade to the new choice (back to the right track when the screen changes)
     try { auInit(); } catch (e) {} _mu(id); };
   const _sh = settingsHTML;
   window.settingsHTML = settingsHTML = function () {
     const h = _sh.apply(this, arguments);
-    const sel = (which) => `<div class="opt"><span>${which === 'menu' ? 'Menu music' : 'Battle music'}</span><select class="bgmsel" onchange="setBgm('${which}',this.value)">${TRACKS.map(([id, n]) => `<option value="${id}" ${pick(which) === id ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
+    const sel = (which) => { const v = SET()[which === 'menu' ? 'bgmMenu' : 'bgmBattle'], cur = which === 'menu' ? (!v ? 'shuffle' : v) : (v || 'bgm_battle'); return `<div class="opt"><span>${which === 'menu' ? 'Menu music' : 'Battle music'}</span><select class="bgmsel" onchange="setBgm('${which}',this.value)">${which === 'menu' ? `<option value="shuffle" ${cur === 'shuffle' ? 'selected' : ''}>Shuffle (a new one each time)</option>` : ''}${TRACKS.map(([id, n]) => `<option value="${id}" ${cur === id ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`; };
     return h.replace(/<\/div>$/, sel('menu') + sel('battle') + '</div>');
   };
   const css = document.createElement('style');
@@ -736,7 +739,7 @@
   };
   function elementBurst(d) {
     const keys = Object.keys(EL), e = EL[keys[Math.random() * keys.length | 0]], x = d.x, y = d.y, cy = y - 38 * HS, R = 95, w = d.o, f = w.foe, keep = SRC; SRC = 'mirror';
-    try { boom(x, cy, 1.25); const b = booms[booms.length - 1]; if (b) { b.cols = e.cols; b.style = Math.random() * 8 | 0; } } catch (er) {}
+    try { boom(x, cy, 1.25); const b = booms[booms.length - 1]; if (b) { b.cols = e.cols.concat(e.cols); b.style = Math.random() * 8 | 0; }   /* the explosion drawer needs six colours: with three it threw every frame and froze the duel */ } catch (er) {}
     lights.push({ x, y: y + 6, r: 150, c: e.cols[1], t: 0, life: .6 }); shake = Math.max(shake, 12);
     inkRing(x, y, e.cols[1], 2, 10, R, .5); inkRing(x, y, e.cols[0], 1, 6, R * .6, .5);
     for (let i = 0; i < 26; i++) { const an = rnd(0, 6.283), rr = rnd(0, 30); fireFx.push({ x: x + Math.cos(an) * rr, y: cy + Math.sin(an) * rr * .7, vx: Math.cos(an) * rnd(40, 170), vy: Math.sin(an) * rnd(40, 170) - 50, t: 0, life: rnd(.3, .6), s: rnd(10, 18), seed: rnd(0, 99), el: e.fx === 'fire' ? undefined : e.fx, smoke: 0 }); }
@@ -850,9 +853,9 @@
 /* ---------------- emotes (F-492) ----------------
    Tap the face button in a duel to send one. The rival answers, and sometimes starts: after a big hit, a round win or loss. */
 (function () {
-  const EM = [['hi', '👋'], ['nice', '👍'], ['ha', '😆'], ['wow', '😮'], ['grr', '😤'], ['think', '🤔'], ['cry', '😭'], ['gg', '🤝']];
-  const REPLY = { hi: ['hi', 'hi', 'nice'], nice: ['nice', 'gg', 'ha'], ha: ['grr', 'ha', 'think'], wow: ['ha', 'nice', 'think'], grr: ['ha', 'think', 'grr'], think: ['think', 'ha'], cry: ['ha', 'nice', 'gg'], gg: ['gg', 'gg', 'nice'] };
-  const MOOD = { cocky: { ha: 3, grr: 1 }, calm: { think: 3, nice: 2 }, wild: { ha: 2, wow: 2 } };
+  const EM = [['happy', '😀'], ['tear', '🥲'], ['cry', '😭'], ['up', '👍'], ['down', '👎'], ['shock', '😱']];
+  const REPLY = { happy: ['happy', 'up', 'happy'], tear: ['up', 'happy', 'tear'], cry: ['happy', 'tear', 'up'], up: ['up', 'happy'], down: ['down', 'cry', 'happy', 'shock'], shock: ['happy', 'shock', 'up'] };
+  const MOOD = { cocky: { happy: 3, down: 1 }, calm: { up: 3, tear: 1 }, wild: { happy: 2, shock: 2 } };
   let bubbles = [], lastMine = -9, lastFoe = -9, hpPrev = null;
   const glyph = id => (EM.find(e => e[0] === id) || [0, id])[1];
   function say(w, id, txt) { if (!w || w.dead) return; bubbles = bubbles.filter(b => b.w !== w); bubbles.push({ w, e: id ? glyph(id) : null, txt: txt || null, t0: performance.now() }); try { sfx('ui_pick', { vol: .5 }); } catch (e) {} }
@@ -861,7 +864,7 @@
   function foeSay(id, delay) { if (now() - lastFoe < 2.2) return; lastFoe = now() + (delay || 0); setTimeout(() => { try { if (typeof ents !== 'undefined' && ents && ents[1] && running !== undefined && document.getElementById('battle').classList.contains('on')) say(ents[1], id); } catch (e) {} }, (delay || 0) * 1000); }
   const pickFor = list => { const mood = M && M.rival && MOOD[M.rival.mood]; if (mood && Math.random() < .4) { const ks = Object.keys(mood), tot = ks.reduce((a, k) => a + mood[k], 0); let r = Math.random() * tot; for (const k of ks) { r -= mood[k]; if (r <= 0) return k; } } return list[Math.random() * list.length | 0]; };
   window.sendEmote = function (id) { const row = document.getElementById('emoRow'); if (row) row.classList.remove('on'); if (now() - lastMine < 1.5 || typeof ents === 'undefined' || !ents || !ents[0]) return; lastMine = now(); say(ents[0], id);
-    if (Math.random() < .85) foeSay(pickFor(REPLY[id] || ['think']), rnd(.7, 1.6)); };
+    if (Math.random() < .85) foeSay(pickFor(REPLY[id] || ['happy']), rnd(.7, 1.6)); };
   // the button and its tray
   const host = document.getElementById('battle');
   if (host) { host.insertAdjacentHTML('beforeend', `<button id="emoBtn" aria-label="Emotes">😀</button><div id="emoRow">${EM.map(([id, g]) => `<button onclick="sendEmote('${id}')">${g}</button>`).join('')}</div>`);
@@ -876,14 +879,14 @@
   window.update = update = function (dt) { const r = _up.apply(this, arguments);
     try { if (typeof ents !== 'undefined' && ents && ents[1] && !ended && !window.ONB_ACTIVE) { const a = ents[0], b = ents[1];
       if (hpPrev && hpPrev.a === a && hpPrev.b === b) { const da = hpPrev.ha - a.hp, db = hpPrev.hb - b.hp;
-        if (da >= 16 && Math.random() < .35) foeSay(pickFor(['ha', 'nice', 'ha']), rnd(.3, .8));
-        else if (db >= 16 && Math.random() < .35) foeSay(pickFor(['wow', 'grr', 'think']), rnd(.3, .8)); }
+        if (da >= 16 && Math.random() < .35) foeSay(pickFor(['happy', 'up', 'happy']), rnd(.3, .8));
+        else if (db >= 16 && Math.random() < .35) foeSay(pickFor(['shock', 'down', 'tear']), rnd(.3, .8)); }
       hpPrev = { a, b, ha: a.hp, hb: b.hp }; } } catch (e) {}
     return r; };
   const _er = endRound;
-  window.endRound = endRound = function (winner) { try { if (!ended && !window.ONB_ACTIVE && typeof ents !== 'undefined' && ents && ents[1]) { const last = M && (M.score[winner] + 1 >= (typeof WIN !== 'undefined' ? WIN : 4)); if (winner === 'foe') say(ents[1], last ? 'gg' : pickFor(['ha', 'nice'])); else say(ents[1], last ? 'gg' : pickFor(['cry', 'grr', 'wow'])); } } catch (e) {} return _er.apply(this, arguments); };
+  window.endRound = endRound = function (winner) { try { if (!ended && !window.ONB_ACTIVE && typeof ents !== 'undefined' && ents && ents[1]) { const last = M && (M.score[winner] + 1 >= (typeof WIN !== 'undefined' ? WIN : 4)); if (winner === 'foe') say(ents[1], last ? 'up' : pickFor(['happy', 'up'])); else say(ents[1], last ? 'up' : pickFor(['cry', 'tear', 'shock'])); } } catch (e) {} return _er.apply(this, arguments); };
   const _sd = startDuel;
-  window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); bubbles = []; hpPrev = null; try { if (M && M.round === 1 && !M.rival && !window.ONB_ACTIVE && Math.random() < .5) foeSay('hi', 1.2); } catch (e) {} return r; };
+  window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); bubbles = []; hpPrev = null; try { if (M && M.round === 1 && !M.rival && !window.ONB_ACTIVE && Math.random() < .5) foeSay('happy', 1.2); } catch (e) {} return r; };
   // speech bubbles, drawn over everything
   const _rn = render;
   window.render = render = function () { const r = _rn.apply(this, arguments);
@@ -943,7 +946,7 @@
 (function () {
   const FINAL = 5;
   const _mu = window.music;
-  window.music = music = function (id) { try { if (id === 'bgm_battle' && typeof M !== 'undefined' && M && M.round >= FINAL && AU.man && AU.man.bgm_battle_final) return _mu('bgm_battle_final'); } catch (e) {} return _mu.apply(this, arguments); };
+  window.music = music = function (id) { try { if (id === 'bgm_battle' && typeof M !== 'undefined' && M && M.round >= FINAL && AU.man) { if (M.round >= 7 && AU.man.bgm_battle_finale) return _mu('bgm_battle_finale'); if (AU.man.bgm_battle_final) return _mu('bgm_battle_final'); } } catch (e) {} return _mu.apply(this, arguments); };
   const _sd = startDuel;
   window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); try { if (M && M.round >= FINAL) { music('bgm_battle'); if (M.round === FINAL && !M._finalSaid) { M._finalSaid = 1; setTimeout(() => { try { toast('Final stretch! Each draft now includes a counter card.'); } catch (e) {} }, 600); } } } catch (e) {} return r; };
   // one counter card per offer from round 5
@@ -970,3 +973,94 @@
   css.textContent = `.card .ctag{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font:10px 'Lilita One';letter-spacing:1px;padding:2px 8px;border-radius:8px;border:2px solid #000;background:linear-gradient(#ff8a96,#d63a4a);color:#fff;z-index:3;white-space:nowrap}`;
   document.head.appendChild(css);
 })();
+
+/* ---------------- options: one art style, and Reset progress with a confirm (F-501, F-502) ---------------- */
+(function () {
+  try { ART_STYLE = 'hd'; localStorage.setItem('sb.artStyle2', 'hd'); } catch (e) {}
+  window.askReset = function () { $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Reset progress?</div><div class="ssub" style="margin:0">This wipes your level, trophies, gold, unlocked abilities and cosmetics on this device. It can't be undone.</div><button class="upbtn" style="background:linear-gradient(#ff8a96,#d63a4a)" onclick="doReset()">Yes, erase everything</button><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="openOptions()">Cancel</button>`; $('sheet').classList.add('on'); };
+  window.doReset = function () { try { localStorage.removeItem(SAVE); } catch (e) {} location.reload(); };
+  const _sh = settingsHTML;
+  window.settingsHTML = settingsHTML = function () { const h = _sh.apply(this, arguments), inMatch = document.getElementById('pause') && document.getElementById('pause').classList.contains('on'); return inMatch ? h : h.replace(/<\/div>$/, '<button class="hbtn out" style="width:100%;margin-top:8px;color:#ff9aa6;border-color:#d63a4a" onclick="askReset()">Reset progress</button></div>'); };
+})();
+
+/* ---------------- VFX pass (F-508 to F-511) ----------------
+   Live effects: craters keep smoking, scorches keep glowing, frost keeps misting for the rest of the round they were
+   made in; at the next round they go quiet and only the scar stays. Debris from broken summons lies on the field
+   until the next round. Grand Bisection leaves a blood splatter. Ricochet runes spark on every bounce. */
+(function () {
+  let emit = [], debris = [];
+  const LIVE = {
+    ejecta:     o => ({ kind: 'smoke', r: (o && o.r) || 50, heavy: 1, embers: 1 }),
+    scorch:     o => ({ kind: 'smoke', r: 14 * ((o && o.s) || 1), embers: ((o && o.s) || 1) >= 1.4 ? 1 : 0 }),
+    firering:   o => ({ kind: 'ring', r: (o && o.r) || 60 }),
+    lich:       o => ({ kind: 'wisp', r: 10 * ((o && o.s) || 1) }),
+    frostcrack: o => ({ kind: 'mist', r: (o && o.r) || 24 }),
+    etch:       o => ({ kind: 'fume', r: (o && o.r) || 20 }),
+  };
+  const _sc = scar;
+  window.scar = scar = function (k, x, y, o) { const r = _sc.apply(this, arguments);
+    try { if (LIVE[k] && typeof ended !== 'undefined' && !ended && typeof running !== 'undefined' && document.getElementById('battle').classList.contains('on')) {
+      const e = LIVE[k](o); if (e.r >= 9 && !emit.some(q => q.kind === e.kind && Math.hypot(q.x - x, q.y - y) < Math.max(14, e.r * .45))) { if (emit.length > 36) emit.splice(emit.findIndex(q => !q.heavy), 1); emit.push(Object.assign(e, { x, y, t: 0, acc: Math.random() })); } } } catch (er) {}
+    return r; };
+  window.addEmitter = (x, y, kind, r, extra) => { if (emit.some(q => q.kind === kind && Math.hypot(q.x - x, q.y - y) < 30)) return; if (emit.length > 40) emit.splice(Math.max(0, emit.findIndex(q => !q.heavy)), 1); emit.push(Object.assign({ x, y, kind, r, t: 0, acc: 0 }, extra || {})); };
+  function emitTick(dt) {
+    for (const e of emit) { e.t += dt; const fade = Math.max(.35, 1 - e.t / 40);   // thins out a little over a long round, never stops
+      const rate = (e.kind === 'smoke' ? (e.heavy ? 5 : 1.6) : e.kind === 'ring' ? 5 : e.kind === 'mist' ? 2.2 : e.kind === 'fume' ? 2 : 1.2) * fade;
+      e.acc += rate * dt; while (e.acc >= 1) { e.acc -= 1; const R = e.r;
+        if (e.kind === 'smoke') { const s = Math.min(2.2, R / 30); P({ x: e.x + rnd(-R * .35, R * .35), y: e.y + rnd(-R * .15, R * .12), vx: rnd(-10, 14), vy: rnd(-42, -18), color: ['#3b3346', '#4d4458', '#2e2838', '#5a5066'][Math.random() * 4 | 0], size: rnd(4, 8) * (e.heavy ? 1.3 : .8) * Math.max(.7, s * .6), life: rnd(1.4, 2.6), glow: false, shrink: false, grow: 1.9, drag: .88, fade: .6 });
+          if (e.embers && Math.random() < .45) { if (Math.random() < .5) decals.push({ k: 'ember', x: e.x + rnd(-R * .5, R * .5), y: e.y + rnd(-R * .25, R * .25), t: 0, life: rnd(1.6, 3), s: rnd(.6, 1.1) }); else P({ x: e.x + rnd(-R * .3, R * .3), y: e.y, vx: rnd(-14, 14), vy: rnd(-70, -30), color: Math.random() < .5 ? '#ffb347' : '#ff5a1f', size: rnd(1.4, 2.6), life: rnd(.6, 1.2) }); } }
+        else if (e.kind === 'ring') { const a = rnd(0, 6.283); if (Math.random() < .6) decals.push({ k: 'ember', x: e.x + Math.cos(a) * R, y: e.y + Math.sin(a) * R * .55, t: 0, life: rnd(1.6, 3), s: rnd(.6, 1.1) }); else P({ x: e.x + Math.cos(a) * R, y: e.y + Math.sin(a) * R * .55, vx: rnd(-8, 8), vy: rnd(-36, -14), color: '#3b3346', size: rnd(3, 5), life: rnd(1, 1.8), glow: false, shrink: false, grow: 1.7, drag: .88 }); }
+        else if (e.kind === 'wisp') P({ x: e.x + rnd(-4, 4), y: e.y, vx: rnd(-6, 6), vy: rnd(-34, -16), color: '#6a6078', size: rnd(2.5, 4.5), life: rnd(1, 1.7), glow: false, shrink: false, grow: 1.6, drag: .9 });
+        else if (e.kind === 'mist') P({ x: e.x + rnd(-R, R), y: e.y + rnd(-R * .4, R * .4), vx: rnd(-16, 16), vy: rnd(-12, -3), color: Math.random() < .5 ? '#d8f6ff' : '#ffffff', size: rnd(3, 6), life: rnd(1.2, 2.2), glow: false, shrink: false, grow: 1.5, drag: .92, fade: .5 });
+        else if (e.kind === 'fume') P({ x: e.x + rnd(-R * .7, R * .7), y: e.y + rnd(-R * .3, R * .3), vx: rnd(-6, 6), vy: rnd(-30, -12), color: Math.random() < .5 ? '#9fd04a' : '#d8f070', size: rnd(2, 4), life: rnd(.9, 1.6), glow: false, grow: 1.4, drag: .9 });
+        else if (e.kind === 'violet') P({ x: e.x + rnd(-R * .5, R * .5), y: e.y + rnd(-R * .2, R * .2), vx: rnd(-10, 10), vy: rnd(-40, -16), color: ['#3a1470', '#6a3fd6', '#1a0a30'][Math.random() * 3 | 0], size: rnd(4, 7), life: rnd(1.3, 2.2), glow: false, shrink: false, grow: 1.8, drag: .88 }); } }
+  }
+  // debris: small pieces thrown from a broken summon; they land and lie there until the next round
+  const DEB = { rock: ['#a8a29a', '#7a746c', '#5a554e'], bone: ['#f2ecd8', '#d8cfb4', '#b8ad8e'], wood: ['#8a5a2b', '#6b4420', '#a8703a'], copper: ['#e0935a', '#b86a32', '#ffd0a0'], glass: ['#f0d2ff', '#b06bff', '#ffffff'] };
+  function scatter(x, y, kind, n, sz) { for (let i = 0; i < n; i++) { if (debris.length > 160) debris.shift(); const a = rnd(0, 6.283), v = rnd(30, 150); debris.push({ x, y, z: rnd(8, 34), vx: Math.cos(a) * v, vy: Math.sin(a) * v * .6, vz: rnd(60, 190), rot: rnd(0, 6.3), vr: rnd(-10, 10), kind, c: DEB[kind][i % 3], sz: rnd(.6, 1.25) * (sz || 3), sh: Math.random() * 3 | 0, land: 0 }); } }
+  window.scatterDebris = scatter;
+  function debTick(dt) { for (const d of debris) { if (d.land) continue; d.x += d.vx * dt; d.y += d.vy * dt; d.z += d.vz * dt; d.vz -= 560 * dt; d.rot += d.vr * dt; if (d.z <= 0) { if (d.vz < -130 && !d.b) { d.b = 1; d.z = 0; d.vz = -d.vz * .3; d.vx *= .5; d.vy *= .5; } else { d.z = 0; d.land = 1; d.x = clamp(d.x, F.x0, F.x1); d.y = clamp(d.y, F.y0, F.y1); } } } }
+  function debDraw(x) { for (const d of debris) { x.save(); x.translate(d.x, d.y - d.z); if (d.land) { x.fillStyle = 'rgba(0,0,0,.25)'; x.beginPath(); x.ellipse(1, 1.5, d.sz * 1.1, d.sz * .45, 0, 0, 7); x.fill(); } x.rotate(d.rot); x.fillStyle = d.c; x.strokeStyle = '#07020d'; x.lineWidth = 1.1; const s = d.sz; x.beginPath();
+      if (d.kind === 'bone') { x.lineCap = 'round'; x.lineWidth = s * .7 + 1.6; x.strokeStyle = '#07020d'; x.moveTo(-s * 1.4, 0); x.lineTo(s * 1.4, 0); x.stroke(); x.strokeStyle = d.c; x.lineWidth = s * .7; x.stroke(); x.beginPath(); x.arc(-s * 1.4, 0, s * .55, 0, 7); x.arc(s * 1.4, 0, s * .55, 0, 7); x.fill(); }
+      else if (d.kind === 'wood') { x.rect(-s * 1.6, -s * .3, s * 3.2, s * .6); x.fill(); x.stroke(); }
+      else if (d.kind === 'glass' || d.sh === 0) { x.moveTo(0, -s * 1.2); x.lineTo(s * .8, s * .5); x.lineTo(-s * .7, s * .7); x.closePath(); x.fill(); x.stroke(); }
+      else { x.moveTo(-s, -s * .2); x.lineTo(-s * .2, -s * .9); x.lineTo(s, -s * .3); x.lineTo(s * .7, s * .7); x.lineTo(-s * .6, s * .8); x.closePath(); x.fill(); x.stroke(); }
+      x.restore(); } }
+  // what breaks into what
+  const dieHook = (nm, fn) => { const f = window[nm]; if (typeof f !== 'function') return; const g = function (e) { const alive = e && (e.hp > 0) && !e.gone; const r = f.apply(this, arguments); try { if (alive && (e.hp <= 0 || e.gone) && !ended) fn(e); } catch (er) {} return r; }; window[nm] = g; try { eval(nm + ' = g'); } catch (er) {} };
+  dieHook('hurtGolem', g => { scatter(g.x, g.y, 'rock', g.mini ? 6 : 14, g.mini ? 2.4 : 3.6); scar('pebbles', g.x, g.y, { r: 34 }); });
+  dieHook('hurtArcher', a => scatter(a.x, a.y, 'wood', 6, 2.6));
+  dieHook('hurtTotem', t => scatter(t.x, t.y, 'copper', 7, 2.4));
+  dieHook('hurtZ', z => { if (!z.beast) scatter(z.x, z.y, 'bone', 4, 2.2); });
+  dieHook('hurtDecoy', d => scatter(d.x, d.y, 'glass', 8, 2.6));
+  // Grand Bisection: blood under and behind the caster it hits, different every time
+  window.bloodSplat = function (f, a) { if (typeof M === 'undefined' || !M) return; M.splats = M.splats || []; const ca = Math.cos(a), sa = Math.sin(a), blobs = [];
+    const n1 = 5 + (Math.random() * 4 | 0); for (let i = 0; i < n1; i++) blobs.push({ x: rnd(-14, 14), y: rnd(-6, 6), rx: rnd(7, 17), ry: rnd(3.5, 8), rot: rnd(0, 3.14) });                      // the pool beneath them
+    const n2 = 9 + (Math.random() * 9 | 0), spread = rnd(.35, .8), reach = rnd(60, 130); for (let i = 0; i < n2; i++) { const an = rnd(-spread, spread), d = rnd(14, reach) * (1 - Math.abs(an) * .5), dx = Math.cos(an) * d, dy = Math.sin(an) * d; blobs.push({ x: ca * dx - sa * dy, y: (sa * dx + ca * dy) * .6, rx: rnd(4, 12) * (1 - d / (reach * 1.4)) + 2, ry: rnd(1.4, 3.4), rot: Math.atan2(sa * .6, ca) + an }); }   // the spray thrown along the cut
+    const n3 = 10 + (Math.random() * 10 | 0); for (let i = 0; i < n3; i++) { const an = rnd(0, 6.283), d = rnd(18, 70); blobs.push({ x: Math.cos(an) * d, y: Math.sin(an) * d * .5, rx: rnd(1, 3), ry: rnd(1, 2.4), rot: 0 }); }               // stray drops
+    M.splats.push({ x: f.x, y: f.y + 4, blobs, rd: M.round, t: 0 }); if (M.splats.length > 14) M.splats.shift();
+    for (let i = 0; i < 26; i++) { const an = a + rnd(-.7, .7), v = rnd(120, 420); P({ x: f.x, y: f.y - 40 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .7 - rnd(20, 120), color: i % 3 ? '#a8101f' : '#5a0610', size: rnd(2, 4.5), life: rnd(.4, .8), grav: 620, glow: false }); } };
+  function splatDraw(x) { if (typeof M === 'undefined' || !M || !M.splats) return; for (const s of M.splats) { s.t += 1 / 60; const old = s.rd !== M.round, grow = Math.min(1, s.t * 5); x.save(); x.translate(s.x, s.y); x.globalAlpha = old ? .36 : .86; x.fillStyle = old ? '#4a4347' : '#7a0c18';
+      for (const b of s.blobs) { x.beginPath(); x.ellipse(b.x * grow, b.y * grow, b.rx * grow, b.ry * grow, b.rot, 0, 7); x.fill(); }
+      if (!old) { x.globalAlpha = .5; x.fillStyle = '#c21a2c'; for (let i = 0; i < Math.min(4, s.blobs.length); i++) { const b = s.blobs[i]; x.beginPath(); x.ellipse(b.x * grow - 2, b.y * grow - 1, b.rx * .45 * grow, b.ry * .4 * grow, b.rot, 0, 7); x.fill(); } }
+      x.restore(); } }
+  // hooks
+  const _dd = drawDecals;
+  window.drawDecals = drawDecals = function (x) { const r = _dd.apply(this, arguments); if (x !== ctx) return r; try { splatDraw(x); debDraw(x); } catch (e) {} return r; };
+  const _up = update;
+  window.update = update = function (dt) { const r = _up.apply(this, arguments);
+    try { if (!ended) emitTick(dt); debTick(dt);
+      // ricochet runes: sparks every time one bounces off the arena edge
+      if (typeof runes !== 'undefined') for (const q of runes) { if (!(q.life > 0)) continue; if (q._vx !== undefined && ((q._vx > 0) !== (q.vx > 0) || (q._vy > 0) !== (q.vy > 0)) && (q.x <= F.x0 + 14 || q.x >= F.x1 - 14 || q.y <= F.y0 + 60 || q.y >= F.y1 - 2)) { const col = q.orb ? ['#f0d2ff', '#b06bff', '#fff'] : ['#ffffff', '#f0d2ff', '#ffd45e']; for (let i = 0; i < 12; i++) { const an = Math.atan2(q.vy, q.vx) + rnd(-1.1, 1.1), v = rnd(90, 300); P({ x: q.x, y: q.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v, color: col[i % 3], size: rnd(1.5, 3), life: rnd(.25, .55), grav: 300 }); } inkRing(q.x, q.y, '#b06bff', 1, 4, 20, .5); } q._vx = q.vx; q._vy = q.vy; }
+    } catch (e) {}
+    return r; };
+  const _sd = startDuel;
+  window.startDuel = startDuel = function () { emit = []; debris = []; return _sd.apply(this, arguments); };   // a new round: everything live goes quiet, the field is swept
+  window.VFX2_DEBUG = { get emit() { return emit; }, get debris() { return debris; } };
+})();
+
+/* burn trenches (Spell Cannon, Collapse) keep smouldering for the rest of the round */
+(function () { if (typeof beamScar !== 'function') return; const _bs = beamScar;
+  window.beamScar = beamScar = function (O, E, wide, sc) { const d = _bs.apply(this, arguments);
+    try { if (!ended && window.addEmitter && d && d.L > 30 && (sc === undefined || sc >= 1)) { const n = Math.max(1, Math.min(4, d.L / 110 | 0)); for (let i = 0; i < n; i++) { const u = (i + .5) / n; addEmitter(d.x0 + (d.x1 - d.x0) * u, d.y0 + (d.y1 - d.y0) * u, 'smoke', 16, { embers: 1 }); } } } catch (e) {}
+    return d; }; })();

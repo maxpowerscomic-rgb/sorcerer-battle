@@ -852,5 +852,49 @@
   "files": [
    "audio/bgm_battle_final.mp3"
   ]
+ },
+ "bgm_battle_finale": {
+  "kind": "music",
+  "prompt": "Original instrumental final-round anime battle climax theme, no holding back. Explosive grunge rock fused with electronic production: huge distorted down-tuned guitar riffs, screaming lead guitar hooks, pounding live rock drums with double kick, booming sub 808 bass drops and slides, gritty synth arpeggios and risers, fast around 170 BPM. It opens already at full power, then keeps escalating: key lifts, gang-shout style guitar stabs, a soaring heroic lead melody at the peak, relentless exhilarating last-stand energy, the payoff after a long tense fight. Instrumental only, no vocals, loopable with no fade.",
+  "ms": 90000,
+  "group": "music",
+  "vol": 0.8,
+  "loop": true,
+  "files": [
+   "audio/bgm_battle_finale.mp3"
+  ]
+ },
+ "bgm_menu_tavern": {
+  "kind": "music",
+  "prompt": "Original cozy fantasy tavern menu music. Warm plucked lute and nylon guitar, a playful wooden flute melody, soft hand drum and tambourine, gentle upright bass, a little fiddle. Relaxed medium tempo, friendly and welcoming, hearthside evening mood. Instrumental only, no vocals, loopable with no ending.",
+  "ms": 90000,
+  "group": "music",
+  "vol": 0.78,
+  "loop": true,
+  "files": [
+   "audio/bgm_menu_tavern.mp3"
+  ]
+ },
+ "bgm_menu_lofi": {
+  "kind": "music",
+  "prompt": "Original lo-fi hip-hop menu music with a mystical feel. Dusty mellow drum loop, warm vinyl crackle, soft Rhodes chords, a sleepy music-box and celesta melody, round sub bass, distant chimes. Slow and chill around 78 BPM, late-night study mood, calm and cosy. Instrumental only, no vocals, loopable with no ending.",
+  "ms": 90000,
+  "group": "music",
+  "vol": 0.78,
+  "loop": true,
+  "files": [
+   "audio/bgm_menu_lofi.mp3"
+  ]
+ },
+ "bgm_menu_synth": {
+  "kind": "music",
+  "prompt": "Original bright retro synthwave menu music for a wizard game. Sparkling arpeggiated synths, punchy gated-reverb drums, a driving but relaxed bass line, a hopeful soaring lead melody, shimmering pads. Medium tempo around 104 BPM, adventurous and optimistic, neon starlit night mood. Instrumental only, no vocals, loopable with no ending.",
+  "ms": 90000,
+  "group": "music",
+  "vol": 0.78,
+  "loop": true,
+  "files": [
+   "audio/bgm_menu_synth.mp3"
+  ]
  }
 }

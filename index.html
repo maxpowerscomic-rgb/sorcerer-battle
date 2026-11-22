@@ -780,7 +780,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
   <div class="upm" id="upm"><div class="upcard"><div class="kicker" id="upK">Spell upgraded!</div><div class="upic"><div class="burst"></div><img id="upImg"></div><div class="h1" id="upName"></div><div class="uplv" id="upLv"></div><div class="sub" id="upDesc"></div><div class="upstats" id="upStats"></div><button class="btn" id="upOk" style="width:100%;margin-top:4px" onclick="$('upm').classList.remove('on');nextModal()">Awesome!</button></div></div>
   <div class="toast" id="toast"></div>
 </div>
-<p class="notes">Mockup. Progress saves in this browser. Purchases with real money are turned off. <a href="#" style="color:#b9a6ee" onclick="localStorage.removeItem(SAVE);location.reload()">Reset progress</a></p>
+
 
 <script src="wizard-data.js"></script>
 <script src="wizard-look.js"></script>
@@ -860,7 +860,7 @@ function roundCurtain(won,mid){sfx('ui_curtain');const c=$('curtain'),fw=M.lastW
 const QUIT_LOSS=18;
 const SET=()=>(PR.settings=Object.assign({slowmo:true,shake:true,music:70,sfx:80},PR.settings||{}));
 function setOpt(k,v){SET()[k]=v;save();if(typeof auVol==='function')auVol();}
-function settingsHTML(){const o=SET();return `<div class="opts"><button class="hbtn out" style="width:100%;margin-bottom:6px" onclick="replayTutorial()">Replay tutorial</button><div class="opt"><span>Art style</span><span style="display:flex;gap:4px"><button class="hbtn ${ART_STYLE==='v1'?'':'out'}" style="padding:4px 8px" onclick="setArtStyle('v1')">Classic</button><button class="hbtn ${ART_STYLE==='v4'?'':'out'}" style="padding:4px 8px" onclick="setArtStyle('v4')">Refined</button><button class="hbtn ${ART_STYLE==='v3'?'':'out'}" style="padding:4px 8px" onclick="setArtStyle('v3')">Vector</button><button class="hbtn ${ART_STYLE==='hd'?'':'out'}" style="padding:4px 8px" onclick="setArtStyle('hd')">New</button></span></div><label class="opt"><span>Slow-motion moments</span><input type="checkbox" ${o.slowmo?'checked':''} onchange="setOpt('slowmo',this.checked)"><i></i></label><label class="opt"><span>Screen shake</span><input type="checkbox" ${o.shake?'checked':''} onchange="setOpt('shake',this.checked)"><i></i></label><div class="opt"><span>Music</span><input type="range" min="0" max="100" value="${o.music}" oninput="setOpt('music',+this.value)"></div><div class="opt"><span>Sound effects</span><input type="range" min="0" max="100" value="${o.sfx}" oninput="setOpt('sfx',+this.value)"></div></div>`}
+function settingsHTML(){const o=SET();return `<div class="opts"><button class="hbtn out" style="width:100%;margin-bottom:6px" onclick="replayTutorial()">Replay tutorial</button><label class="opt"><span>Slow-motion moments</span><input type="checkbox" ${o.slowmo?'checked':''} onchange="setOpt('slowmo',this.checked)"><i></i></label><label class="opt"><span>Screen shake</span><input type="checkbox" ${o.shake?'checked':''} onchange="setOpt('shake',this.checked)"><i></i></label><div class="opt"><span>Music</span><input type="range" min="0" max="100" value="${o.music}" oninput="setOpt('music',+this.value)"></div><div class="opt"><span>Sound effects</span><input type="range" min="0" max="100" value="${o.sfx}" oninput="setOpt('sfx',+this.value)"></div></div>`}
 function openPause(){paused=true;const r=M.mode==='ranked';$('pzBody').innerHTML=`<div class="h1">Paused</div><div class="sub">${r?'Ranked':'Casual'} · vs ${M.foeName} · ${M.score.me}–${M.score.foe}</div>
  ${settingsHTML()}<button class="btn" onclick="closePause()">Resume</button><button class="btn pz2" onclick="askQuit('restart')">Restart Match</button><button class="btn pz3" onclick="askQuit('quit')">Quit Match</button>`;$('pause').classList.add('on');}
 function closePause(){$('pause').classList.remove('on');paused=false;last=performance.now();}
@@ -986,7 +986,8 @@ function startDuel(){M.rc={};fireFx=[];firerings=[];M.rdmg={me:{},foe:{}};beamTr
   $(w.me?'pipM':'pipF').innerHTML=[...Array(WIN).keys()].map(i=>`<i class="${i<M.score[w.side]?'w':''}"></i>`).join('')});
  drawAva($('avaM'),ents[0]);drawAva($('avaF'),ents[1]);
  if(!running){running=true;last=performance.now();requestAnimationFrame(loop);}}
-function loop(now){if(!running)return;let dt=Math.min(.033,(now-last)/1000);last=now;if(paused){requestAnimationFrame(loop);return;}dt*=(SET().slowmo?slow:1);T+=dt;update(dt);render();requestAnimationFrame(loop);}
+function loop(now){if(!running)return;let dt=Math.min(.033,(now-last)/1000);last=now;if(paused){requestAnimationFrame(loop);return;}dt*=(SET().slowmo?slow:1);T+=dt;/* one bad frame must never freeze the duel: log it and keep going */try{update(dt);}catch(e){loopErr(e,'update');}try{render();}catch(e){loopErr(e,'render');try{ctx.setTransform(dpr,0,0,dpr,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';}catch(e2){}}requestAnimationFrame(loop);}
+let LOOP_ERRS=[];function loopErr(e,where){if(LOOP_ERRS.length<20)LOOP_ERRS.push(where+': '+(e&&e.message)+' | '+String(e&&e.stack).split('\n').slice(0,3).join(' > '));if(LOOP_ERRS.length===1)console.error('[loop]',where,e);}
 
 function P(o){parts.push(Object.assign({life:.6,size:4,grav:0,drag:.9,glow:true,shrink:true},o,{max:o.life||.6}))}
 function burst(x,y,n,cols,sp=120,size=5,life=.6,grav=0){for(let i=0;i<n;i++){const a=rnd(0,6.28),v=rnd(.2,1)*sp;P({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,color:cols[i%cols.length],size:rnd(size*.5,size),life:rnd(life*.5,life),grav})}}
@@ -1497,7 +1498,7 @@ function clash(a,b){if(!(a.life>0&&b.life>0))return;const ka=clashKind(a),kb=cla
  for(const side of ents)for(const c of enemyCreatures(side))if(Math.hypot(c.e.x-gx,(c.e.y-gy)*1.3)<R){const dd=Math.hypot(c.e.x-gx,c.e.y-gy)||1;hurtCreature(c.e,c.k,total*.5,'fire');if(c.k==='z'||c.k==='g'){c.e.x=clamp(c.e.x+(c.e.x-gx)/dd*40,F.x0,F.x1);c.e.y=clamp(c.e.y+(c.e.y-gy)/dd*40,F.y0,F.y1);}}
  SRC=SV;shake=Math.max(shake,16);slow=.15;setTimeout(()=>{if(!ended)slow=1},260);decals.push({k:'char',x,y:gy,t:0,life:16,s:1.8});}
 /* 8 explosion silhouettes (style 0 = the original lobed cloud) */
-function drawBoomStyle(x,b){const f=b.t/b.life,g=Math.min(1,b.t/.12),E=1-Math.pow(1-g,3),R=46*b.sc,c=b.cols||['#ffd45e','#ff7a2a','#fff3b0','#ffffff'],a=f>.6?1-(f-.6)/.4:1;if(b.t<0)return;x.save();x.translate(b.x,b.y);x.globalAlpha=a;x.lineJoin='round';
+function drawBoomStyle(x,b){const f=b.t/b.life,g=Math.min(1,b.t/.12),E=1-Math.pow(1-g,3),R=46*b.sc,c=(b.cols||[]).filter(Boolean).concat(['#ffd45e','#ff7a2a','#fff3b0','#ffffff','#ffd45e','#ff7a2a','#fff3b0','#ffffff']),a=f>.6?1-(f-.6)/.4:1;if(b.t<0)return;x.save();x.translate(b.x,b.y);x.globalAlpha=a;x.lineJoin='round';
  const ink=(lw=3)=>{x.strokeStyle='#000';x.lineWidth=lw;x.stroke();};
  const st=b.style,rnd2=i=>(Math.sin(b.seed*7+i*12.9)+1)/2;
  if(st===1){ // shockwave ring + starburst core
@@ -1950,15 +1951,15 @@ function upgrade(k){if(!canUp(k)||upBusy)return;sfx('ui_upgrade');upBusy=1;const
 /* shop */
 function giveCards(n){const got={};for(let i=0;i<n;i++){const un=unlockedSpells(),k=un[Math.random()*un.length|0];got[k]=(got[k]||0)+1;PR.spells[k].cards+=1}return got}
 function dealDay(){const d=new Date().toDateString();if(PR.dealDay!==d){PR.dealDay=d;PR.deals={};PR.dealRefreshes=0;PR.dealSeed=(Math.random()*1e9)|0;save();}}
-function refreshCost(){return 50*Math.pow(2,PR.dealRefreshes||0)}
+function refreshCost(){return 25*Math.pow(2,PR.dealRefreshes||0)}
 function refreshDeals(){const c=refreshCost();if(PR.coins<c)return toast('Not enough coins');PR.coins-=c;PR.dealRefreshes=(PR.dealRefreshes||0)+1;PR.dealSeed=(Math.random()*1e9)|0;PR.deals={};save();refreshMeta();sfx('ui_deal');toast('New deals!');renderShop();}
 function renderShop(){dealDay();const un=unlockedSpells();let sd=PR.dealSeed||1;const rr=()=>{sd=(sd*16807)%2147483647;return sd/2147483647};const pool=un.slice().sort(()=>rr()-.5);const pick=i=>pool[i%pool.length];
- const deals=[{k:pick(0),q:5,c:120},{k:pick(1),q:5,c:120},{k:pick(2),q:3,c:200}];
+ const deals=[{k:pick(0),q:5,c:60},{k:pick(1),q:5,c:60},{k:pick(2),q:3,c:100}];
  {const now=new Date(),mid=new Date(now);mid.setHours(24,0,0,0);const ms=mid-now,h=Math.floor(ms/36e5),m=Math.floor(ms%36e5/6e4);const c=refreshCost();$('dealTm').innerHTML=`Resets in ${h}h ${m}m <button class="dref" ${PR.coins<c?'disabled':''} onclick="refreshDeals()">↻ <span class="ci coin-i"></span>${c}</button>`;}
  $('deals').innerHTML=deals.map((d,i)=>{const sold=PR.deals[i];return `<div class="deal ${sold?'sold':''}"><img src="${ICON[d.k]}"><div class="q">×${d.q}</div><button class="price" ${sold||PR.coins<d.c?'disabled':''} onclick="buyDeal(${i},'${d.k}',${d.q},${d.c})">${sold?'Sold':`<span class="ci coin-i"></span>${d.c}`}</button></div>`}).join('');
- $('chests').innerHTML=[{n:'Magic Chest',g:60,cards:8,c:['#b47bff','#5b2fb8'],bg:'#6a3fc0'},{n:'Arcane Chest',g:150,cards:24,c:['#ff7ad0','#a8176f'],bg:'#a8176f'}].map(c=>`<div class="chest" style="--c:${c.bg}">${chestSVG(c.c[0],c.c[1])}<div class="nm">${c.n}</div><small>${c.cards} skill points</small><button class="price gp" ${PR.gems<c.g?'disabled':''} onclick="buyChest('${c.n}',${c.g},${c.cards})"><span class="ci">${SVG.gem}</span>${c.g}</button></div>`).join('');
+ $('chests').innerHTML=[{n:'Magic Chest',g:30,cards:8,c:['#b47bff','#5b2fb8'],bg:'#6a3fc0'},{n:'Arcane Chest',g:75,cards:24,c:['#ff7ad0','#a8176f'],bg:'#a8176f'}].map(c=>`<div class="chest" style="--c:${c.bg}">${chestSVG(c.c[0],c.c[1])}<div class="nm">${c.n}</div><small>${c.cards} skill points</small><button class="price gp" ${PR.gems<c.g?'disabled':''} onclick="buyChest('${c.n}',${c.g},${c.cards})"><span class="ci">${SVG.gem}</span>${c.g}</button></div>`).join('');
  $('gemPacks').innerHTML=[[80,'$0.99',1,''],[500,'$4.99',3,'POPULAR'],[1200,'$9.99',5,'+20%']].map(([q,p,n,t])=>`<div class="pack">${t?`<div class="tagx">${t}</div>`:''}<div class="gems">${SVG.gem.repeat(n)}</div><div class="q">${fmt(q)}</div><button class="price" onclick="toast('Real-money purchases are off in this mockup')">${p}</button></div>`).join('');
- $('coinPacks').innerHTML=[[500,30],[1500,80],[5000,240]].map(([q,g])=>`<div class="pack"><div class="gems">${'<span class="ci coin-i" style="width:30px;height:30px;margin:0 -6px"></span>'.repeat(q>=5000?4:q>=1500?3:2)}</div><div class="q">${fmt(q)}</div><button class="price gp" ${PR.gems<g?'disabled':''} onclick="buyCoins(${q},${g})"><span class="ci">${SVG.gem}</span>${g}</button></div>`).join('');}
+ $('coinPacks').innerHTML=[[500,15],[1500,40],[5000,120]].map(([q,g])=>`<div class="pack"><div class="gems">${'<span class="ci coin-i" style="width:30px;height:30px;margin:0 -6px"></span>'.repeat(q>=5000?4:q>=1500?3:2)}</div><div class="q">${fmt(q)}</div><button class="price gp" ${PR.gems<g?'disabled':''} onclick="buyCoins(${q},${g})"><span class="ci">${SVG.gem}</span>${g}</button></div>`).join('');}
 function buyDeal(i,k,q,c){if(PR.coins<c||PR.deals[i])return;PR.coins-=c;PR.deals[i]=1;PR.spells[k].cards+=q;toast(`+${q} ${SP[k].n} skill points`);refreshMeta();}
 function buyCoins(q,g){if(PR.gems<g)return;PR.gems-=g;PR.coins+=q;toast('+'+fmt(q)+' coins');refreshMeta();}
 function buyChest(n,g,cards){if(PR.gems<g)return;PR.gems-=g;const got=giveCards(cards);refreshMeta();openChestEvent(n,got,n.startsWith('Arcane')?['#ff7ad0','#a8176f']:['#b47bff','#5b2fb8']);return;
