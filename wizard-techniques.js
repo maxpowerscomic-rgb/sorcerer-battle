@@ -119,17 +119,19 @@
   }
   /* Unrestrained Collapse: the singularity bursts into a violet sphere that erases everything in it, caster included */
   let pblasts = [];
-  function unboundBlast(c) {
-    const w = c.o, f = w.foe, R = 125, dmg = c.dmg * 1.8; SRC = 'polarity';
+  function unboundBlast(c, neutral) {   // neutral: set off by a Draw orb meeting a Repel orb, so it belongs to nobody and hurts everyone inside
+    const w = c.o, f = w.foe, R = 125, dmg = neutral ? c.dmg : c.dmg * 1.8; SRC = 'polarity';
     pblasts.push({ x: c.x, y: c.y - 36 * HS, r0: performance.now(), R, seed: Math.random() * 99 });
     shake = Math.max(shake, 26); slow = Math.min(slow, .05); setTimeout(() => { if (!ended) slow = 1; }, 260);
-    text(c.x, c.y - 120 * HS, 'UNRESTRAINED', '#e8d8ff', true); try { sfx('shatter', { x: c.x }); } catch (e) {}
+    text(c.x, c.y - 120 * HS, neutral ? 'COLLAPSE!' : 'UNRESTRAINED', '#e8d8ff', true); try { sfx('shatter', { x: c.x }); if (neutral) sfx('boom', { x: c.x, vol: 1.1 }); } catch (e) {}
     const inR = e => Math.hypot(e.x - c.x, (e.y - c.y) * 1.2) < R;
     if (!f.dead && !ghosted(f) && inR(f)) { const d = Math.hypot(f.x - c.x, f.y - c.y) || 1; damage(f, dmg, (f.x - c.x) / d * 700, (f.y - c.y) / d * 700, '#e8d8ff'); }
     for (const e of enemyCreatures(w)) if (e.e.x !== undefined && inR(e.e)) hurtCreature(e.e, e.k, dmg, 'arcane');
+    if (neutral) for (const e of enemyCreatures(f)) if (e.e.x !== undefined && inR(e.e)) hurtCreature(e.e, e.k, dmg, 'arcane');
     for (const wl of walls) for (const cr of wl.cr) if (!cr.gone && inR(cr)) { cr.gone = 1; const live = wl.cr.filter(q => !q.gone).length; wl.hp = live ? Math.min(wl.hp, wl.max * live / wl.cr.length) : 0; }
     // the caster feels it too: full damage inside the blast, a 30% backlash from anywhere else
-    if (!w.dead) { const keep = w.shell; w.shell = null; damage(w, inR(w) ? dmg : dmg * .3, 0, 0, '#c48cff'); w.shell = keep; text(w.x, w.y - 100 * HS, 'BACKLASH', '#c48cff'); }
+    if (neutral) { if (!w.dead && !ghosted(w) && inR(w)) { const d = Math.hypot(w.x - c.x, w.y - c.y) || 1; damage(w, dmg, (w.x - c.x) / d * 700, (w.y - c.y) / d * 700, '#e8d8ff'); } }
+    else if (!w.dead) { const keep = w.shell; w.shell = null; damage(w, inR(w) ? dmg : dmg * .3, 0, 0, '#c48cff'); w.shell = keep; text(w.x, w.y - 100 * HS, 'BACKLASH', '#c48cff'); }
     scar('crack', c.x, c.y, { s: 2 }); scar('scorch', c.x, c.y, { r: R * .8, c: '#1a0a30', a: .5 });
     if (typeof beamScar === 'function') for (let i = 0; i < 6; i++) { const an = i / 6 * 6.283 + rnd(-.3, .3), l = R * rnd(.6, .95); const d0 = beamScar({ x: c.x, y: c.y }, { x: c.x + Math.cos(an) * l, y: c.y + Math.sin(an) * l * .6 }, false, 1.1, true); d0.life = 5; decals.push(d0); }
     for (let i = 0; i < 40; i++) { const an = rnd(0, 6.283), rr = rnd(10, R); decals.push({ k: 'ember', x: c.x + Math.cos(an) * rr, y: c.y + Math.sin(an) * rr * .6, t: 0, life: rnd(2.5, 4.5), s: rnd(.8, 1.4) }); }
@@ -898,7 +900,13 @@
     }
     domes = domes.filter(d => d.t < d.dur);
     // Collapse orbs
+    // a Draw orb meeting a Repel orb, whoever cast them: the two forces fuse and go off as a Collapse blast where they touch
+    for (const a of orbsC) if (a.draw && a.life > 0) for (const b of orbsC) if (b.repel && b.life > 0 && a.life > 0 && Math.hypot(a.x - b.x, a.y - b.y) < 30) {
+      a.life = 0; b.life = 0; a.fused = b.fused = 1; for (const h of a.held || []) h.gone = 1;
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2; if (typeof flashScreen === 'function') flashScreen(); impacts.push({ x: mx, y: my - 36 * HS, t: 0, r0: performance.now(), a: Math.atan2(b.vy, b.vx), seed: Math.random() * 99 });
+      unboundBlast({ o: a.o, x: mx, y: my, dmg: (a.dmg + b.dmg) * 2.16 }, true); }
     for (const c of orbsC) {
+      if (c.fused) continue;
       SRC = 'polarity'; c.t += dt; c.life -= dt;
       if (c.wind && !c.launched) {   // wind-up in four beats: the two orbs form, spiral in, smash, then implode and fire
         const w = c.o, k = c.t / c.wind;
