@@ -655,14 +655,14 @@
 /* ---------------- Options button on the home screen (F-456) ---------------- */
 (function () {
   window.openOptions = function () {
-    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Options</div>${settingsHTML()}`;
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Options</div>${settingsHTML()}<div class="vernote">Wizards vs Sorcerers · Version ${typeof GAME_VERSION !== 'undefined' ? GAME_VERSION : '1.0'}</div>`;
     $('sheet').classList.add('on');
   };
   const add = () => { const st = document.querySelector('#home .stage'); if (!st || st.querySelector('.optbtn')) return;
     st.insertAdjacentHTML('beforeend', `<button class="optbtn" onclick="openOptions()" aria-label="Options"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.4-2.5 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.4 2.7a7.6 7.6 0 0 0-1.7 1l-2.5-1-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.4 2.5-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.4-2.7a7.6 7.6 0 0 0 1.7-1l2.5 1 2-3.4zM13 15.5A3.5 3.5 0 1 1 13 8.5a3.5 3.5 0 0 1 0 7z"/></svg></button>`); };
   add(); document.addEventListener('DOMContentLoaded', add);
   const css = document.createElement('style');
-  css.textContent = `#chBtn{top:88px!important}.optbtn{position:absolute;top:10px;left:10px;z-index:2;width:34px;height:34px;display:grid;place-items:center;border-radius:11px;border:2px solid #000;background:linear-gradient(#4a3a80,#2b2050);color:#fff;cursor:pointer;box-shadow:0 3px 0 #000;padding:0}`;
+  css.textContent = `.vernote{text-align:center;font:11px Nunito;font-weight:800;color:#8d7fbf;letter-spacing:.3px;margin-top:2px}#chBtn{top:88px!important}.optbtn{position:absolute;top:10px;left:10px;z-index:2;width:34px;height:34px;display:grid;place-items:center;border-radius:11px;border:2px solid #000;background:linear-gradient(#4a3a80,#2b2050);color:#fff;cursor:pointer;box-shadow:0 3px 0 #000;padding:0}`;
   document.head.appendChild(css);
 })();
 
@@ -1096,6 +1096,7 @@
       if (shot === 'home') { nav('home'); }
       else if (shot === 'abilities') { window.abTab = 'sorc'; nav('spells'); setTimeout(() => openSpell('dissect'), 600); }
       else if (shot === 'wardrobe') { nav('wardrobe'); }
+      else if (shot === 'shop') { nav('shop'); setTimeout(() => { try { const el = document.getElementById('packs'); if (el) el.scrollIntoView({ block: 'center' }); } catch (e) {} }, 700); }
       else if (shot === 'draft') { newMatch({ arena: 'castle', mode: 'ranked' }); M.round = 3; M.me.book = ['fireball', 'meteor']; M.me.up = new Set(['fireball.twin']); show('draft'); try { M.offer = genOffer(M.me, 3); renderDraft(); } catch (e) {} }
       else if (shot === 'battle') {
         newMatch({ arena: 'frost', mode: 'ranked' }); M.round = 4; M.score = { me: 2, foe: 1 };
