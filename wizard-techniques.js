@@ -253,7 +253,7 @@
     if (k === 'doubletake') { if (w.dtLoop === loop) { text(w.x, w.y - 80 * HS, 'ALREADY SWAPPED', '#bbb'); return; } w.dtLoop = loop; }
     if (k === 'polarity') { if (w.polLoop === loop) { text(w.x, w.y - 80 * HS, 'POLARITY SPENT', '#bbb'); return; } w.polLoop = loop;
       if (w.bndSpent) { w.bndSpent = 0; w.boundary = 1; text(w.x, w.y - 80 * HS, 'BOUNDARY REFILLED', '#bcd2ff'); addFx({ k: 'refill', w, life: .6 }); return; } }
-    if (k === 'sanctum') { const rest = U(w, k, 'rite') ? 1 : 2; if (w.sancLoop >= 0 && loop - w.sancLoop < rest) { text(w.x, w.y - 80 * HS, loop === w.sancLoop ? 'SANCTUM SPENT' : 'SANCTUM RESTING', '#bbb'); return; } w.sancLoop = loop; }
+    if (k === 'sanctum') { const rest = (U(w, k, 'rite') ? 1 : 2) + (w.sancBurn || 0); if (w.sancLoop >= 0 && loop - w.sancLoop < rest) { text(w.x, w.y - 80 * HS, loop === w.sancLoop ? 'SANCTUM SPENT' : w.sancBurn ? 'BURNOUT' : 'SANCTUM RESTING', w.sancBurn ? '#ff9a6b' : '#bbb'); return; } w.sancLoop = loop; w.sancBurn = 0; }
     // once per loop, so stacked defences can't loop forever (Ghost Form, Spell Shield, Hourglass, Titan Shell, Counter Stance)
     if (LOOP_ONCE[k]) { w.once = w.once || {}; if (w.once[k] === loop) { text(w.x, w.y - 80 * HS, LOOP_ONCE[k], '#bbb'); return; } w.once[k] = loop; }
     // Disoriented: the cast is aimed at a random spot (or one of the caster's own creatures)
@@ -352,6 +352,8 @@
       for (const c of enemyCreatures(w)) if (c.e.x !== undefined && inD0(c.e)) dome.trap.push(c.e);
       for (const wl of walls) { let n = 0; for (const c of wl.cr) if (!c.gone && inD0(c)) { c.gone = 1; n++; burst(c.x, c.y - 20 * HS, 12, wl.mud ? ['#d8c09a', '#8a6a48'] : ['#d8f6ff', '#fff'], 180, 4, .4); } if (n) { const live = wl.cr.filter(c => !c.gone).length; wl.hp = live ? Math.min(wl.hp, wl.max * live / wl.cr.length) : 0; } }
       w.sanctNext = { sure: U(w, k, 'surehit'), vast }; inkRing(w.x, w.y, COL.ward[1], 2, 20, r, .5); text(w.x, w.y - 90 * HS, 'SANCTUM', '#bcd2ff', true);
+      const rival = domes.find(d => d !== dome && d.o !== w && d.t < d.dur && Math.hypot(d.x - dome.x, (d.y - dome.y) * 1.4) < d.r + dome.r);
+      if (rival) sanctumClash(dome, rival);
     }
     if (k === 'doubletake') doSwap(w, false);
     if (k === 'rush') {
@@ -637,6 +639,37 @@
   }
 
   /* while your Sanctum stands, a hit also lands on every enemy inside the dome (except the one already struck) */
+  function crumbleDome(dm) {   // the caster left: the dome cracks apart and is gone
+    if (dm.t >= dm.dur) return; dm.t = dm.dur; dm.trap = []; dm.crumbled = 1; const w = dm.o; w.sanctNext = null;
+    text(w.x, w.y - 100 * HS, 'SANCTUM CRUMBLES', '#9fb8ff', true); shake = Math.max(shake, 8); try { sfx('shatter', { x: dm.x }); } catch (e) {}
+    for (let i = 0; i < 40; i++) { const an = rnd(0, 6.283), rr = dm.r * rnd(.6, 1); P({ x: dm.x + Math.cos(an) * rr, y: dm.y + Math.sin(an) * rr / 1.4 - rnd(10, 60) * HS, vx: Math.cos(an) * rnd(20, 90), vy: rnd(-20, 60), color: ['#e6f0ff', '#9fb8ff', '#5b7ad8'][i % 3], size: rnd(2.5, 5), life: rnd(.5, 1), grav: 360, glow: false }); }
+    inkRing(dm.x, dm.y, '#9fb8ff', 2, 10, dm.r, .5);
+  }
+  window.crumbleDome = crumbleDome;
+  /* Two Sanctums touching: they clash. The stronger one (level, then upgrades, then health left) holds; the other shatters
+     and its caster burns out, resting one extra loop before they can raise another. */
+  function sanctumClash(a, b) {
+    const power = d => { const w = d.o; return (w.lv && w.lv.sanctum || 1) * 10 + [...(typeof M !== 'undefined' && M ? (w.me ? M.me.up : M.foe.up) : [])].filter(u => u.startsWith('sanctum.')).length * 4 + d.hp / d.max * 3 + Math.random() * .5; };
+    const pa = power(a), pb = power(b), win = pa >= pb ? a : b, lose = win === a ? b : a, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    shake = Math.max(shake, 22); slow = Math.min(slow, .06); setTimeout(() => { if (!ended) slow = 1; }, 260); if (typeof flashScreen === 'function') flashScreen();
+    clashes.push({ x: mx, y: my, a, b, win, t: 0, r0: performance.now() });
+    for (let i = texts.length - 1; i >= 0; i--) if (texts[i].s === 'SANCTUM' && texts[i].life > .8) texts.splice(i, 1); text(mx, my - 40 * HS, 'SANCTUM CLASH', '#ffd75e', true); try { sfx('boom', { x: mx, vol: 1.2 }); sfx('shatter', { x: lose.x }); } catch (e) {}
+    for (let i = 0; i < 60; i++) { const an = rnd(0, 6.283), v = rnd(160, 520); P({ x: mx, y: my - 40 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .7, color: ['#ffffff', '#bcd2ff', '#ffd75e', '#ff9a6b'][i % 4], size: rnd(2, 4.5), life: rnd(.4, 1), grav: 200 }); }
+    setTimeout(() => { if (ended) return; lose.t = lose.dur; lose.trap = []; lose.o.sanctNext = null; lose.o.sancBurn = 1; text(lose.o.x, lose.o.y - 110 * HS, 'BURNOUT', '#ff9a6b', true);
+      for (let i = 0; i < 50; i++) { const an = rnd(0, 6.283), rr = lose.r * rnd(.5, 1); P({ x: lose.x + Math.cos(an) * rr, y: lose.y + Math.sin(an) * rr / 1.4 - rnd(10, 70) * HS, vx: Math.cos(an) * rnd(60, 200), vy: rnd(-80, 40), color: ['#e6f0ff', '#9fb8ff', '#ff9a6b'][i % 3], size: rnd(2.5, 5), life: rnd(.5, 1.1), grav: 360, glow: false }); }
+      inkRing(lose.x, lose.y, '#ff9a6b', 3, 12, lose.r * 1.1, .5); }, 450);
+  }
+  let clashes = [];
+  function drawClashes(x) {   // the two domes press into each other: a seam of white light, crackling arcs, then the loser breaks
+    for (const c of clashes) { const t = (performance.now() - c.r0) / 1000; if (t > .9) continue; const k = t / .9;
+      x.save(); x.lineCap = 'round'; x.globalCompositeOperation = 'lighter';
+      const ang = Math.atan2(c.b.y - c.a.y, c.b.x - c.a.x) + Math.PI / 2, L = 120 + 60 * Math.sin(k * 3.14);
+      for (let j = 0; j < 3; j++) { x.strokeStyle = j ? `rgba(255,215,94,${.7 * (1 - k)})` : `rgba(255,255,255,${1 - k})`; x.lineWidth = j ? 10 - j * 3 : 4; x.beginPath(); for (let i = 0; i <= 10; i++) { const u = i / 10 - .5, px = c.x + Math.cos(ang) * L * u + Math.sin(t * 80 + i * 3 + j) * 6, py = c.y - 50 * HS + Math.sin(ang) * L * u * .7 + Math.cos(t * 70 + i * 5) * 5; i ? x.lineTo(px, py) : x.moveTo(px, py); } x.stroke(); }
+      for (const [d, col] of [[c.a, '188,210,255'], [c.b, '255,154,107']]) { x.strokeStyle = `rgba(${col},${.8 * (1 - k)})`; x.lineWidth = 4; x.beginPath(); x.ellipse(d.x, d.y - 30 * HS, d.r * (1 + .08 * Math.sin(t * 40)), d.r / 1.4, 0, 0, 7); x.stroke(); }
+      const R = 40 + 160 * k; x.strokeStyle = `rgba(255,255,255,${1 - k})`; x.lineWidth = 6 * (1 - k) + 1; x.beginPath(); x.ellipse(c.x, c.y, R, R * .45, 0, 0, 7); x.stroke();
+      x.restore(); }
+    clashes = clashes.filter(c => performance.now() - c.r0 < 900);
+  }
   function sanctumEcho(w, dmg, skip, cols) {
     const dm = domes.find(d => d.o === w && d.t < d.dur && !d.left); if (!dm || !(dmg > 0)) return; const inD = e => Math.hypot(e.x - dm.x, (e.y - dm.y) * 1.4) < dm.r, f = w.foe, c = (cols && cols[1]) || '#7aa6ff';
     const zap = e => { addFx({ k: 'redir', x: w.x, y: w.y - 40 * HS, x2: e.x, y2: e.y - 30 * HS, life: .22 }); burst(e.x, e.y - 30 * HS, 6, ['#fff', c], 120, 3, .3); };
@@ -890,10 +923,12 @@
       for (const a of arrows) if (a.o !== w && a.life > 0 && inD(a.x, a.y + 40 * HS)) { a.life = 0; wear(a.dmg || 6, a.o); addFx({ k: 'ping', x: a.x, y: a.y + 40 * HS, life: .35 }); }
       for (const c of cannons) if (c.o !== w && c.t < c.dur && c.g && inD(c.g.E.x, c.g.E.y)) wear(c.dps * dt, c.o);
       // the caster cannot leave their own Sanctum (they can move around inside it)
-      { const dx = w.x - dm.x, dy = (w.y - dm.y) * 1.4, d = Math.hypot(dx, dy), lim = dm.r - 10, steering = w.me && window.STEER && STEER.p;
-        if (!w.dead && !dm.left && d > lim) {
-          if (steering && d > dm.r) { dm.left = 1; w.sanctNext = null; text(w.x, w.y - 96 * HS, 'LEFT THE SANCTUM', '#9fb8ff', true); inkRing(w.x, w.y, '#9fb8ff', 1, 10, 30, .5); }
-          else if (!steering) { w.x = dm.x + dx / d * lim; w.y = dm.y + dy / d * lim / 1.4; w.vx *= .3; w.vy *= .3; } } }
+      // the caster moves freely: the fighter's own movement leans back toward the middle near the edge, but stepping
+      // outside (by steering, or being shoved out) makes the dome crumble
+      { const dx = w.x - dm.x, dy = (w.y - dm.y) * 1.4, d = Math.hypot(dx, dy) || 1, steering = w.me && window.STEER && STEER.p;
+        if (!w.dead && dm.t < dm.dur) {
+          if (d > dm.r + 4) crumbleDome(dm);
+          else if (!steering && d > dm.r - 26) { const k = Math.min(1, (d - (dm.r - 26)) / 26); w.vx -= dx / d * 260 * k * dt * 6; w.vy -= dy / d / 1.4 * 260 * k * dt * 6; } } }
       // enemies caught inside when it went up cannot leave until it falls
       for (const e of dm.trap) { if (e.dead || e.hp <= 0) continue; const dx = e.x - dm.x, dy = (e.y - dm.y) * 1.4, d = Math.hypot(dx, dy), lim = dm.r - 8; if (d > lim) { e.x = dm.x + dx / d * lim; e.y = dm.y + dy / d * lim / 1.4; if (e.vx !== undefined) { e.vx *= .3; e.vy *= .3; } } }
       if (dm.hp <= 0 && dm.t < dm.dur) { dm.t = dm.dur; text(dm.x, dm.y - 110 * HS, 'SANCTUM BROKEN', '#bcd2ff', true); shake = Math.max(shake, 10); burst(dm.x, dm.y - 50 * HS, 40, ['#e6f0ff', '#7aa6ff', '#1a2a6a'], 280, 6, .8, 200); try { sfx('shatter', { x: dm.x }); } catch (e) {} }
@@ -1012,7 +1047,7 @@
   window.startDuel = startDuel = function () {
     slashes = []; domes = []; orbsC = []; halves = []; tarrows = []; fx = []; springs = []; motes = []; cleaves = []; muds = []; flames = []; EYE = null;
     const r = _startDuel.apply(this, arguments);
-    if (typeof ents !== 'undefined') ents.forEach(w => { w.shell = null; w.shellDown = 0; w.copyArmed = 0; w.copyGlow = 0; w.sanctNext = null; w.rush = null; w.jump = 0; w.infused = 0; w.cleaveN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].c) || 0; w.counter = null; w.qdSpent = 0; w.polN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].p) || 0; w.zn = 0; w.zbag = null; w.ceaseT = 0; w.viviT = 0; w.viviLoop = undefined; w.pull = null; w.sw = null; w.swPause = 0; w.healAcc = 0; w.qdFill = 0; w.infArm = 0; w.repelT = 0; w.cdNum = 0; w.bleeds = null; w.braceT = 0; w.mom = 0; w.dmgSince = 0; w.finalUsed = 0; w.finalBoost = 0; w.fate = 0; w.fateUsed = 0; w.castN = 0; w.flyN = 0; w.dtLoop = -1; w.polLoop = -1; w.once = {}; w.mirN = 0; w.sancLoop = -9; w.chosenSaid = 0; w.dizzyT = 0; w.drag = null; w.boundary = undefined; w.bndSpent = 0; w._hpLast = w.hp; w._hpSeen = w.hp;
+    if (typeof ents !== 'undefined') ents.forEach(w => { w.shell = null; w.shellDown = 0; w.copyArmed = 0; w.copyGlow = 0; w.sanctNext = null; w.rush = null; w.jump = 0; w.infused = 0; w.cleaveN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].c) || 0; w.counter = null; w.qdSpent = 0; w.polN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].p) || 0; w.zn = 0; w.zbag = null; w.ceaseT = 0; w.viviT = 0; w.viviLoop = undefined; w.pull = null; w.sw = null; w.swPause = 0; w.healAcc = 0; w.qdFill = 0; w.infArm = 0; w.repelT = 0; w.cdNum = 0; w.bleeds = null; w.braceT = 0; w.mom = 0; w.dmgSince = 0; w.finalUsed = 0; w.finalBoost = 0; w.fate = 0; w.fateUsed = 0; w.castN = 0; w.flyN = 0; w.dtLoop = -1; w.polLoop = -1; w.once = {}; w.mirN = 0; w.sancBurn = 0; w.sancLoop = -9; w.chosenSaid = 0; w.dizzyT = 0; w.drag = null; w.boundary = undefined; w.bndSpent = 0; w._hpLast = w.hp; w._hpSeen = w.hp;
       if (U(w, 'rush', 'oath') && w.book.includes('rush')) { w.hp = Math.round(w.hp * .5); w.lag = w.hp; w._ph = w.hp; w.oathT = 1.6; } });
     return r;
   };
@@ -1176,6 +1211,7 @@
         x.restore(); }
     }
     drawShards(x);
+    drawClashes(x);
     drawPBlasts(x);
     drawImpacts(x);
     drawScatter(x);
@@ -1622,7 +1658,7 @@
     muds = muds.filter(m => m.t < m.dur);
     for (const dm of domes) { if (dm.t >= dm.dur) continue;   // every unit inside a Sanctum moves 30% slower
       const all = ents.concat(zombies.filter(z => z.hp > 0), golems.filter(g => g.hp > 0), archers.filter(a => a.hp > 0), decoys.filter(d => !d.gone));
-      for (const e of all) if (!e.dead && e.x !== undefined && Math.hypot(e.x - dm.x, (e.y - dm.y) * 1.4) < dm.r) { const ex = out.find(q => q.e === e); if (ex) ex.f = Math.min(ex.f, .7); else out.push({ e, x: e.x, y: e.y, f: .7, p: null, nm: 1 }); }
+      for (const e of all) if (!e.dead && e.x !== undefined && e !== dm.o && e.o !== dm.o && Math.hypot(e.x - dm.x, (e.y - dm.y) * 1.4) < dm.r) { const ex = out.find(q => q.e === e); if (ex) ex.f = Math.min(ex.f, .7); else out.push({ e, x: e.x, y: e.y, f: .7, p: null, nm: 1 }); }
       castSlow(dm.o.foe, Math.hypot(dm.o.foe.x - dm.x, (dm.o.foe.y - dm.y) * 1.4) < dm.r); }
     // enemy casters inside a Sanctum or an Hourglass charge 25% slower (one 25%, not stacked with mud)
     function castSlow(e, inside) { if (!e || e.dead || !inside) return; const ex = out.find(q => q.e === e); if (ex) { if (ex.p == null) ex.p = e.p; } else out.push({ e, x: e.x, y: e.y, f: 1, p: e.p, nm: 1 }); }

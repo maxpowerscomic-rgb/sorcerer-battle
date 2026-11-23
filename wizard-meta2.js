@@ -372,13 +372,14 @@
   function chState() { if (!PR.ch || PR.ch.day !== today()) { PR.ch = { day: today(), list: CH_POOL.slice().sort(() => Math.random() - .5).slice(0, 5).map(c => ({ id: c.id, p: 0, done: 0 })) }; try { save(); } catch (e) {} } return PR.ch; }
   function chProgress(d) { const st = chState(), got = [];
     for (const c of st.list) { if (c.done) continue; const def = CH_POOL.find(q => q.id === c.id); if (!def) continue; const v = d[def.key] || 0; c.p = def.max ? Math.max(c.p, v) : c.p + v;
-      if (c.p >= def.need) { c.done = 1; PR.coins = (PR.coins || 0) + CH_GOLD; c.gold = CH_GOLD; got.push(def.n + ': +' + CH_GOLD + ' gold'); } }
-    try { save(); } catch (e) {} if (got.length) setTimeout(() => toast('Challenge done! ' + got[0] + (got.length > 1 ? ' (+' + (got.length - 1) + ' more)' : '')), 4200); chDot(); }
-  function chDot() { const st = chState(), el = document.getElementById('chDot'); if (el) el.textContent = st.list.filter(c => c.done).length + '/5'; }
+      if (c.p >= def.need) { c.done = 1; c.gold = CH_GOLD; c.claimed = 0; got.push(def.n); } }
+    try { save(); } catch (e) {} if (got.length) setTimeout(() => toast('Challenge done: ' + got[0] + (got.length > 1 ? ' (+' + (got.length - 1) + ' more)' : '') + '. Collect it in Challenges.'), 4200); chDot(); }
+  function chDot() { const st = chState(), el = document.getElementById('chDot'), ready = st.list.filter(c => c.done && c.claimed === 0).length; if (el) { el.textContent = st.list.filter(c => c.done).length + '/5'; el.classList.toggle('ready', ready > 0); } }
+  window.collectChallenge = function (i) { const st = chState(), c = st.list[i]; if (!c || !c.done || c.claimed !== 0) return; c.claimed = 1; const g = c.gold || CH_GOLD; PR.coins = (PR.coins || 0) + g; try { save(); sfx('ui_coin'); } catch (e) {} refreshMeta(); toast(`+${g} gold`); openChallenges(); };
   window.swapChallenge = function (i) { const st = chState(), c = st.list[i]; if (!c || !c.done || PR.coins < CH_COST) return; const free = CH_POOL.filter(q => !st.list.some(l => l.id === q.id)); if (!free.length) return; PR.coins -= CH_COST; st.list[i] = { id: free[Math.random() * free.length | 0].id, p: 0, done: 0 }; try { save(); } catch (e) {} refreshMeta(); openChallenges(); };
   window.openChallenges = function () { const st = chState();
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Daily Challenges</div><div class="ssub" style="margin:0">New set every day. Each one pays ${CH_GOLD} gold.</div><div class="chl">${st.list.map((c, i) => { const def = CH_POOL.find(q => q.id === c.id) || { n: c.id, need: 1 };
-      return `<div class="chrow ${c.done ? 'done' : ''}"><div class="cg"><b>${def.n}</b><div class="chbar"><i style="width:${Math.min(100, c.p / def.need * 100)}%"></i><span>${c.done ? 'Done' : Math.floor(Math.min(c.p, def.need)) + ' / ' + def.need}</span></div>${c.done ? `<small>+${c.gold || CH_GOLD} gold</small>` : ''}</div>${c.done ? `<button onclick="swapChallenge(${i})" ${PR.coins < CH_COST ? 'disabled' : ''}>New<small><span class="ci coin-i"></span>${CH_COST}</small></button>` : ''}</div>`; }).join('')}</div>`;
+      return `<div class="chrow ${c.done ? 'done' : ''}"><div class="cg"><b>${def.n}</b><div class="chbar"><i style="width:${Math.min(100, c.p / def.need * 100)}%"></i><span>${c.done ? 'Done' : Math.floor(Math.min(c.p, def.need)) + ' / ' + def.need}</span></div>${c.done && c.claimed !== 0 ? `<small>+${c.gold || CH_GOLD} gold collected</small>` : ''}</div>${c.done && c.claimed === 0 ? `<button class="chcol" onclick="collectChallenge(${i})">Collect<small><span class="ci coin-i"></span>${c.gold || CH_GOLD}</small></button>` : c.done ? `<button onclick="swapChallenge(${i})" ${PR.coins < CH_COST ? 'disabled' : ''}>New<small><span class="ci coin-i"></span>${CH_COST}</small></button>` : ''}</div>`; }).join('')}</div>`;
     $('sheet').classList.add('on'); };
   window.CH_DEBUG = { chProgress, chState };
   const _rmC = refreshMeta; window.refreshMeta = refreshMeta = function () { const r = _rmC.apply(this, arguments); try { chDot(); } catch (e) {} return r; };
@@ -1351,3 +1352,16 @@ window.buyGems = function (id) { const iap = window.webkit && window.webkit.mess
    Sheets opened from the pause screen (music list, ability info) used to sit underneath it. A sheet is always the thing
    the player just asked for, so it now stacks above pause, reward cards and level-up screens (below toasts and the curtain). */
 (function () { const css = document.createElement('style'); css.textContent = `.sheet{z-index:29!important}`; document.head.appendChild(css); })();
+
+/* ---------------- Sanctum: +20% damage while you stand inside your own dome (F-554) ---------------- */
+(function () {
+  const inOwnDome = w => { if (!w || w.dead || !window.TECH_DEBUG) return false; return TECH_DEBUG.domes.some(d => d.o === w && d.t < d.dur && Math.hypot(w.x - d.x, (w.y - d.y) * 1.4) < d.r); };
+  window.inOwnDome = inOwnDome;
+  const _dm = damage;
+  window.damage = damage = function (t, d) { if (d > 0 && t && t.foe && t.foe !== t && inOwnDome(t.foe)) arguments[1] = d * 1.2; return _dm.apply(this, arguments); };
+  const _hc = hurtCreature;
+  window.hurtCreature = hurtCreature = function (c, k, d) { if (d > 0 && c && c.o && c.o.foe && inOwnDome(c.o.foe)) arguments[2] = d * 1.2; return _hc.apply(this, arguments); };
+})();
+
+/* challenge Collect button and the ready dot (F-555) */
+(function () { const css = document.createElement('style'); css.textContent = `.chrow .chcol{background:linear-gradient(#7ef08a,#2fb64c)!important;color:#fff!important;text-shadow:0 1px 0 #000}#chDot.ready{background:#2fd08a!important;color:#062a16!important;box-shadow:0 0 0 2px #7dffa8}`; document.head.appendChild(css); })();

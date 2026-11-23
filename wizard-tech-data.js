@@ -12,7 +12,7 @@ COL.chosen = ['#effcff', '#7fd8ff', '#0b3a5c']; // Chosen One light
 
 const TECH = {
   dissect:    { n: 'Dissection',    el: 'ki',    t: 1.3, range: 170, d: 'Throw a razor-thin cutting slash. It stops at the first creature or caster it hits.', tag: 'Cuts' },
-  sanctum:    { n: 'Sanctum',       el: 'ward',  t: 3, range: 150, d: 'A fixed 100 HP dome that stops shots. Enemies inside are trapped, move 30% and cast 25% slower, and take your casts. Rests every other loop.', tag: 'Dome' },
+  sanctum:    { n: 'Sanctum',       el: 'ward',  t: 3, range: 150, d: 'A 100 HP dome. Inside it you deal 20% more damage, and enemies are trapped, slowed and hit by your casts. Leave it and it crumbles.', tag: 'Dome' },
   doubletake: { n: 'Double Take',   el: 'ki',    t: 1.5, range: 150, d: 'Clap, and swap places with the enemy. Their aim is thrown off for a moment. Only one Double Take per loop.', tag: 'Swaps' },
   rush:       { n: 'Rushdown',      el: 'ki',    t: 2.2, range: 70,  d: 'Dash at the nearest enemy unit, land a 4-punch combo it cannot walk out of, then spring back. Ice in the way gets punched first.', tag: 'Brawls' },
   polarity:   { n: 'Polarity',      el: 'ward',  t: 1.8, range: 160, d: 'Alternates each cast: Draw yanks the enemy toward you; Repel fires an orb that shoves back whatever it passes through.', tag: 'Push/Pull' },
@@ -41,7 +41,7 @@ UPG.healspring = [{ id: 'shared', n: 'Shared Waters', d: 'Your creatures standin
 const TECH_STATS = {
   healspring: { heal: [4, 4.5, 5, 5.5, 6], dur: [4, 4, 4.5, 4.5, 5], radius: [58, 60, 62, 65, 68] },
   dissect:    { dmg: [10, 11, 13, 15, 17] },
-  sanctum:    { dur: [3, 3.2, 3.4, 3.7, 4], radius: [96, 101, 106, 113, 120] },
+  sanctum:    { dur: [3, 3.2, 3.4, 3.7, 4], radius: [115, 121, 127, 136, 144] },
   doubletake: { stun: [0.3, 0.35, 0.4, 0.45, 0.5] },
   rush:       { dmg: [4.2, 4.6, 5.1, 5.7, 6.4] },
   polarity:   { dmg: [8, 9, 10, 12, 14], pull: [260, 280, 300, 330, 360] },
