@@ -151,7 +151,7 @@
         return `<div class="trow ${ok ? '' : 'lk'} ${t.id === cur ? 'on' : ''}" ${ok ? `onclick="PR.title='${t.id}';save();refreshMeta();openTitles()"` : ''}><b>${t.n}</b><small>${t.d}${pr ? ` <em>${Math.min(pr[0], pr[1])}/${pr[1]}</em>` : ''}</small>${ok ? (t.id === cur ? '<i>✓</i>' : '') : `<span class="tlk">${SVG.lock}</span>`}</div>`; }).join('')}</div>`;
     $('sheet').classList.add('on');
   };
-  function titleHTML() { const cb = castBonus({ me: 1 }), hb = hpBonus({ me: 1 }); return `<span class="tn">${titleName()}</span>${cb > 0 ? `<span class="cs">⚡ +${Math.round(cb * 100)}% cast${hb > 0 ? ` · ♥ +${Math.round(hb * 100)}%` : ''}</span>` : ''}`; }
+  function titleHTML() { const cb = castBonus({ me: 1 }), hb = hpBonus({ me: 1 }); return `<span class="tn">${titleName()}</span>${cb > 0 ? `<span class="cs" style="white-space:nowrap">⚡+${Math.round(cb * 100)}%${hb > 0 ? ` ♥+${Math.round(hb * 100)}%` : ''}</span>` : ''}`; }
   const _rm = refreshMeta;
   window.refreshMeta = refreshMeta = function () {
     const r = _rm.apply(this, arguments);
@@ -640,8 +640,10 @@
   window.toggleFav = function (id) { const f = favs(), i = f.indexOf(id); if (i >= 0) f.splice(i, 1); else f.push(id); try { save(); } catch (e) {} openMusic(); };
   window.playTrack = function (id) { try { auInit(); } catch (e) {} _mu(id); };
   window.openMusic = function () { const row = ([id, n, cat]) => `<div class="mrow"><button class="mplay" onclick="playTrack('${id}')">▶</button><span>${n}<small>${cat === 'menu' ? 'Menus' : cat === 'battle' ? 'Battles' : cat === 'final' && id === 'bgm_battle_finale' ? 'Round 7' : 'Rounds 5 and 6'}</small></span><button class="mfav ${favs().includes(id) ? 'on' : ''}" onclick="toggleFav('${id}')" aria-label="Favourite">${favs().includes(id) ? '★' : '☆'}</button></div>`;
-    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Music</div><div class="ssub" style="margin:0">Tap ▶ to listen, ★ to favourite. Shuffle picks from your favourites.</div>${sel('menu')}${sel('battle')}<div class="mlist">${TRACKS.map(row).join('')}</div><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="openOptions()">Back</button>`;
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Music</div><div class="ssub" style="margin:0">Tap ▶ to listen, ★ to favourite. Shuffle picks from your favourites.</div>${sel('menu')}${sel('battle')}<div class="mlist">${TRACKS.map(row).join('')}</div><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="sheetBack()">Back</button>`;
     $('sheet').classList.add('on'); };
+  // Back returns to where the player came from: the pause screen mid-match (just close this sheet), otherwise Options
+  window.sheetBack = function () { const pz = document.getElementById('pause'); if (pz && pz.classList.contains('on')) { closeSheet(); try { music('bgm_battle'); } catch (e) {} } else openOptions(); };   /* mid-match, the fight's music comes back after previewing tracks */
   const sel = which => { const c = choice(which), list = TRACKS.filter(t => t[2] === which); if (c === 'shuffle' && !cur[which]) roll(which);   /* so Random can name the song that is (or will be) playing */ return `<div class="opt"><span>${which === 'menu' ? 'Menu music' : 'Battle music'}</span><select class="bgmsel" onchange="setBgm('${which}',this.value)"><option value="shuffle" ${c === 'shuffle' ? 'selected' : ''}>${(() => { const now = cur[which] && TRACKS.find(t => t[0] === cur[which]); return 'Random' + (favs().some(k => list.some(t => t[0] === k)) ? ' ★' : '') + (now ? ': ' + now[1] : ''); })()}</option>${list.map(([id, n]) => `<option value="${id}" ${c === id ? 'selected' : ''}>${favs().includes(id) ? '★ ' : ''}${n}</option>`).join('')}</select></div>`; };
   const _sh = settingsHTML;
   window.settingsHTML = settingsHTML = function () { const h = _sh.apply(this, arguments); return h.replace(/<\/div>$/, sel('menu') + sel('battle') + `<button class="hbtn out" style="width:100%;margin-top:6px" onclick="openMusic()">♫ All music and favourites</button></div>`); };
@@ -1046,13 +1048,14 @@
   dieHook('hurtZ', z => { if (!z.beast) scatter(z.x, z.y, 'bone', 4, 2.2); });
   dieHook('hurtDecoy', d => scatter(d.x, d.y, 'glass', 8, 2.6));
   // Grand Bisection: blood under and behind the caster it hits, different every time
+  window.__splatDraw = (x, all) => splatDraw(x, all);
   window.bloodSplat = function (f, a) { if (typeof M === 'undefined' || !M) return; M.splats = M.splats || []; const ca = Math.cos(a), sa = Math.sin(a), blobs = [];
     const n1 = 5 + (Math.random() * 4 | 0); for (let i = 0; i < n1; i++) blobs.push({ x: rnd(-14, 14), y: rnd(-6, 6), rx: rnd(7, 17), ry: rnd(3.5, 8), rot: rnd(0, 3.14) });                      // the pool beneath them
     const n2 = 9 + (Math.random() * 9 | 0), spread = rnd(.35, .8), reach = rnd(60, 130); for (let i = 0; i < n2; i++) { const an = rnd(-spread, spread), d = rnd(14, reach) * (1 - Math.abs(an) * .5), dx = Math.cos(an) * d, dy = Math.sin(an) * d; blobs.push({ x: ca * dx - sa * dy, y: (sa * dx + ca * dy) * .6, rx: rnd(4, 12) * (1 - d / (reach * 1.4)) + 2, ry: rnd(1.4, 3.4), rot: Math.atan2(sa * .6, ca) + an }); }   // the spray thrown along the cut
     const n3 = 10 + (Math.random() * 10 | 0); for (let i = 0; i < n3; i++) { const an = rnd(0, 6.283), d = rnd(18, 70); blobs.push({ x: Math.cos(an) * d, y: Math.sin(an) * d * .5, rx: rnd(1, 3), ry: rnd(1, 2.4), rot: 0 }); }               // stray drops
     M.splats.push({ x: f.x, y: f.y + 4, blobs, rd: M.round, t: 0 }); if (M.splats.length > 14) M.splats.shift();
     for (let i = 0; i < 26; i++) { const an = a + rnd(-.7, .7), v = rnd(120, 420); P({ x: f.x, y: f.y - 40 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .7 - rnd(20, 120), color: i % 3 ? '#a8101f' : '#5a0610', size: rnd(2, 4.5), life: rnd(.4, .8), grav: 620, glow: false }); } };
-  function splatDraw(x) { if (typeof M === 'undefined' || !M || !M.splats) return; for (const s of M.splats) { s.t += 1 / 60; const old = s.rd !== M.round, grow = Math.min(1, s.t * 5); x.save(); x.translate(s.x, s.y); x.globalAlpha = old ? .36 : .86; x.fillStyle = old ? '#4a4347' : '#7a0c18';
+  function splatDraw(x, all) { if (typeof M === 'undefined' || !M || !M.splats) return; for (const s of M.splats) { if (!all) { s.t += 1 / 60; if (s.t >= .25) continue; } const old = s.rd !== M.round, grow = Math.min(1, s.t * 5); x.save(); x.translate(s.x, s.y); x.globalAlpha = old ? .36 : .86; x.fillStyle = old ? '#4a4347' : '#7a0c18';
       for (const b of s.blobs) { x.beginPath(); x.ellipse(b.x * grow, b.y * grow, b.rx * grow, b.ry * grow, b.rot, 0, 7); x.fill(); }
       if (!old) { x.globalAlpha = .5; x.fillStyle = '#c21a2c'; for (let i = 0; i < Math.min(4, s.blobs.length); i++) { const b = s.blobs[i]; x.beginPath(); x.ellipse(b.x * grow - 2, b.y * grow - 1, b.rx * .45 * grow, b.ry * .4 * grow, b.rot, 0, 7); x.fill(); } }
       x.restore(); } }
@@ -1082,13 +1085,13 @@
   const shot = window.SB_SHOT; if (!shot) return;
   setTimeout(() => {
     try {
-      window.ONB_ACTIVE = false; document.querySelectorAll('[id^=onb],[class*=onb]').forEach(e => e.style.display = 'none'); document.documentElement.classList.remove('onb-on');
+      window.ONB_ACTIVE = false; document.documentElement.classList.remove('onb-on'); document.querySelectorAll('.onb, #onbSkipAll').forEach(e => e.style.display = 'none'); try { if (typeof ONB !== 'undefined') { ONB.i = -1; } } catch (e) {}
       Object.assign(PR, { name: 'Starweaver', lvl: 14, trophies: 620, coins: 2450, gems: 180, onbDone: 1, title: 'flawless' });
       PR.stats = Object.assign(PR.stats || {}, { matches: 60, wins: 42, flawless: 3, wizW: 22, sorcW: 20, streak: 2, best: 6 });
       PR.chosen = ['meteor', 'mirror', 'rush', 'dissect', 'sanctum', 'polarity', 'storm', 'beam', 'titan', 'zodiac'].filter(k => SP[k]);
       PR.unlocked = Array.from(new Set((PR.unlocked || []).concat(PR.chosen)));
       for (const k in PR.spells) { PR.spells[k].lvl = Math.max(PR.spells[k].lvl, 3 + (k.length % 5)); PR.spells[k].cards = 12; }
-      PR.look = Object.assign({}, PR.look, { cls: shot === 'battle' || shot === 'abilities' ? 'sorc' : 'wiz', robe: 'royal', hat: 'pointy', beard: 'white', aura: 'violet', pet: 'owl' });
+      PR.look = Object.assign({}, PR.look, { cls: shot === 'battle' || shot === 'abilities' ? 'sorc' : 'wiz', robe: 'amethyst', hat: 'pointy', beard: 'white', aura: 'violet', pet: 'owl' });
       PR.hand = shot === 'battle' ? ['dissect', 'rush', 'sanctum', 'polarity'] : ['fireball', 'meteor', 'mirror', 'storm'];
       PR.login = { day: new Date().toISOString().slice(0, 10), streak: 4 };
       refreshMeta();
@@ -1103,7 +1106,8 @@
         M.me.book = ['dissect', 'rush', 'polarity', 'dissect']; M.me.up = new Set(['dissect.triple', 'rush.flow', 'polarity.collapse']);
         M.foe.book = ['fireball', 'meteor', 'zombies', 'storm']; M.foe.up = new Set(['fireball.twin', 'zombies.horde']);
         M.foeLv = Object.fromEntries(Object.keys(SP).map(k => [k, 6]));
-        show('battle'); startDuel(); introT = 0; const ri = document.getElementById('rintro'); if (ri) ri.style.display = 'none';
+        const _show = show; window.show = show = function (sc) { if (sc !== 'battle') return; return _show.apply(this, arguments); };   /* the shot stays on the fight */
+        _show('battle'); startDuel(); introT = 0; const ri = document.getElementById('rintro'); if (ri) ri.style.display = 'none';
       }
     } catch (e) { console.log('shot error ' + e.message); }
     // no reward pop-ups in screenshots
@@ -1111,6 +1115,21 @@
     clean(); let n = 0; const iv = setInterval(() => { clean(); if (++n > 40) clearInterval(iv); }, 150);
   }, 2500);
 })();
+
+/* ---------------- blood layer cache (F-549) ----------------
+   Settled blood (pools, splatters, drips) is drawn once into an offscreen layer and reused every frame; only blood
+   that is still spreading is drawn live. The layer is rebuilt when something settles, scrolls out, or the round changes. */
+let __bloodSeq = 0;
+function bloodLayer(x) {
+  const L = bloodLayer, sp = (M.splats || []).filter(s => s.t >= .25), dr = (M.drips || []).filter(d => d.t >= .2);
+  for (const q of sp.concat(dr)) if (!q.id) q.id = ++__bloodSeq;
+  const key = M.round + '|' + sp.length + ':' + (sp[0] && sp[0].id) + ':' + (sp.length && sp[sp.length - 1].id) + '|' + dr.length + ':' + (dr[0] && dr[0].id) + ':' + (dr.length && dr[dr.length - 1].id) + '|' + dpr;
+  if (!sp.length && !dr.length) return;
+  if (L.key !== key || !L.c) { L.key = key; const c = L.c || (L.c = document.createElement('canvas')); c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (const d of dr) { const old = d.rd !== M.round; g.save(); g.translate(d.x, d.y); g.globalAlpha = old ? .32 : .8; g.fillStyle = old ? '#4a4347' : d.shade ? '#2a1450' : '#6e0a16'; for (const s of d.spots) { g.beginPath(); g.ellipse(s.x, s.y, s.rx, s.ry, s.rot, 0, 7); g.fill(); } g.restore(); }
+    if (window.__splatDraw) { const keep = M.splats; M.splats = sp; try { __splatDraw(g, true); } finally { M.splats = keep; } } }
+  x.drawImage(L.c, 0, 0, W, H);
+}
 
 /* ---------------- zombies bleed: a few small, random blood spots under them on every hit (F-515) ---------------- */
 (function () {
@@ -1123,7 +1142,8 @@
     return r; };
   const _dd = drawDecals;
   window.drawDecals = drawDecals = function (x) { const r = _dd.apply(this, arguments); if (x !== ctx) return r;
-    try { if (typeof M !== 'undefined' && M && M.drips) for (const d of M.drips) { d.t += 1 / 60; const old = d.rd !== M.round, g = Math.min(1, d.t * 6); x.save(); x.translate(d.x, d.y); x.globalAlpha = old ? .32 : .8; x.fillStyle = old ? '#4a4347' : d.shade ? '#2a1450' : '#6e0a16'; for (const s of d.spots) { x.beginPath(); x.ellipse(s.x * g, s.y * g, s.rx * g, s.ry * g, s.rot, 0, 7); x.fill(); } x.restore(); } } catch (e) {}
+    try { if (typeof M !== 'undefined' && M) bloodLayer(x); } catch (e) {}
+    try { if (typeof M !== 'undefined' && M && M.drips) for (const d of M.drips) { d.t += 1 / 60; if (d.t >= .2) continue; const old = d.rd !== M.round, g = Math.min(1, d.t * 6); x.save(); x.translate(d.x, d.y); x.globalAlpha = old ? .32 : .8; x.fillStyle = old ? '#4a4347' : d.shade ? '#2a1450' : '#6e0a16'; for (const s of d.spots) { x.beginPath(); x.ellipse(s.x * g, s.y * g, s.rx * g, s.ry * g, s.rot, 0, 7); x.fill(); } x.restore(); } } catch (e) {}
     return r; };
 })();
 
@@ -1263,3 +1283,71 @@
       x.font = "12px 'Lilita One', system-ui"; x.textAlign = 'center'; x.lineWidth = 4; x.strokeStyle = '#07020d'; x.lineJoin = 'round'; x.strokeText('BOUNDARY', 0, -40); x.fillStyle = '#d6e4ff'; x.fillText('BOUNDARY', 0, -40); x.restore(); } } catch (e) {}
     return r; };
 })();
+
+/* ---------------- App Store review prompt and feedback form (F-548) ----------------
+   Review: after the first win, Apple's own review prompt (iOS decides whether to show it, and caps it at 3 a year).
+   Apple's rule 5.6.1 forbids custom review prompts and filtering by mood, so the review ask goes to everyone the same way.
+   Feedback: a form in Options, also suggested (separately from reviews) after 3 losses in a row.
+   Sending opens the player's mail app with everything filled in. The address comes from wizard-config.js (FEEDBACK_TO). */
+(function () {
+  const APP_ID = '6838122041';
+  const native = () => window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.app;
+  const openURL = u => { const n = native(); if (n) n.postMessage({ action: 'open', url: u }); else window.open(u, '_blank'); };
+  window.openExternal = openURL;
+  window.askReview = function () {
+    const n = native(); if (n) { n.postMessage({ action: 'review' }); return; }
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Rate Wizards vs Sorcerers</div><div class="ssub" style="margin:0">If you have a moment, a rating on the App Store helps a lot.</div><button class="upbtn" onclick="closeSheet();openExternal('https://apps.apple.com/app/id${APP_ID}?action=write-review')">Rate on the App Store</button><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="closeSheet()">Not now</button>`;
+    $('sheet').classList.add('on'); };
+  const _sr = showRewards;
+  window.showRewards = showRewards = function () { const r = _sr.apply(this, arguments);
+    try { if (M && !window.ONB_ACTIVE && M.score.me > M.score.foe && !PR.reviewAsked) { PR.reviewAsked = 1; try { save(); } catch (e) {} setTimeout(() => { if (document.getElementById('rewards').classList.contains('on') && !document.getElementById('sheet').classList.contains('on')) askReview(); }, 3500); } } catch (e) {}
+    try { if (M && !window.ONB_ACTIVE && M.score.me < M.score.foe && (PR.lossStreak || 0) >= 3 && !PR.fbOffered) { PR.fbOffered = 1; try { save(); } catch (e) {} setTimeout(() => { try { toast('Rough streak? Tell us what would make it better: Options, Send feedback.'); } catch (e) {} }, 4200); } } catch (e) {}
+    return r; };
+  const CATS = [['bug', 'Something broke'], ['balance', 'Too hard or unfair'], ['idea', 'An idea'], ['love', 'Something I love'], ['other', 'Other']];
+  window.openFeedback = function (back) {
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Send feedback</div><div class="ssub" style="margin:0">Bugs, balance, ideas, anything. It goes straight to the developer.</div>
+      <div class="fbcats">${CATS.map(([id, n], i) => `<button class="${i === 0 ? 'on' : ''}" data-c="${id}" onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));this.classList.add('on')">${n}</button>`).join('')}</div>
+      <textarea id="fbText" maxlength="2000" placeholder="What happened, or what would you change?"></textarea>
+      <label class="fbinc"><input type="checkbox" id="fbInc" checked> Include game details (version, rank, current hand)</label>
+      <button class="upbtn" onclick="sendFeedback()">Send</button>${back ? `<button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="openOptions()">Back</button>` : ''}`;
+    $('sheet').classList.add('on'); };
+  window.sendFeedback = function () {
+    const to = window.FEEDBACK_TO; if (!to) return toast('Feedback is not set up yet in this build.');
+    const txt = (document.getElementById('fbText').value || '').trim(); if (txt.length < 3) return toast('Write a few words first');
+    const b = document.querySelector('.fbcats button.on'), cat = (b && b.dataset.c) || 'other', inc = document.getElementById('fbInc').checked;
+    const info = inc ? `\n\n---\nVersion ${typeof GAME_VERSION !== 'undefined' ? GAME_VERSION : '?'} | ${native() ? 'iOS app' : 'web'} | level ${PR.lvl} | ${PR.trophies} trophies | ${(PR.look && PR.look.cls) === 'sorc' ? 'sorcerer' : 'wizard'}\nHand: ${(PR.hand || []).map(k => SP[k] ? SP[k].n : k).join(', ')}\n${navigator.userAgent}` : '';
+    const subj = 'Wizards vs Sorcerers feedback: ' + (CATS.find(c => c[0] === cat) || [0, 'Other'])[1];
+    openURL('mailto:' + to + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(txt + info));
+    closeSheet(); toast('Your mail app is opening. Tap Send there. Thank you!');
+    try { if (window.logNote) logNote('Sent feedback: ' + subj.split(': ')[1]); } catch (e) {} };
+  const _sh = settingsHTML;
+  window.settingsHTML = settingsHTML = function () { const h = _sh.apply(this, arguments), inMatch = document.getElementById('pause') && document.getElementById('pause').classList.contains('on'); return inMatch ? h : h.replace(/<\/div>$/, '<button class="hbtn out" style="width:100%;margin-top:6px" onclick="openFeedback(1)">✉ Send feedback</button><button class="hbtn out" style="width:100%;margin-top:6px" onclick="askReview()">★ Rate the game</button></div>'); };
+  const css = document.createElement('style');
+  css.textContent = `.fbcats{display:flex;flex-wrap:wrap;gap:5px}.fbcats button{font:12px 'Lilita One';padding:6px 10px;border-radius:10px;border:2px solid #000;background:#1a1236;color:#b9a6ee;cursor:pointer}.fbcats button.on{background:linear-gradient(#4a3a80,#33275e);color:#fff;border-color:#ffd75e}
+  #fbText{width:100%;box-sizing:border-box;min-height:120px;resize:vertical;font:14px Nunito;font-weight:700;color:#1b1630;background:#f4f0ff;border:2px solid #000;border-radius:12px;padding:10px;-webkit-user-select:text;user-select:text}.fbinc{display:flex;align-items:center;gap:7px;font:12px Nunito;font-weight:800;color:#c9b8ff}`;
+  document.head.appendChild(css);
+})();
+
+/* ---------------- Gem packs are the only real-money purchase (F-551) ----------------
+   The Unlock Packs (Wizard Tome, Sorcerer Scroll, Grand Bundle) are gone. Money buys gems; gems buy chests, coins and
+   Echo Runes. In the iOS app the packs go through StoreKit; on the web they explain that packs are in the app. */
+const GEM_PACKS = [{ id: 'gems80', q: 80, price: '$0.99', n: 1 }, { id: 'gems500', q: 500, price: '$4.99', n: 3, tag: 'POPULAR' }, { id: 'gems1200', q: 1200, price: '$9.99', n: 5, tag: '+20%' }];
+window.GEM_PACKS = GEM_PACKS;
+window.grantGems = function (id) { const p = GEM_PACKS.find(q => q.id === id); if (!p) return false; PR.gems = (PR.gems || 0) + p.q; try { save(); sfx('ui_coin'); } catch (e) {} try { refreshMeta(); renderShop(); } catch (e) {} toast(`+${p.q.toLocaleString()} gems. Thank you!`); return true; };
+window.buyGems = function (id) { const iap = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iap; if (iap) iap.postMessage({ action: 'buy', id }); else toast('Gem packs can be bought in the iOS app.'); };
+(function () {
+  const _rs = renderShop;
+  window.renderShop = renderShop = function () { const r = _rs.apply(this, arguments);
+    try {
+      const pk = document.getElementById('packs'); if (pk) { const lbl = pk.previousElementSibling; if (lbl && /Unlock Packs/i.test(lbl.textContent)) lbl.remove(); pk.remove(); }
+      const gp = document.getElementById('gemPacks'); if (gp) { gp.innerHTML = GEM_PACKS.map(p => `<div class="pack">${p.tag ? `<div class="tagx">${p.tag}</div>` : ''}<div class="gems">${SVG.gem.repeat(p.n)}</div><div class="q">${p.q.toLocaleString()}</div><button class="price" onclick="buyGems('${p.id}')">${p.price}</button></div>`).join('');
+        // gem packs lead the shop now
+        const lbl = gp.previousElementSibling, host = gp.parentNode; if (lbl && host && !gp._moved) { gp._moved = 1; const title = [...host.children].find(e => /^\s*Shop\s*$/.test(e.textContent || '')), after = title ? title.nextElementSibling : host.firstElementChild; host.insertBefore(lbl, after); host.insertBefore(gp, lbl.nextElementSibling); } }
+    } catch (e) {}
+    return r; };
+})();
+
+/* ---------------- sheets always open on top (F-553) ----------------
+   Sheets opened from the pause screen (music list, ability info) used to sit underneath it. A sheet is always the thing
+   the player just asked for, so it now stacks above pause, reward cards and level-up screens (below toasts and the curtain). */
+(function () { const css = document.createElement('style'); css.textContent = `.sheet{z-index:29!important}`; document.head.appendChild(css); })();

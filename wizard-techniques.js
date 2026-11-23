@@ -1082,6 +1082,7 @@
 
   const _render = render;
   window.render = render = function () {
+    window.__frame = (window.__frame || 0) + 1;
     _render();
     const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (typeof ents !== 'undefined' && ents.length && document.getElementById('battle')?.classList.contains('on') !== false) drawTech(x);
@@ -1314,7 +1315,7 @@
      lightning crawls over it and chips of floor lift off the ground. drawAuraFront adds low flames in front of the feet. */
   function drawInkAura(x, w, inten, l, m, big) {
     if (inten <= .01) return;
-    const S2 = 2, CW = 190, CH = 270, ox = CW / 2, oy = 204, mk = () => { const c = document.createElement('canvas'); c.width = CW * S2; c.height = CH * S2; return c; };
+    const S2 = 1.5, CW = 190, CH = 270, ox = CW / 2, oy = 204, mk = () => { const c = document.createElement('canvas'); c.width = CW * S2; c.height = CH * S2; return c; };
     const st = drawInkAura.st || (drawInkAura.st = { m: mk(), t: mk() }), mx = st.m.getContext('2d'), tx = st.t.getContext('2d');
     const t = T + (w.t || 0) * .37, k = Math.min(1.3, inten) * (big ? 1.25 : 1), RX = 18 * SC, RY = 40 * HS, cy0 = -40 * HS;
     const flame = sc => {
@@ -1340,12 +1341,18 @@
     // seat it on the floor, and let it bloom on dark arenas
     x.fillStyle = `rgba(8,3,20,${.26 * al})`; x.beginPath(); x.ellipse(w.x, w.y + 1, 30 * k + 8, 10 * k + 3, 0, 0, 7); x.fill();
     x.globalCompositeOperation = 'lighter'; const bl = x.createRadialGradient(w.x, w.y + cy0, 6, w.x, w.y + cy0, 96 * k); bl.addColorStop(0, m); bl.addColorStop(1, 'rgba(0,0,0,0)'); x.globalAlpha = al * .42; x.fillStyle = bl; x.beginPath(); x.arc(w.x, w.y + cy0, 96 * k, 0, 7); x.fill(); x.globalCompositeOperation = 'source-over';
-    flame(1);
-    const ink = tint('#07020d'); x.globalAlpha = al * .95; for (let q = 0; q < 8; q++) { const a = q / 8 * 6.283; x.drawImage(ink, X0 + Math.cos(a) * 2.8, Y0 + Math.sin(a) * 2.8, CW, CH); }
-    const g1 = tx.createLinearGradient(0, top, 0, bot); g1.addColorStop(0, mixHex(m, '#12040c', .18)); g1.addColorStop(.22, m); g1.addColorStop(.7, mixHex(m, l, .55)); g1.addColorStop(1, l); x.globalAlpha = al; const body = tint(g1); x.drawImage(body, X0, Y0, CW, CH);
-    x.globalCompositeOperation = 'lighter'; x.globalAlpha = al * .3; x.drawImage(body, X0, Y0, CW, CH); x.globalCompositeOperation = 'source-over';
-    flame(.74); const g2 = tx.createLinearGradient(0, top + 50 * S2, 0, bot); g2.addColorStop(0, mixHex(m, l, .7)); g2.addColorStop(.45, l); g2.addColorStop(1, '#ffffff'); x.globalAlpha = al * .96; x.drawImage(tint(g2), X0, Y0 + 5, CW, CH);
-    if (inten > .4) { flame(.47); x.globalAlpha = al * Math.min(1, (inten - .4) * 3) * .92; x.drawImage(tint('#ffffff'), X0, Y0 + 11, CW, CH); }
+    // the layered flame (ink outline, body, glow, core) is composed once into a per-fighter image and redrawn every other frame
+    const cache = (w && w.book ? (w._auC || (w._auC = mk())) : (drawInkAura.hc || (drawInkAura.hc = mk())));
+    const fr = window.__frame || 0, stale = !(w && w.book) || !cache._t || (fr + (w && w.me ? 0 : 1)) % 2 === 0 || Math.abs(cache._i - inten) > .12 || cache._l !== l || cache._m !== m;
+    if (stale) { cache._t = 1; cache._i = inten; cache._l = l; cache._m = m; const cx = cache.getContext('2d'), CWp = CW * S2, CHp = CH * S2; cx.setTransform(1, 0, 0, 1, 0, 0); cx.globalCompositeOperation = 'source-over'; cx.globalAlpha = 1; cx.clearRect(0, 0, CWp, CHp);
+      flame(1);
+      const ink = tint('#07020d'); cx.globalAlpha = al * .95; for (let q = 0; q < 8; q++) { const a = q / 8 * 6.283; cx.drawImage(ink, Math.cos(a) * 2.8 * S2, Math.sin(a) * 2.8 * S2, CWp, CHp); }
+      const g1 = tx.createLinearGradient(0, top, 0, bot); g1.addColorStop(0, mixHex(m, '#12040c', .18)); g1.addColorStop(.22, m); g1.addColorStop(.7, mixHex(m, l, .55)); g1.addColorStop(1, l); cx.globalAlpha = al; const body = tint(g1); cx.drawImage(body, 0, 0, CWp, CHp);
+      cx.globalCompositeOperation = 'lighter'; cx.globalAlpha = al * .3; cx.drawImage(body, 0, 0, CWp, CHp); cx.globalCompositeOperation = 'source-over';
+      flame(.74); const g2 = tx.createLinearGradient(0, top + 50 * S2, 0, bot); g2.addColorStop(0, mixHex(m, l, .7)); g2.addColorStop(.45, l); g2.addColorStop(1, '#ffffff'); cx.globalAlpha = al * .96; cx.drawImage(tint(g2), 0, 5 * S2, CWp, CHp);
+      if (inten > .4) { flame(.47); cx.globalAlpha = al * Math.min(1, (inten - .4) * 3) * .92; cx.drawImage(tint('#ffffff'), 0, 11 * S2, CWp, CHp); }
+      cx.globalAlpha = 1; }
+    x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; x.drawImage(cache, X0, Y0, CW, CH);
     // embers streak upward off the tips
     x.lineCap = 'round'; for (let i = 0; i < 9; i++) { const ph = (t * .8 + i * .37) % 1, ex = w.x + Math.sin(i * 2.4 + t * 1.6) * RX * 1.3, ey = w.y + cy0 - RY * .45 - ph * 86 * k; x.globalAlpha = al * (1 - ph); x.strokeStyle = i % 3 ? l : '#ffffff'; x.lineWidth = 1.7; x.beginPath(); x.moveTo(ex, ey); x.lineTo(ex + Math.sin(t * 3 + i) * 1.5, ey + 3 + 5 * (1 - ph)); x.stroke(); }
     // chips of floor float up around the feet

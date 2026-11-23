@@ -118,7 +118,7 @@ const ONB_STEPS = [
     until: () => PR.spells[ONB.upK].lvl > ONB.upFrom && !modalOpen(),
     guard: () => { if (!document.getElementById('sheet').classList.contains('on') && !(PR.spells[ONB.upK].lvl > ONB.upFrom)) ONB.i -= 1; } },
   { id: 'shop', dot: 6, enter() { nav('shop'); }, target: ['#deals', '#chests'], place: 'pinBottom',
-    html: () => `<b class="who">Hoot</b>The <em>Shop</em>. Daily deals, chests stuffed with points, and <em>Unlock Packs</em> for new Spells and Techniques. Coins come from duels; gems are the rare stuff.<div class="row"><button class="go" data-next>Next</button></div>` },
+    html: () => `<b class="who">Hoot</b>The <em>Shop</em>. Daily deals and chests stuffed with skill points. Coins come from duels; <em>gems</em> are the rare stuff that buys chests and Echo Runes.<div class="row"><button class="go" data-next>Next</button></div>` },
   { id: 'friends', dot: 6, enter() { nav('friends'); }, target: '#flist', place: 'top',
     html: () => `<b class="who">Hoot</b><em>Friends</em>. See who's online and challenge them to a friendly duel. No trophies on the line.<div class="row"><button class="go" data-next>Next</button></div>` },
   { id: 'ranks', dot: 6, enter() { nav('ranks'); }, target: '.tier.here', place: 'top',

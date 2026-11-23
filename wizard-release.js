@@ -26,9 +26,9 @@
   const iap = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iap;
   if (typeof buyPack === 'function') {
     const grant = buyPack;
-    window.SB_IAP_DONE = function (id, ok, msg) { if (ok) grant(id); else if (msg) toast(msg); };
+    window.SB_IAP_DONE = function (id, ok, msg) { if (ok) { if (!(window.grantGems && grantGems(id))) grant(id); } else if (msg) toast(msg); };
     window.buyPack = function (id) { if (iap) iap.postMessage({ action: 'buy', id }); else toast('Purchases are only available in the app.'); };
-    window.SB_IAP_PRICES = function (map) { try { PACKS.forEach(p => { if (map[p.id]) p.price = map[p.id]; }); if (typeof renderShop === 'function' && document.getElementById('shop')?.classList.contains('on')) renderShop(); } catch (e) {} };
+    window.SB_IAP_PRICES = function (map) { try { PACKS.forEach(p => { if (map[p.id]) p.price = map[p.id]; }); (window.GEM_PACKS || []).forEach(p => { if (map[p.id]) p.price = map[p.id]; }); if (typeof renderShop === 'function' && document.getElementById('shop')?.classList.contains('on')) renderShop(); } catch (e) {} };
     if (iap) iap.postMessage({ action: 'prices' });
   }
 })();
