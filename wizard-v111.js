@@ -53,7 +53,7 @@
   document.addEventListener('keydown', e => { if (e.key === 'ArrowUp') stanceStep(-1); else if (e.key === 'ArrowDown') stanceStep(1); });
 
   const css = document.createElement('style');
-  css.textContent = `.sdn{display:inline-block;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+  css.textContent = `.rd{white-space:nowrap}.sdn{display:inline-block;max-width:64px;font-size:.88em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
   #rwTip{position:absolute;z-index:60;display:none;background:#0b0816f7;border:2px solid #ffd45e;border-radius:14px;padding:9px 11px;box-shadow:0 4px 0 #000;color:#f1eaff}#rwTip.on{display:block;animation:pop .18s}
   #rwTip>b{font:15px 'Lilita One';font-weight:400;color:#ffd45e}#rwTip p{margin:3px 0 0;font:800 12px/1.3 Nunito}#rwTip p.ru{color:#c9b8ff}#rwTip .rwtl{font:11px 'Lilita One';color:#b9a6ee;letter-spacing:.4px;text-transform:uppercase;margin:7px 0 3px}#rwTip .hbtn{margin-top:8px;padding:6px;font-size:14px}
   #rwTip .ostats{display:flex;flex-wrap:wrap;gap:5px}#rwTip .ostats span{display:inline-flex;gap:6px;align-items:baseline;background:#0008;border:2px solid #000;border-radius:9px;padding:2px 8px}#rwTip .ostats small{font:800 11px Nunito;color:#cfc3f2}#rwTip .ostats b{font:13px 'Lilita One';font-weight:400;color:#7ee0a0}

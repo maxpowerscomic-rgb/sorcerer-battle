@@ -41,8 +41,15 @@
       try { const b = M.me.book, p = pz(); if (p.length > b.length) p.length = b.length;
         const sel = M.swapSel ?? (M.lastAdded >= 0 ? M.lastAdded : 0), ring = $('ring');
         ring.querySelectorAll('.tile[data-i]').forEach(t => { const i = +t.dataset.i; t.classList.toggle('pz', !!p[i]); if (p[i]) t.insertAdjacentHTML('beforeend', '<span class="pzm">⏸</span>');
-          t.onclick = () => { if (M.swapSel === null) M.swapSel = i; else { if (M.swapSel !== i) { [b[M.swapSel], b[i]] = [b[i], b[M.swapSel]]; [p[M.swapSel], p[i]] = [p[i], p[M.swapSel]]; } M.swapSel = null; } renderBook(); }; });
-        const d = $('detail'); if (d && b[sel] !== undefined && !window.ONB_ACTIVE) d.insertAdjacentHTML('beforeend', `<button class="pzbtn ${p[sel] ? 'on' : ''}" onclick="togglePause(${sel})">${p[sel] ? '▶ Resume' : '⏸ Pause this round'}</button>`);
+          const swap = (a, c) => { [b[a], b[c]] = [b[c], b[a]]; [p[a], p[c]] = [p[c], p[a]]; };
+          // (1.0.11.2) a tap only selects. Order changes go through the Move button, so looking at two abilities in a row never swaps them.
+          t.classList.toggle('mvto', !!M.moveArm && i !== sel);
+          t.onclick = () => { if (window.ONB_ACTIVE) { if (M.swapSel === null) M.swapSel = i; else { if (M.swapSel !== i) swap(M.swapSel, i); M.swapSel = null; } }
+            else if (M.moveArm && sel !== i) { swap(sel, i); M.moveArm = 0; M.swapSel = i; try { sfx('ui_deal'); } catch (e) {} }
+            else { M.swapSel = i; M.moveArm = 0; }
+            renderBook(); }; });
+        if (!window.ONB_ACTIVE) { const hint = $('hint'); if (hint) hint.textContent = b.length < 2 ? 'Draft more abilities to build a combo' : M.moveArm ? 'Tap the slot to move it to' : 'Tap an ability to see it. Move changes the order.'; }
+        const d = $('detail'); if (d && b[sel] !== undefined && !window.ONB_ACTIVE) d.insertAdjacentHTML('beforeend', `<div class="odbtns">${b.length > 1 ? `<button class="pzbtn mvbtn ${M.moveArm ? 'on' : ''}" onclick="orderMove(${sel})">${M.moveArm ? '✕ Cancel move' : '⇄ Move'}</button>` : ''}<button class="pzbtn ${p[sel] ? 'on' : ''}" onclick="togglePause(${sel})">${p[sel] ? '▶ Resume' : '⏸ Pause this round'}</button></div>`);
         const act = b.filter((k, j) => !p[j]); if (p.some(Boolean)) $('loopt').innerHTML = 'One full loop: ' + act.reduce((a, k) => a + SP[k].t, 0).toFixed(1) + 's · ' + (b.length - act.length) + ' paused' + (typeof synHTML === 'function' ? synHTML(PR.hand, 1) : ''); } catch (e) {}
       return r; }; }
   { const _sd = startDuel; window.startDuel = startDuel = function () { const p = (typeof M !== 'undefined' && M && M.pz) ? M.pz.slice() : []; const r = _sd.apply(this, arguments);
@@ -81,6 +88,7 @@
 
   /* ---------------- how much your fighter talks ---------------- */
   window.talkChance = first => { const t = (typeof PR !== 'undefined' && PR.talk) || 'some'; return t === 'off' ? 0 : t === 'lots' ? (first ? 1 : .75) : (first ? .3 : .12); };
+  window.orderMove = function (i) { M.swapSel = i; M.moveArm = M.moveArm ? 0 : 1; renderBook(); };
   window.setTalk = function (v) { PR.talk = v; try { save(); } catch (e) {} toast({ off: 'Your fighter will stay silent.', some: 'Your fighter will speak now and then.', lots: 'Your fighter will have plenty to say.' }[v]); };
   // a chatty fighter also speaks up mid-round
   { let next = 0; const _up = update; window.update = update = function (dt) { const r = _up.apply(this, arguments);
@@ -113,6 +121,7 @@
   .tkrow button{display:flex;align-items:center;gap:3px;font:12.5px 'Lilita One';color:#2a1600;background:linear-gradient(#ffe27a,#f0a830);border:2px solid #000;border-radius:10px;padding:5px 8px;box-shadow:0 2px 0 #000;cursor:pointer;white-space:nowrap}
   .tkrow button.gm{background:linear-gradient(#e07bff,#9a3fd6);color:#fff}.tkrow button[disabled]{filter:grayscale(1) brightness(.7)}.tkrow button .ci{width:14px;height:14px;display:inline-grid}
   .tile.pz img{opacity:.3;filter:grayscale(1)}.tile .pzm{position:absolute;inset:0;display:grid;place-items:center;font-size:24px;color:#ffd75e;text-shadow:0 2px 0 #000;pointer-events:none}
+  .odbtns{display:flex;gap:8px;flex-wrap:wrap}.tile.mvto{box-shadow:0 0 0 2px #ffd45e,0 0 12px #ffd45e88;animation:breathe 1s ease-in-out infinite}
   .pzbtn{margin-top:6px;font:13px 'Lilita One';color:#fff;background:linear-gradient(#4a3a80,#2b2050);border:2px solid #000;border-radius:10px;padding:5px 12px;box-shadow:0 2px 0 #000;cursor:pointer}.pzbtn.on{background:linear-gradient(#ffe27a,#f0a830);color:#2a1600}
   #detail{flex-wrap:wrap}.q .qpz{opacity:.3;filter:grayscale(1)}
   .crlog{max-height:36vh;overflow:auto;background:#0009;border:2px solid #000;border-radius:10px;padding:8px;margin:8px 0;font:11px/1.35 ui-monospace,Menlo,monospace;color:#e8e0ff;white-space:pre-wrap;word-break:break-word;-webkit-user-select:text;user-select:text}
