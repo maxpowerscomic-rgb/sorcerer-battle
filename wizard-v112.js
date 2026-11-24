@@ -79,12 +79,24 @@
       try { const over = e.type === 'pointerup' ? tileAt(e.clientX, e.clientY) : null, j = over ? +over.dataset.i : -1, b = M.me.book; if (j >= 0 && j !== cur.i && b[j] !== undefined) { [b[cur.i], b[j]] = [b[j], b[cur.i]]; const p = (M.pz = M.pz || []); [p[cur.i], p[j]] = [p[j], p[cur.i]]; M.swapSel = j; M.moveArm = 0; try { sfx('ui_deal'); } catch (x) {} renderBook(); } } catch (x) {} };
     document.addEventListener('pointerup', end, true); document.addEventListener('pointercancel', end, true); })();
 
+  /* ---------------- 8. text size: Normal, Large, Extra large ---------------- */
+  // Sizes in this game are fixed pixels, so the menus, sheets, tooltips and speech bubbles are scaled as a whole (text and its boxes together).
+  const SIZES = [['normal', 'Normal'], ['large', 'Large'], ['xl', 'Extra large']];
+  const applyText = () => { try { const v = (typeof SET === 'function' && SET().textSize) || 'normal'; document.documentElement.classList.toggle('tx-l', v === 'large'); document.documentElement.classList.toggle('tx-xl', v === 'xl'); } catch (e) {} };
+  window.setTextSize = function (v) { try { SET().textSize = v; save(); } catch (e) {} applyText(); try { toast(v === 'xl' ? 'Text: extra large' : v === 'large' ? 'Text: large' : 'Text: normal'); } catch (e) {} };
+  if (typeof settingsHTML === 'function') { const _sh = settingsHTML; window.settingsHTML = settingsHTML = function () { const h = _sh.apply(this, arguments), v = (SET().textSize) || 'normal';
+      const row = `<div class="opt"><span>Text size</span><select class="bgmsel" onchange="setTextSize(this.value)">${SIZES.map(([id, n]) => `<option value="${id}" ${v === id ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
+      return h.includes('<div class="opt"><span>My fighter talks</span>') ? h.replace('<div class="opt"><span>My fighter talks</span>', row + '<div class="opt"><span>My fighter talks</span>') : h.replace(/<\/div>$/, row + '</div>'); }; }
+  applyText();
+
   /* ---------------- 2 and 3: red dots, bigger hand icons ---------------- */
   const css = document.createElement('style');
   css.textContent = `#chBtn,#ldBtn{overflow:visible}#chBtn:has(#chDot.ready)::after,#ldBtn.ready::after,#stkBtn.newcos::after{content:"";position:absolute;top:-5px;right:-5px;width:12px;height:12px;border-radius:50%;background:#ff3b4a;border:2px solid #000;box-shadow:0 0 6px #ff3b4a;animation:ndot 1.1s ease-in-out infinite}
   @keyframes ndot{50%{transform:scale(1.25)}}
   .qi .spn{position:absolute;top:-7px!important;right:-7px;left:auto;bottom:auto;width:16px!important;height:16px!important;box-sizing:border-box;border-radius:50%;background:#2f8dff;color:#fff;border:1.500px solid #000;font:10px/13px 'Lilita One';font-style:normal;text-align:center;z-index:3;box-shadow:0 0 6px #2f8dffaa;pointer-events:none}
   #ring .tile[data-i]{touch-action:none;-webkit-user-select:none;user-select:none}#ring .tile.dragsrc{opacity:.35}#ring .tile.dragover{box-shadow:0 0 0 3px #ffd45e,0 0 14px #ffd45e!important;transform:scale(1.06)}
+  .tx-l .screen>.mc,.tx-l #sheetP,.tx-l #detail,.tx-l #rwTip,.tx-l #dtip,.tx-l #sytip,.tx-l .onb .bub,.tx-l .rwwrap,.tx-l #toast{zoom:1.14}.tx-xl .screen>.mc,.tx-xl #sheetP,.tx-xl #detail,.tx-xl #rwTip,.tx-xl #dtip,.tx-xl #sytip,.tx-xl .onb .bub,.tx-xl .rwwrap,.tx-xl #toast{zoom:1.28}
+  .tx-xl #handBar .hsl{width:54px;height:54px}.tx-xl #handBar .hsl img{width:48px;height:48px}.tx-xl #handBar .hs{gap:6px}.tx-l #handBar .hsl{width:60px;height:60px}.tx-l #handBar .hsl img{width:52px;height:52px}
   #handBar{flex-wrap:wrap}#handBar .hl{flex:1 1 100%}#handBar .hs{width:100%;justify-content:center;gap:10px;margin-top:8px}#handBar .hsl{width:66px;height:66px;border-radius:16px}#handBar .hsl img{width:58px;height:58px}`;
   document.head.appendChild(css);
 })();

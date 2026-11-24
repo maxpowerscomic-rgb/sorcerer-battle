@@ -116,6 +116,10 @@
       for (const p of projs) if (!p.blue && p.o && p.o.blueT > T && (!p.src || p.src === 'fireball') && p.life > 0 && (p.age || 0) < .12) bluify(p, p.o);
       for (const p of projs) if (p.blue) { if (p.life > 0) { p._bx = p.x; p._by = p.y; } else if (!p._bd) { p._bd = 1; blueDead.push({ x: p._bx === undefined ? p.x : p._bx, y: p._by === undefined ? p.y : p._by, t: 0 }); } }
       for (const d of blueDead) d.t += dt; blueDead = blueDead.filter(d => d.t < .5);
+      // embers a Blue Flame drops or scatters are blue embers (drawn below, in the floor layer)
+      { const live = projs.filter(p => p.blue && p.life > 0); if ((live.length || blueDead.length) && typeof decals !== 'undefined') for (let i = decals.length - 1; i >= 0 && i > decals.length - 30; i--) { const d = decals[i]; if (d.k !== 'ember' || d.t > .12) continue;
+          if (live.some(p => Math.hypot(p.x - d.x, p.y + 46 * HS - d.y) < 16) || blueDead.some(q => Math.hypot(q.x - d.x, q.y + 46 * HS - d.y) < 80)) { d.k = 'bember'; d.life = Math.max(d.life || 2.6, 2.6); } }
+        for (let i = decals.length - 1; i >= 0; i--) if (decals[i].k === 'bember' && decals[i].t >= decals[i].life) decals.splice(i, 1); }
       if (blueDead.length) { for (let i = fireFx.length - 1; i >= 0 && i > fireFx.length - 80; i--) { const f = fireFx[i]; if (f.el || f.smoke || f.steam || f.t > .12) continue; if (blueDead.some(d => Math.hypot(d.x - f.x, d.y - f.y) < 70)) f.el = 'frost'; }
         if (typeof parts !== 'undefined') for (let i = parts.length - 1; i >= 0 && i > parts.length - 80; i--) { const q = parts[i]; if (typeof q.color === 'string' && /^#ff|^#f[0-9a-f]9|^#e0|^#c93/i.test(q.color) && blueDead.some(d => Math.hypot(d.x - q.x, d.y - q.y) < 70)) q.color = Math.random() < .5 ? '#7fd0ff' : '#e6f6ff'; } }
       // Blue Wall: a standing cone of blue fire. Enemies inside it burn; it is fed with fresh flame every frame
@@ -173,6 +177,9 @@
   };
 
   if (typeof drawDecals === 'function') { const _dd = drawDecals; window.drawDecals = drawDecals = function (x) { _dd.apply(this, arguments); if (x !== ctx) return;
+      if (typeof decals !== 'undefined') for (const d of decals) { if (d.k !== 'bember' || d.t < 0) continue; const k0 = d.t / d.life, a = k0 > .7 ? (1 - k0) / .3 : 1, s0 = (d.s || 1) * (1 + Math.sin(T * 30 + d.x) * .15); x.save(); x.translate(d.x, d.y); x.globalAlpha = a; x.globalCompositeOperation = 'lighter';
+        const g = x.createRadialGradient(0, -3, 0, 0, -3, 12 * s0); g.addColorStop(0, 'rgba(230,246,255,.95)'); g.addColorStop(.4, 'rgba(58,160,255,.6)'); g.addColorStop(1, 'rgba(30,90,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, -3, 12 * s0, 0, 7); x.fill();
+        x.globalCompositeOperation = 'source-over'; x.fillStyle = '#3aa0ff'; x.beginPath(); x.moveTo(-3 * s0, 0); x.quadraticCurveTo(-4 * s0, -5 * s0, Math.sin(T * 12 + d.y) * 1.2, -10 * s0); x.quadraticCurveTo(4 * s0, -5 * s0, 3 * s0, 0); x.closePath(); x.fill(); x.fillStyle = '#e6f6ff'; x.beginPath(); x.arc(0, -2.5 * s0, 1.6 * s0, 0, 7); x.fill(); x.restore(); }
       for (const c of cones) { const k0 = Math.min(1, c.t / .25), fade = Math.min(1, (c.life - c.t) * 2.5), L = c.len * k0; x.save(); x.translate(c.x, c.y); x.scale(1, .8); x.rotate(c.a); x.globalCompositeOperation = 'lighter';
         const g = x.createRadialGradient(0, 0, 4, 0, 0, L); g.addColorStop(0, `rgba(230,246,255,${.5 * fade})`); g.addColorStop(.5, `rgba(58,160,255,${.34 * fade})`); g.addColorStop(1, 'rgba(30,90,255,0)'); x.fillStyle = g; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, L, -c.half, c.half); x.closePath(); x.fill();
         x.strokeStyle = `rgba(160,210,255,${.6 * fade})`; x.lineWidth = 2; x.setLineDash([6, 6]); x.lineDashOffset = -T * 40; x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(-c.half) * L, Math.sin(-c.half) * L); x.moveTo(0, 0); x.lineTo(Math.cos(c.half) * L, Math.sin(c.half) * L); x.stroke(); x.restore(); }
