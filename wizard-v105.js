@@ -161,8 +161,10 @@
     else { who = list; const m = SCHOOL_SYN[id] || {}; title = m.t || id; what = `Every ability in the hand is a ${id === 'sorc' ? 'technique' : 'spell'}: +${Math.round(sy.pct * 100)}% ${m.n || 'damage'}.`; }
     let t = $('sytip'); if (!t) { t = document.createElement('div'); t.id = 'sytip'; document.body.appendChild(t); t.onclick = () => t.classList.remove('on'); }
     t.innerHTML = `<b>${title}</b><p>${what}</p><div>${who.map(k => `<span><img src="${ICON[k]}">${SP[k].n}</span>`).join('')}</div>`;
-    const r = el.getBoundingClientRect(); t.classList.add('on'); const tw = Math.min(300, innerWidth - 20); t.style.width = tw + 'px'; t.style.left = Math.max(10, Math.min(innerWidth - tw - 10, r.left + r.width / 2 - tw / 2)) + 'px';
-    const th = t.offsetHeight; t.style.top = (r.top - th - 8 > 8 ? r.top - th - 8 : r.bottom + 8) + 'px'; clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 4500); }
+    // (1.0.23) kept inside the game frame on every side: the box is measured with its padding and border, and clamped left, right, top and bottom
+    const r = el.getBoundingClientRect(), fr = (document.querySelector('.phone') || document.body).getBoundingClientRect(), L0 = Math.max(0, fr.left), R0 = Math.min(innerWidth, fr.right), T0 = Math.max(0, fr.top), B0 = Math.min(innerHeight, fr.bottom);
+    t.classList.add('on'); t.style.boxSizing = 'border-box'; t.style.maxHeight = (B0 - T0 - 16) + 'px'; t.style.overflowY = 'auto'; const tw = Math.min(300, R0 - L0 - 16); t.style.width = tw + 'px'; t.style.left = Math.max(L0 + 8, Math.min(R0 - tw - 8, r.left + r.width / 2 - tw / 2)) + 'px';
+    const th = t.offsetHeight; let top = r.top - th - 8 > T0 + 8 ? r.top - th - 8 : r.bottom + 8; top = Math.max(T0 + 8, Math.min(B0 - th - 8, top)); t.style.top = top + 'px'; clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 4500); }
   document.addEventListener('click', e => { const el = e.target && e.target.closest && e.target.closest('.sy[data-sk]'); if (el) { e.stopPropagation(); synTip(el); } else { const t = $('sytip'); if (t && !(e.target.closest && e.target.closest('#sytip'))) t.classList.remove('on'); } }, true);
 
   const css = document.createElement('style');

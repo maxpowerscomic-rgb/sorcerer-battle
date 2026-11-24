@@ -122,10 +122,15 @@
   function canvas() { let c = $('yardCv'); if (!c) { const st = document.querySelector('#home .stage'); if (!st) return null; c = document.createElement('canvas'); c.id = 'yardCv'; st.insertBefore(c, st.firstChild.nextSibling);
       c.addEventListener('pointerdown', e => { try { if (!Y.on || !Y.cam || !ents[1]) return; const r = c.getBoundingClientRect(), bx = Y.cam.sx + (e.clientX - r.left) / Y.cam.sc, by = Y.cam.sy + (e.clientY - r.top) / Y.cam.sc, d = ents[1];
           if (Math.abs(bx - d.x) < 30 && by > d.y - 82 * SC && by < d.y + 14) tip((d.x - Y.cam.sx) * Y.cam.sc, (d.y - 96 * SC - Y.cam.sy) * Y.cam.sc); else { const t = $('yardTip'); if (t) t.classList.remove('on'); } } catch (x) {} }); } return c; }
+  // the view follows both the fighter and the dummy: it zooms out (up to showing ground beyond the arena) so neither leaves the picture
   function blit() { const c = canvas(); if (!c) return; const r = c.getBoundingClientRect(), w = r.width, h = r.height; if (!w || !h) return; const d2 = Math.min(2, devicePixelRatio || 1);
     if (c.width !== Math.round(w * d2) || c.height !== Math.round(h * d2)) { c.width = Math.round(w * d2); c.height = Math.round(h * d2); }
-    const g = c.getContext('2d'), me = ents[0], sw = 350, sc = w / sw, sh = h / sc, sx = 20; let cy = (me.y + AY) / 2 - 30; Y.camY += (cy - Y.camY) * .08; const sy = Math.max(120, Math.min(H - sh - 40, Y.camY - sh / 2));
-    Y.cam = { sx, sy, sc }; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height); g.imageSmoothingEnabled = true; g.drawImage(cv, sx * dpr, sy * dpr, sw * dpr, sh * dpr, 0, 0, c.width, c.height); }
+    const g = c.getContext('2d'), me = ents[0], fo = ents[1], dx = Math.abs(me.x - fo.x), dy = Math.abs(me.y - fo.y);
+    const want = Math.max(350, Math.min(620, Math.max(dx + 170, (dy + 230) * w / h))); Y.camW = (Y.camW || 350) + (want - (Y.camW || 350)) * .07; const sw = Y.camW, sc = w / sw; let sh = h / sc; if (sh > H) sh = H;
+    const mx = sw > 356 ? (me.x + fo.x) / 2 : 195, cy = (me.y + fo.y) / 2 - 30; Y.camY += (cy - Y.camY) * .08; Y.camX = (Y.camX === undefined ? mx : Y.camX) + (mx - (Y.camX === undefined ? mx : Y.camX)) * .08;
+    const sx = Y.camX - sw / 2, sy = Math.max(0, Math.min(H - sh, Y.camY - sh / 2));
+    Y.cam = { sx, sy, sc }; g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#1a1228'; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingEnabled = true;
+    g.drawImage(cv, 0, sy * dpr, W * dpr, sh * dpr, -sx * sc * d2, (h - sh * sc) / 2 * d2, W * sc * d2, sh * sc * d2); }
   function frame(now) { if (!Y.on) return; Y.raf = requestAnimationFrame(frame); const dt = Math.min(.033, (now - Y.last) / 1000); Y.last = now; if (document.hidden || sheetOn() || !homeOn() || dt <= 0) return;
     try { if (Y.dirty || typeof M === 'undefined' || !M || !M.practice || typeof ents === 'undefined' || !ents || !ents[1] || !ents[1].isDummy) { Y.dirty = 0; build(); } step(dt); blit(); }
     catch (e) { Y.fails++; try { if (window.logCrash) logCrash('yard', e && e.message, '', e && e.stack); } catch (x) {} stop(); } }

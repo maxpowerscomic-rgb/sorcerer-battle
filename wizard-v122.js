@@ -19,6 +19,7 @@
     wisps: { n: 'Grave Wisps', r: 'legendary', u: { type: 'gems', v: 260 }, step: 6, cols: ['#9fffd0', '#3fd0a0', '#e6fff4'], mk: w => ({ x: w.x + rnd(-12, 12), y: w.y - rnd(0, 50) * HS, vx: rnd(-22, 22), vy: -rnd(20, 50), size: rnd(2.4, 4.6), life: rnd(.8, 1.4), grav: -18, drag: .96 }) },
     prism: { n: 'Prism', r: 'legendary', u: { type: 'streak', v: 30 }, step: 3, cols: null, mk: w => ({ x: w.x + rnd(-6, 6), y: w.y - rnd(0, 56) * HS, vx: rnd(-10, 10), vy: rnd(-12, 12), size: rnd(2.6, 4.4), life: rnd(.5, .9), color: `hsl(${(T * 300 + rnd(0, 40)) % 360 | 0},100%,62%)` }) },
   };
+  window.TRAIL_COLS = {}; for (const id in TR) TRAIL_COLS[id] = TR[id].cols || ['#ff5a5a', '#ffd45e', '#5aff8a', '#5ab8ff', '#c48cff'];
   try { for (const id in TR) if (!COSMETICS.trail.some(t => t.id === id)) COSMETICS.trail.push({ id, n: TR[id].n, r: TR[id].r, unlock: TR[id].u }); } catch (e) {}
   if (typeof update === 'function') { const _u = update; window.update = update = function (dt) { const r = _u.apply(this, arguments);
       try { if (typeof ents !== 'undefined' && ents && !ended) for (const w of ents) { const t = TR[w.trail]; if (!t || w.dead) continue; const mv = Math.hypot(w.x - (w._t2x === undefined ? w.x : w._t2x), w.y - (w._t2y === undefined ? w.y : w._t2y)); w._t2x = w.x; w._t2y = w.y; if (mv > 60) continue; w._t2a = (w._t2a || 0) + mv;

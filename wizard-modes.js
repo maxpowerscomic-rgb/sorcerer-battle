@@ -80,10 +80,11 @@
     once: ['Once a loop', '<svg viewBox="0 0 20 20"><path d="M15.6 6.2A6.6 6.6 0 1 0 16.6 10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12.4 5.6h4v-4z" fill="currentColor"/><path d="M8.8 8l1.8-1.3v6.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>'],
     rest: ['Rests every other loop', '<svg viewBox="0 0 20 20"><path d="M15.6 6.2A6.6 6.6 0 1 0 16.6 10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12.4 5.6h4v-4z" fill="currentColor"/><path d="M8 7.4v5.4M12 7.4v5.4" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/></svg>'],
     passive: ['Passive: always on', '<svg viewBox="0 0 20 20"><path d="M10 10c-1.6-2.8-3-3.8-4.6-3.8a3.8 3.8 0 0 0 0 7.6c1.600 0 3-1 4.600-3.800zm0 0c1.600 2.800 3 3.800 4.600 3.800a3.800 3.800 0 0 0 0-7.600c-1.600 0-3 1-4.600 3.800z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/></svg>'],
+    noseq: ['Not twice in a row', '<svg viewBox="0 0 20 20"><rect x="2.500" y="6" width="6.500" height="8" rx="1.500" fill="none" stroke="currentColor" stroke-width="1.900"/><rect x="11" y="6" width="6.500" height="8" rx="1.500" fill="none" stroke="currentColor" stroke-width="1.900"/><path d="M3 17 17 3" stroke="currentColor" stroke-width="2.100" stroke-linecap="round"/></svg>'],
     one: ['One copy only', '<svg viewBox="0 0 20 20"><rect x="5" y="3" width="10" height="14" rx="2.2" fill="none" stroke="currentColor" stroke-width="2.1"/><path d="M9 8l1.600-1.200v6.400" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round"/></svg>'],
   };
   const restrCodes = k => { const out = [], L = window.LOOP_ONCE || {};
-    if (k === 'chosen' || k === 'bloodoath') out.push('passive'); if (L[k] || k === 'doubletake' || k === 'polarity') out.push('once'); if (k === 'sanctum' || k === 'opensanctum') out.push('rest');
+    if (k === 'chosen' || k === 'bloodoath') out.push('passive'); if (L[k] || k === 'doubletake' || k === 'polarity') out.push('once'); if (k === 'sanctum' || k === 'opensanctum') out.push('rest'); if (window.NOSEQ && NOSEQ.has(k)) out.push('noseq');
     try { if (ONE_COPY.has(k) && !out.length) out.push('one'); } catch (e) {} return out; };
   const restr = k => restrCodes(k).map(c => RSYM[c][0]);
   window.RESTR_SYMBOLS = RSYM;
@@ -123,12 +124,22 @@
   if (typeof startDuel === 'function') { const _sd = startDuel;
     window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments);
       try { if (typeof M !== 'undefined' && M && !M.practice && !window.ONB_ACTIVE && window.emoteSay && typeof ents !== 'undefined' && ents[1]) { const first = M.round === 1;
-          if (!M.rival && !M.ladder && Math.random() < (first ? .65 : .22)) { const cls = (M.foeLook && M.foeLook.cls) === 'sorc' ? 'sorc' : 'wiz'; setTimeout(() => { try { if (!ended && ents[1] && !ents[1].dead) emoteSay(ents[1], null, pickOf(LINES[cls])); } catch (e) {} }, 1100); }
+          if (!(M.rival && M.rival.line) && !M.ladder && Math.random() < (first ? .65 : .22)) { const cls = (M.foeLook && M.foeLook.cls) === 'sorc' ? 'sorc' : 'wiz'; setTimeout(() => { try { if (!ended && ents[1] && !ents[1].dead) emoteSay(ents[1], null, pickOf(LINES[cls])); } catch (e) {} }, 1100); }
           if (Math.random() < (window.talkChance ? talkChance(first) : (first ? .3 : .12))) { const cls = (PR.look && PR.look.cls) === 'sorc' ? 'sorc' : 'wiz'; setTimeout(() => { try { if (!ended && ents[0] && !ents[0].dead) emoteSay(ents[0], null, pickOf(LINES[cls])); } catch (e) {} }, 2300); } } } catch (e) {}
       return r; }; }
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.23', d: '24 Nov 2026', items: ['Target buttons in battle: four buttons on the left choose what you aim at (caster, walls, summons, nearest). Tap the lit one again for auto.',
+      'Colourways: four new colours each for Fireball, Arcane Orbs, Bubbles, Ricochet, Fly Swarm, Gravity Well, Thorns, Ice Wall and Zodiac Beasts. Earn them by playing, on the ability page.',
+      'New Ladder variant: Crimson Zodiac, with five fused beasts and the Regent. Win it from the 30th rival.',
+      'Juggernaut: walks faster the longer it lives. New upgrades: Vanguard, Dome Breaker, Bodyguard and Take the Blow.',
+      'Collapse erases enemy walls and ground effects in its path, and wears a Sanctum down twice as fast.',
+      'Copy Cast and Mirror Counter cannot fire twice in a row. One Sanctum per caster: a new one replaces the old. New Sanctum upgrade: Bulwark (+50% durability).',
+      'Chosen One: after taking one of its upgrades, the next waits until you lose another round.',
+      'New opening: the curtain closes on WIZARDS and SORCERERS and VS slams down.',
+      'Order screen: solid cards, and five abilities fit on one row. Hoot can be folded away on the Battle Hand. The training camera keeps you and the dummy in view.',
+      'Fixes: new trails now show in the preview, Fight Club rivals no longer say "null", bonus tooltips stay on screen, round damage icons are no longer cut off, Blue Wall has no guide lines, and music uses less memory.'] },
     { v: '1.0.22.1', d: '25 Nov 2026', items: ['A Spell Cannon beam that reaches the enemy caster now stops on them and refracts, instead of passing straight through.'] },
     { v: '1.0.22', d: '25 Nov 2026', items: ['Ten more Ladder rivals: the base Ladder now has 30.', 'Seven new aura styles: Live Wire, Petal Whirl, Moons, Rune Circle, Shadow Tendrils, Frost Crown and Eclipse.',
       'Eight new trails: Frostbite, Falling Leaves, Bubbles, Voltage, Ink Blots, Coin Shower, Grave Wisps and Prism.', 'Animated emblems: Storm Caller now sparks, and Inferno, Aurora, Void Star, Tempest and Phoenix are new.',

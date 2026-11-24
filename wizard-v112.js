@@ -102,6 +102,7 @@
       ${row(sym('rest'), 'Rests every other loop.')}
       ${row(sym('passive'), 'Always on. It never needs a turn.')}
       ${row(sym('one'), 'Only one copy allowed.')}
+      ${row(sym('noseq'), 'Cannot fire twice in a row.')}
       ${row('<span class="lgs dots"><i></i><i></i></span>', 'Upgrades you already have on it.')}
       ${row('<span class="lgs star">★</span>', 'A standout: signature upgrade or boss ability.')}
       ${row('<span class="lgs ring"></span>', 'The next open slot in your book.')}

@@ -184,8 +184,8 @@
   /* ---------------- load splash: the curtain starts shut with the logo, then opens ---------------- */
   (function () { const c = $('curtain'); if (!c || !c.classList.contains('splash')) return; try { if (typeof setLogo === 'function') setLogo(); } catch (e) {}
     if (window.SB_SHOT) { c.className = 'curtain'; return; }
-    const t0 = performance.now(), open = () => { if (!c.classList.contains('splash')) return; c.className = 'curtain opening'; setTimeout(() => { if (c.className === 'curtain opening') c.className = 'curtain'; }, 560); };
-    const go = () => setTimeout(open, Math.max(0, 1150 - (performance.now() - t0)));
+    const t0 = performance.now(), open = () => { if (!c.classList.contains('splash')) return; c.className = 'curtain opening spl'; setTimeout(() => { if (c.className === 'curtain opening spl') c.className = 'curtain'; }, 560); };
+    const go = () => setTimeout(open, Math.max(0, 2550 - (performance.now() - t0)));
     let fired = false; const once = () => { if (fired) return; fired = true; go(); };
     try { (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => { if (document.readyState === 'complete') once(); else addEventListener('load', once); }); } catch (e) { once(); }
     setTimeout(once, 3500); })();

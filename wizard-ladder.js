@@ -34,6 +34,8 @@
                     drop: ['iron'], ups: [{ id: 'shards', n: 'Shatterglass', d: 'When it breaks, it sprays shards over enemies nearby.' }] },
     blackfrost:   { base: 'icewall', n: 'Black Frost', el: 'shade', t: 1, boss: 49, d: 'A wall of black ice that blocks nothing. Whatever touches it is frozen solid for a second, and that crystal breaks.', tag: 'Variant',
                     drop: ['mirror', 'spikes', 'shrapnel', 'frostbite'], ups: [{ id: 'deep', n: 'Deep Freeze', d: 'The freeze lasts 1.6 seconds.' }] },
+    crimsonzodiac:{ base: 'zodiac', n: 'Crimson Zodiac', el: 'crimson', t: 1.3, boss: 29, d: 'Five fused beasts in red, each with two beasts\' tricks. Every fifth summon is the Regent: huge, quick, self-healing, and it fires a Violet Bolt every 8 seconds.', tag: 'Variant',
+                    drop: ['pack', 'cycle', 'guard', 'laststand', 'vanguard'], ups: [{ id: 'bloodmoon', n: 'Blood Moon', d: 'Fused beasts arrive with 25% more health.' }] },
   };
   window.VARIANTS = VARIANTS;
   for (const k in VARIANTS) { const v = VARIANTS[k], b = SP[v.base];
@@ -64,7 +66,8 @@
     const v = VARIANTS[k]; if (!v) return _cast.apply(this, arguments);
     mirror(w); const before = listsNow(), b = v.base, shell0 = w.shell; let r;
     { const own = typeof AU !== 'undefined' && AU.man && AU.man['c_' + k], _s = window.sfx; if (own) { window.sfx = sfx = function (id, o) { return id === 'c_' + b ? undefined : _s.apply(this, arguments); }; try { _s('c_' + k, { x: w.x }); } catch (e) {} }
-      try { r = _cast.call(this, w, b); } finally { if (own) window.sfx = sfx = _s; } }
+      w.czNow = k === 'crimsonzodiac' ? 1 : 0;
+      try { r = _cast.call(this, w, b); } finally { w.czNow = 0; if (own) window.sfx = sfx = _s; } }
     try {
       if (w.me && typeof M !== 'undefined' && M) { for (const o of [M.casts, M.rc]) if (o && o[b]) { o[b]--; if (!o[b]) delete o[b]; o[k] = (o[k] || 0) + 1; } }
       if (k === 'bluefire') { for (const p of projs) if (!before.projs.has(p) && p.o === w) bluify(p, w);
@@ -181,8 +184,8 @@
         const g = x.createRadialGradient(0, -3, 0, 0, -3, 12 * s0); g.addColorStop(0, 'rgba(230,246,255,.95)'); g.addColorStop(.4, 'rgba(58,160,255,.6)'); g.addColorStop(1, 'rgba(30,90,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, -3, 12 * s0, 0, 7); x.fill();
         x.globalCompositeOperation = 'source-over'; x.fillStyle = '#3aa0ff'; x.beginPath(); x.moveTo(-3 * s0, 0); x.quadraticCurveTo(-4 * s0, -5 * s0, Math.sin(T * 12 + d.y) * 1.2, -10 * s0); x.quadraticCurveTo(4 * s0, -5 * s0, 3 * s0, 0); x.closePath(); x.fill(); x.fillStyle = '#e6f6ff'; x.beginPath(); x.arc(0, -2.5 * s0, 1.6 * s0, 0, 7); x.fill(); x.restore(); }
       for (const c of cones) { const k0 = Math.min(1, c.t / .25), fade = Math.min(1, (c.life - c.t) * 2.5), L = c.len * k0; x.save(); x.translate(c.x, c.y); x.scale(1, .8); x.rotate(c.a); x.globalCompositeOperation = 'lighter';
-        const g = x.createRadialGradient(0, 0, 4, 0, 0, L); g.addColorStop(0, `rgba(230,246,255,${.5 * fade})`); g.addColorStop(.5, `rgba(58,160,255,${.34 * fade})`); g.addColorStop(1, 'rgba(30,90,255,0)'); x.fillStyle = g; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, L, -c.half, c.half); x.closePath(); x.fill();
-        x.strokeStyle = `rgba(160,210,255,${.6 * fade})`; x.lineWidth = 2; x.setLineDash([6, 6]); x.lineDashOffset = -T * 40; x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(-c.half) * L, Math.sin(-c.half) * L); x.moveTo(0, 0); x.lineTo(Math.cos(c.half) * L, Math.sin(c.half) * L); x.stroke(); x.restore(); }
+        const g = x.createRadialGradient(0, 0, 4, 0, 0, L); g.addColorStop(0, `rgba(230,246,255,${.3 * fade})`); g.addColorStop(.5, `rgba(58,160,255,${.16 * fade})`); g.addColorStop(1, 'rgba(30,90,255,0)'); x.fillStyle = g; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, L, -c.half, c.half); x.closePath(); x.fill();
+        /* (1.0.23) no dashed guide lines on the cone: the fire shows where it is */ x.restore(); }
       if (!bwalls.length) return;
       for (const b of bwalls) { const fade = Math.min(1, (b.life - b.t) * 2); for (const c of b.wl.cr) { if (c.gone) continue; const h = (c.h || 30) * SC * .62, wd = 8 * SC; x.save(); x.translate(c.x, c.y); x.globalAlpha = fade;
             x.fillStyle = 'rgba(10,4,30,.45)'; x.beginPath(); x.ellipse(0, 1, wd * 1.5, wd * .5, 0, 0, 7); x.fill();
@@ -234,7 +237,7 @@
     { id: 'vessa', n: 'Vessa Hollowlight', title: 'The Unseen', cls: 'wiz', feat: 'ghost', hand: ['ghost', 'rift', 'beam', 'mirror'], ups: ['ghost.haunt', 'beam.wide', 'beam.overload'], look: { robe: 'amethyst', hat: 'hood', staff: 'crystal', beard: 'none', skin: 'spirit', pet: 'wisp' }, line: 'Hit me. Go on. Which one?', mood: 'wild', tip: 'She phases through hits and hides behind decoys while the beam charges. Area damage finds her.' },
     { id: 'toren', n: 'Toren Ashwalker', title: 'The Oathbound', cls: 'sorc', feat: 'rush', hand: ['rush', 'bloodoath', 'doubletake', 'titan'], ups: ['rush.relentless', 'rush.momentum', 'bloodoath.blitz', 'bloodoath.more', 'titan.walking'], look: { robe: 'sunfire', hat: 'crown', staff: 'oak', beard: 'ginger', skin: 'emberskin', pet: 'none' }, aura: 'crimson', line: 'I only know one direction.', mood: 'wild', tip: 'He never stops coming. Walls, roots and stuns buy the seconds you need.' },
     { id: 'nyra', n: 'Nyra Graveborn', title: 'Mother of the Host', cls: 'wiz', feat: 'zombies', hand: ['zombies', 'golem', 'archer', 'totem'], ups: ['zombies.legion', 'zombies.horde', 'zombies.undying', 'zombies.frenzy', 'archer.fire'], look: { robe: 'voidweave', hat: 'witch', staff: 'skull', beard: 'none', skin: 'moonlit', pet: 'cat' }, line: 'You are outnumbered. You always were.', mood: 'cocky', tip: 'Seven zombies that stand back up, a golem and a turret. Bring area damage or go straight for her.' },
-    { id: 'eldrin', n: 'Eldrin the Unbound', title: 'The Thirtieth Rung', cls: 'sorc', feat: 'polarity', hand: ['polarity', 'sanctum', 'dissect', 'copycast'], ups: ['polarity.collapse', 'polarity.boundary', 'polarity.cornered', 'sanctum.unmake', 'sanctum.vast', 'dissect.cleave'], look: { robe: 'midnight', hat: 'crown', staff: 'moon', beard: 'violet', skin: 'gilded', pet: 'dragon' }, aura: 'violet', line: 'Everything you throw, I have already answered.', mood: 'cocky', tip: 'Boundary sends your shots back, Copy Cast repeats your best move, and his dome eats your walls. Bait the copy with something weak.' },
+    { id: 'eldrin', n: 'Eldrin the Unbound', title: 'The Thirtieth Rung', cls: 'sorc', feat: 'polarity', boss: 'crimsonzodiac', hand: ['polarity', 'sanctum', 'crimsonzodiac', 'copycast'], ups: ['crimsonzodiac.bloodmoon', 'crimsonzodiac.mend', 'polarity.collapse', 'polarity.boundary', 'polarity.cornered', 'sanctum.unmake', 'sanctum.vast', 'dissect.cleave'], look: { robe: 'midnight', hat: 'crown', staff: 'moon', beard: 'violet', skin: 'gilded', pet: 'dragon' }, aura: 'violet', line: 'Everything you throw, I have already answered.', mood: 'cocky', tip: 'Boundary sends your shots back, Copy Cast repeats your best move, and his red beasts are two animals each. Kill the Regent before its bolts add up.' },
   ];
   /* The Advanced Ladder: thirty harder rivals. Each is built on TWO abilities that feed each other, with two supports behind them.
      They open after the first twenty are beaten, fight with 5-slot books, start with more upgrades and pay 100 gems on the first win. */

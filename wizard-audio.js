@@ -50,6 +50,9 @@ function music(id) {
   const e = AU.man[id]; if (!e) return; const f = e.files[0];
   const start = b => { if (!b || AU.musId !== id) return; const src = AU.ctx.createBufferSource(), g = AU.ctx.createGain(); src.buffer = b; src.loop = true; const t0 = AU.ctx.currentTime; if (old) { g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(e.vol || 1, t0 + 1.6); }   /* crossfade in over the track it replaces */ else g.gain.setValueAtTime(e.vol || 1, t0);   /* nothing was playing (first load): start at full volume, the intro is quiet enough */ src.connect(g).connect(AU.g.music); src.start(); AU.mus = { src, g }; };
   if (AU.buf[f]) start(AU.buf[f]); else Promise.resolve(auLoad(f)).then(() => start(AU.buf[f]));
+  /* (1.0.23) decoded music is big (tens of megabytes a track). Keeping every track that has ever played ran phones out of memory,
+     and the browser then reloaded the page with a white flash. Only the track playing now and the one fading out stay decoded. */
+  try { const keep = new Set([f, AU.lastMusF]); AU.lastMusF = f; for (const id2 in AU.man) { if (id2.slice(0, 4) !== 'bgm_') continue; for (const g of (AU.man[id2].files || [])) if (!keep.has(g) && AU.buf[g]) { delete AU.buf[g]; delete AU.loading[g]; } } } catch (e2) {}
 }
 // phones only allow audio after a tap
 ['pointerdown', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, auInit, { capture: true, passive: true }));

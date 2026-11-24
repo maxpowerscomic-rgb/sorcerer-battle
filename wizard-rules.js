@@ -149,6 +149,10 @@
     if (f && !f.dead && w.me && !AIM_SKIP.has(k) && window.tgtPref && tgtPref(w, k) === 'struct') { let best = null, bd = 1e9; const see = (x0, y0) => { const d = Math.hypot(x0 - w.x, y0 - w.y); if (d < bd) { bd = d; best = { x: x0, y: y0 }; } };
       try { for (const wl of walls) if (wl.o !== w && wl.hp > 0) for (const c of wl.cr) if (!c.gone) see(c.x, c.y); for (const L of [typeof totems !== 'undefined' ? totems : [], typeof hgs !== 'undefined' ? hgs.filter(h => !h.done) : [], typeof archers !== 'undefined' ? archers.filter(a => a.hp > 0) : []]) for (const e of L) if (e.o !== w && e.x !== undefined) see(e.x, e.y); } catch (e) {}
       if (best) { keep = { x: f.x, y: f.y }; f.x = best.x; f.y = best.y; } }
+    // (1.0.23) target buttons: Summons aims the cast at the nearest enemy summon; Nearest aims at whatever enemy thing is closest, the caster included
+    if (!keep && f && !f.dead && w.me && !AIM_SKIP.has(k) && typeof M !== 'undefined' && M && (M.tgtNow === 'summon' || M.tgtNow === 'near')) { let best = null, bd = M.tgtNow === 'near' ? Math.hypot(f.x - w.x, f.y - w.y) : 1e9; const see = (x0, y0) => { const d = Math.hypot(x0 - w.x, y0 - w.y); if (d < bd) { bd = d; best = { x: x0, y: y0 }; } };
+      try { for (const c of enemyCreatures(w)) if (c.e && c.e.x !== undefined && (M.tgtNow === 'near' || c.k === 'z' || c.k === 'g' || c.k === 'a')) see(c.e.x, c.e.y); if (M.tgtNow === 'near') for (const wl of walls) if (wl.o !== w && wl.hp > 0) for (const c of wl.cr) if (!c.gone) see(c.x, c.y); } catch (e) {}
+      if (best) { keep = { x: f.x, y: f.y }; f.x = best.x; f.y = best.y; } }
     if (!keep && f && !f.dead && typeof afters !== 'undefined' && !AIM_SKIP.has(k)) { const a = afters.find(q => q.look === f && q.t < q.life * .9); if (a) { keep = { x: f.x, y: f.y }; f.x = a.x; f.y = a.y; } }
     let r; try { r = _cast.apply(this, arguments); } finally { if (keep) { f.x = keep.x; f.y = keep.y; } }
     // Sanctum: raising the dome wipes the enemy's hazards standing inside it

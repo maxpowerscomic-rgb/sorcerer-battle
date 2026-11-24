@@ -44,7 +44,7 @@
             if (c._in.has(dm)) { if (d > dm.r - 10) { dm.hp = 0; shake = Math.max(shake, 12); c._in.delete(dm); } }                                   // from inside: the wall goes on contact
             else if (d < dm.r + 6) { c._gr = { dm, vx: c.vx, vy: c.vy }; c.vx = 0; c.vy = 0; grind.push({ c, dm, rays: [0, 1, 2, 3].map(i => ({ off: (i - 1.5) * 1.1, va: rnd(-4, 4) })) }); break; } } }
         for (const g of grind) { const c = g.c, dm = g.dm; if (!(c.life > 0) || dm.t >= dm.dur || dm.hp <= 0) { g.done = 1; if (c.life > 0 && c._gr) { c.vx = c._gr.vx; c.vy = c._gr.vy; } c._gr = null; continue; }
-          c.vx = 0; c.vy = 0; dm.hp -= (c.dmg || 20) * 1.6 * dt; dm.hit = .12; shake = Math.max(shake, 4);
+          c.vx = 0; c.vy = 0; dm.hp -= (c.dmg || 20) * 3.2 * dt;   /* Collapse does double damage to a Sanctum */ dm.hit = .12; shake = Math.max(shake, 4);
           for (const q of g.rays) { q.va += rnd(-60, 60) * dt; q.va = Math.max(-7, Math.min(7, q.va)); q.off += q.va * dt; if (Math.abs(q.off) > 2.6 || Math.abs(q.off) < .4) { q.va = -q.va; q.off = Math.max(.41, Math.min(2.59, Math.abs(q.off))) * Math.sign(q.off || 1); } }
           if (Math.random() < .6) P({ x: c.x + rnd(-10, 10), y: c.y - 36 * HS + rnd(-10, 10), vx: rnd(-160, 160), vy: rnd(-160, 60), color: Math.random() < .5 ? '#ffffff' : '#c48cff', size: rnd(1.8, 3.4), life: .3 }); }
         grind = grind.filter(g => !g.done); } catch (e) {}

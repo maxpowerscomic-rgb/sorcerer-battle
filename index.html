@@ -458,7 +458,11 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
 .lgA{font:64px 'Lilita One';letter-spacing:1px;background:linear-gradient(#ffd9d0,#ff5a4a 45%,#c9182a);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:3px #000;paint-order:stroke;filter:drop-shadow(0 6px 0 #000) drop-shadow(0 0 18px #ff5a4a66)}
 .lgB{font:58px 'Lilita One';letter-spacing:1px;background:linear-gradient(#d9eeff,#4fb0ff 45%,#1f5fe0);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:3px #000;paint-order:stroke;filter:drop-shadow(0 6px 0 #000) drop-shadow(0 0 18px #4fb0ff66)}.lgB small{display:block;font-size:26px;letter-spacing:5px;margin:4px 0 2px;background:linear-gradient(#fff3b0,#ffd45e 45%,#f08a1a);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:2px #000;paint-order:stroke}
 /* load splash: the curtain starts closed with the logo on it, then opens (wizard-v105b.js). If scripts never run it clears itself. */
-.curtain.splash{display:block;pointer-events:auto;animation:splashSafe .01s 8s forwards}.curtain.splash .top,.curtain.splash .bot{transform:none}.curtain.splash .logo{transform:translate(-50%,-50%) rotate(-4deg);animation:splashIn .5s cubic-bezier(.3,1.6,.5,1) backwards}
+.curtain.splash{display:block;pointer-events:auto;animation:splashSafe .01s 8s forwards}.curtain.splash .top,.curtain.splash .bot{animation:ctIn .5s .2s cubic-bezier(.3,1.25,.5,1) forwards}.curtain.splash .logo,.curtain.spl .logo{display:none}
+.spl-w,.spl-s,.spl-v{display:none}.curtain.splash .spl-w,.curtain.splash .spl-s,.curtain.spl .spl-w,.curtain.spl .spl-s{display:block;position:absolute;left:0;right:0;text-align:center;transform:rotate(-8deg);line-height:1}.spl-w{bottom:31%}.spl-s{top:33%}
+.curtain.splash .spl-v,.curtain.spl .spl-v{display:block;position:absolute;left:50%;top:52%;z-index:3;font:78px 'Lilita One';letter-spacing:2px;background:linear-gradient(#fff3b0,#ffd45e 45%,#f08a1a);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:4px #000;paint-order:stroke;filter:drop-shadow(0 7px 0 #000) drop-shadow(0 0 22px #ffd45e88);transform:translate(-50%,-50%) rotate(-8deg) scale(0)}
+.curtain.splash .spl-v{animation:splVs .3s .72s cubic-bezier(.5,0,.9,.5) forwards}.curtain.spl .spl-v{transform:translate(-50%,-50%) rotate(-8deg);animation:splVo .22s forwards}.curtain.splash{animation:splashSafe .01s 8s forwards,splShake .3s 1.02s}
+@keyframes splVs{0%{transform:translate(-50%,-330%) rotate(-8deg) scale(2.6);opacity:0}35%{opacity:1}100%{transform:translate(-50%,-50%) rotate(-8deg) scale(1);opacity:1}}@keyframes splVo{to{opacity:0;transform:translate(-50%,-50%) rotate(-8deg) scale(1.5)}}@keyframes splShake{0%,100%{translate:0 0}20%{translate:0 9px}45%{translate:0 -6px}70%{translate:0 4px}}
 @keyframes splashIn{from{transform:translate(-50%,-50%) scale(1.5) rotate(-8deg);opacity:0}}@keyframes splashSafe{to{visibility:hidden;pointer-events:none}}.curtain.splash .rcd{display:none}
 
 .cards{justify-content:center!important;gap:12px!important;padding:0 10px}
@@ -557,7 +561,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
 .rdm{display:flex;gap:5px;margin-top:3px;flex-wrap:wrap}.rdm .di{display:flex;flex-direction:column;align-items:center;gap:1px;background:#000a;border:2px solid #000;border-radius:10px;padding:3px 4px 2px;min-width:32px;flex:none;animation:rdmIn .35s cubic-bezier(.3,1.6,.5,1) backwards}.rdm img{width:26px;height:26px}.rdm b{font:13px 'Lilita One';color:#fff;letter-spacing:.3px}.rdm .di.top{border-color:#ffd45e;box-shadow:0 0 12px #ffd45e99}.rdm .di.top b{color:#ffd45e}.rdm .dnone{font:11px 'Lilita One';color:#bdb0dc;opacity:.8}@keyframes rdmIn{from{transform:scale(.3);opacity:0}}
 .rside{position:absolute;left:0;right:0;display:none;align-items:center;justify-content:center;gap:14px}
 .curtain.rshow .rside{display:flex}
-.top .rside{bottom:27%}.bot .rside{top:18%}.rside{padding:0 14px;box-sizing:border-box}.rsi{min-width:0;max-width:calc(100% - 100px)}.rcn.long{font-size:15px!important}.rcn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.top .rside{bottom:38%}.bot .rside{top:32%}/* (1.0.23) clear of the diagonal seam, which used to clip the damage strips */.rside{padding:0 14px;box-sizing:border-box}.rsi{min-width:0;max-width:calc(100% - 100px)}.rcn.long{font-size:15px!important}.rcn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .rside canvas{width:84px;height:84px;border-radius:20px;border:4px solid #000;box-shadow:0 5px 0 #000}
 .top .rside canvas{box-shadow:0 5px 0 #000,0 0 24px #ff5d6c88}.bot .rside canvas{box-shadow:0 5px 0 #000,0 0 24px #6f8cff88}
 .rsi{display:flex;flex-direction:column;gap:6px}
@@ -775,7 +779,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
   <div class="lvup" id="lvup"><div class="lvrays" id="lvRays"></div><div class="kicker" id="lvK">Level up!</div><div class="lvstar" id="lvNum">7</div><div class="h1" id="lvTitle">Level <em id="lvNum2">8</em></div>
     <div class="lvrew" id="lvRew"><div class="gempile" id="gemPile"></div><div class="gemct">×<span id="lvGemN">0</span></div><div class="gemlbl">Gems</div></div>
     <button class="btn" id="lvClaim" style="padding:13px 46px;font-size:24px">Claim</button></div>
-  <div class="curtain splash" id="curtain"><div class="ct top"><div class="rside" id="rcTop"></div></div><div class="ct bot"><div class="rside" id="rcBot"></div></div><div class="logo"><div class="lgA" id="logoA">WIZARDS</div><div class="lgB" id="logoB"><small>VS</small>SORCERERS</div></div><div class="rcd" id="rcard"><canvas id="rcAva" width="128" height="128"></canvas><div class="rcn" id="rcName"></div><div class="rcr" id="rcRound"></div><div class="rcp" id="rcPips"></div><div class="rcf" id="rcFoe"></div></div></div>
+  <div class="curtain splash" id="curtain"><div class="ct top"><div class="rside" id="rcTop"></div><div class="spl-w lgA">WIZARDS</div></div><div class="ct bot"><div class="rside" id="rcBot"></div><div class="spl-s lgB">SORCERERS</div></div><div class="spl-v">VS</div><div class="logo"><div class="lgA" id="logoA">WIZARDS</div><div class="lgB" id="logoB"><small>VS</small>SORCERERS</div></div><div class="rcd" id="rcard"><canvas id="rcAva" width="128" height="128"></canvas><div class="rcn" id="rcName"></div><div class="rcr" id="rcRound"></div><div class="rcp" id="rcPips"></div><div class="rcf" id="rcFoe"></div></div></div>
   <div class="chestov" id="chestOv"><div class="chrays"></div><div class="chname" id="chName"></div><div class="chbox" id="chBox"></div><div class="chcards" id="chCards"></div><button class="btn" id="chDone">Collect</button></div>
   <div class="pause" id="rep"><div class="pzb" id="repBody"></div></div>
   <div class="pause" id="pause"><div class="pzb" id="pzBody"></div></div>
@@ -2111,5 +2115,6 @@ nav('home');
 <script src="wizard-v112.js"></script>
 <script src="wizard-v121.js"></script>
 <script src="wizard-v122.js"></script>
+<script src="wizard-v123.js"></script>
 <script src="wizard-release.js"></script>
 </body></html>

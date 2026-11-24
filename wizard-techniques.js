@@ -92,7 +92,9 @@
   const TGT_ABLE = ['fireball', 'lightning', 'meteor', 'ricochet', 'beam', 'sinkhole', 'storm', 'bubbles', 'flies', 'gravity', 'dissect', 'rush', 'zombies', 'zodiac', 'archer'];
   const SUMMON_AIM = new Set(['zombies', 'zodiac', 'archer']);   // these choose targets as they fight, not when cast
   window.TGT_ABLE = TGT_ABLE;
-  function tgtPref(w, k) { return w && w.me && typeof PR !== 'undefined' && PR.tgt && PR.tgt[k] || 'auto'; }
+  // (1.0.23) the battle's target buttons override every ability's own setting while one is lit
+  const TGNOW = { caster: 'caster', struct: 'struct', summon: 'strong', near: 'near' };
+  function tgtPref(w, k) { if (w && w.me && typeof M !== 'undefined' && M && M.tgtNow && TGNOW[M.tgtNow]) return TGNOW[M.tgtNow]; return w && w.me && typeof PR !== 'undefined' && PR.tgt && PR.tgt[k] || 'auto'; }
   window.tgtPref = tgtPref;
   function prefMob(w, k) { const p = tgtPref(w, k); if (p !== 'strong' && p !== 'weak') return null;
     const mobs = enemyCreatures(w).filter(c => SUMMON_K.has(c.k) && c.e.x !== undefined); if (!mobs.length) return null;
@@ -258,10 +260,13 @@
   }
   const LOOP_ONCE = { ghost: 'GHOST SPENT', shield: 'SHIELD SPENT', hourglass: 'HOURGLASS SPENT', titan: 'SHELL SPENT', counter: 'STANCE SPENT' };
   window.LOOP_ONCE = LOOP_ONCE;
+  const NOSEQ = new Set(['copycast', 'mirrorcounter']); window.NOSEQ = NOSEQ;
   // the draft never offers a second copy of a once-per-loop ability
   try { ['doubletake', 'polarity', 'sanctum', 'chosen'].concat(Object.keys(LOOP_ONCE)).forEach(k => ONE_COPY.add(k)); } catch (e) {}
   window.cast = cast = function (w, k) {
     if (!copying) w.castN = (w.castN || 0) + 1;
+    // (1.0.23) abilities that answer the enemy's cast cannot fire twice in a row: the second one fizzles, and the one after that works again
+    if (!copying) { if (NOSEQ.has(k) && w.lastK === k) { w.lastK = null; text(w.x, w.y - 80 * HS, 'NOT TWICE IN A ROW', '#bbb'); return; } w.lastK = k; }
     if (k !== 'blink' && !copying) w.blinkHaste = 0;     // turns taken, for once-per-loop rules
     if (k === 'flies' && !copying) w.flyN = (w.flyN || 0) + 1;
     // Quick Draw was spent early: this cast only refills it (no swap, no clap)
@@ -372,7 +377,9 @@
     }
     if (k === 'sanctum') {
       const vast = U(w, k, 'vast') ? 1.5 : 1, r = S(w, k, 'radius') * (vast > 1 ? 1.4375 : 1);   /* Vast dome = the old Vast dome x1.15 on the 20% bigger base; the blast keeps x1.5 */
-      const dome = { o: w, x: w.x, y: w.y, r, t: 0, dur: S(w, k, 'dur') * (U(w, k, 'linger') ? 2 : 1), hp: 100, max: 100, hit: 0, trap: [], oneway: U(w, k, 'oneway') }; domes.push(dome);
+      // (1.0.23) one Sanctum per caster: raising a new one ends the old one on the spot
+      for (const od of domes) if (od.o === w && od.t < od.dur) od.t = od.dur - .001;   /* it crumbles through the normal end-of-dome path on the next frame */
+      const dome = { o: w, x: w.x, y: w.y, r, t: 0, dur: S(w, k, 'dur') * (U(w, k, 'linger') ? 2 : 1), hp: U(w, k, 'bulwark') ? 150 : 100, max: U(w, k, 'bulwark') ? 150 : 100, hit: 0, trap: [], oneway: U(w, k, 'oneway') }; domes.push(dome);
       const inD0 = e => Math.hypot(e.x - w.x, (e.y - w.y) * 1.4) < r; if (!o.dead && inD0(o) && !o.domeFree) { dome.trap.push(o); text(o.x, o.y - 96 * HS, 'TRAPPED', '#bcd2ff', true); }
       for (const c of enemyCreatures(w)) if (c.e.x !== undefined && inD0(c.e)) dome.trap.push(c.e);
       for (const wl of walls) { let n = 0; for (const c of wl.cr) if (!c.gone && inD0(c)) { c.gone = 1; n++; burst(c.x, c.y - 20 * HS, 12, wl.mud ? ['#d8c09a', '#8a6a48'] : ['#d8f6ff', '#fff'], 180, 4, .4); } if (n) { const live = wl.cr.filter(c => !c.gone).length; wl.hp = live ? Math.min(wl.hp, wl.max * live / wl.cr.length) : 0; } }
@@ -753,17 +760,23 @@
     if (U(w, k, 'cycle')) { if (!w.zbag || !w.zbag.length) w.zbag = ZODIAC.slice().sort(() => Math.random() - .5); b = w.zbag.pop(); }
     else b = ZODIAC[Math.random() * ZODIAC.length | 0];
     if (Math.random() < 1 / 12 && typeof JUGGERNAUT !== 'undefined' && !zombies.some(q => q.o === w && q.beast && q.beast.boss && q.hp > 0)) b = JUGGERNAUT;   // the rare thirteenth
+    // (1.0.23) Crimson Zodiac: a pool of five fused beasts, and every fifth summon is the Regent
+    if (w.czNow && window.CRIMSON_BEASTS) { w.czN = (w.czN || 0) + 1; b = (w.czN % 5 === 0 && !zombies.some(q => q.o === w && q.beast && q.beast.regent && q.hp > 0)) ? CRIMSON_REGENT : CRIMSON_BEASTS[Math.random() * CRIMSON_BEASTS.length | 0]; }
+    // (1.0.23) Vanguard: the round's first summon is the Juggernaut. Only one Juggernaut can be out at a time.
+    if (!w.czNow && !w.zn && U(w, k, 'vanguard') && typeof JUGGERNAUT !== 'undefined' && !zombies.some(q => q.o === w && q.beast && q.beast.boss && q.hp > 0)) b = JUGGERNAUT;
+    // (1.0.23) Dome Breaker: summoning while standing inside an enemy Sanctum shatters it
+    if (U(w, k, 'domebreak')) for (const od of domes) if (od.o !== w && od.t < od.dur && !od.open && Math.hypot(w.x - od.x, (w.y - od.y) * 1.4) < od.r) { od.hp = 0; text(w.x, w.y - 118 * HS, 'DOME BREAKER', '#ffe08a', true); shake = Math.max(shake, 12); }
     w.zn = (w.zn || 0) + 1;
     if (U(w, k, 'mend')) { const full = U(w, k, 'mend2'); for (const q of zombies) if (q.o === w && q.beast && q.hp > 0 && q.hp < q.mx) { q.hp = full ? q.mx : Math.min(q.mx, q.hp + q.mx * .5); text(q.x, q.y - 50 * HS, full ? 'MENDED' : '+50%', '#7dffa8'); burst(q.x, q.y - 20 * HS, 8, ['#7dffa8', '#fff'], 100, 3, .4); } }
     const dome = domes.find(d => d.o === w && d.t < d.dur);
     const o = w.foe, a = Math.atan2(o.y - w.y, o.x - w.x), n = (U(w, k, 'pack') && ['rat', 'rabbit', 'rooster'].includes(b.id) ? 2 : 1) * (dome && !b.boss ? 2 : 1);
     for (let i = 0; i < n; i++) {
-      const ra = rnd(0, 6.283), rd = dome ? Math.sqrt(Math.random()) * dome.r * .85 : 0, q = dome ? inArena(dome.x + Math.cos(ra) * rd, dome.y + Math.sin(ra) * rd / 1.4) : inArena(w.x + Math.cos(a) * 34 + rnd(-12, 12), w.y + Math.sin(a) * 34 + rnd(-12, 12)), hp = S(w, k, 'hp') * b.hp;
-      const z = { o: w, x: q.x, y: q.y, mx: hp, hp, rise: .35, cd: rnd(0, .3), t: rnd(0, 9), flash: 0, lunge: 0, beast: b, spd: b.spd, dmg: b.boss ? 20 : S(w, k, 'dmg') * b.dmg, acd: b.acd, onHit: beastHit };
+      const ra = rnd(0, 6.283), rd = dome ? Math.sqrt(Math.random()) * dome.r * .85 : 0, q = dome ? inArena(dome.x + Math.cos(ra) * rd, dome.y + Math.sin(ra) * rd / 1.4) : inArena(w.x + Math.cos(a) * 34 + rnd(-12, 12), w.y + Math.sin(a) * 34 + rnd(-12, 12)), hp = S(w, k, 'hp') * b.hp * (w.czNow && !b.regent && U(w, 'crimsonzodiac', 'bloodmoon') ? 1.25 : 1);
+      const z = { crim: w.czNow ? 1 : 0, o: w, x: q.x, y: q.y, mx: hp, hp, rise: .35, cd: rnd(0, .3), t: rnd(0, 9), flash: 0, lunge: 0, beast: b, spd: b.spd, dmg: b.boss ? 20 : S(w, k, 'dmg') * b.dmg, acd: b.acd, onHit: beastHit };
       zombies.push(z); decals.push({ k: 'hole', x: q.x, y: q.y, t: 0, life: 4 });
       for (let j = 0; j < 14; j++) P({ x: q.x + rnd(-14, 14), y: q.y - rnd(0, 20), vx: rnd(-30, 30), vy: rnd(-90, -30), color: ['#8a6cff', '#140a30', '#3a2a6a'][j % 3], size: rnd(4, 8), life: rnd(.4, .8), glow: false });
     }
-    text(w.x, w.y - 92 * HS, b.boss ? 'THE JUGGERNAUT' : b.n.toUpperCase(), b.boss ? '#ffe08a' : '#c9b8ff', true); if (b.boss) shake = Math.max(shake, 12); inkRing(w.x + Math.cos(a) * 34, w.y + Math.sin(a) * 34, '#8a6cff', 2, 6, 40, .5); shake = Math.max(shake, 4);
+    text(w.x, w.y - 92 * HS, b.boss ? 'THE JUGGERNAUT' : b.n.toUpperCase(), b.boss ? '#ffe08a' : b.crim ? '#ff8a8a' : '#c9b8ff', true); if (b.boss || b.regent) shake = Math.max(shake, 12); inkRing(w.x + Math.cos(a) * 34, w.y + Math.sin(a) * 34, '#8a6cff', 2, 6, 40, .5); shake = Math.max(shake, 4);
   }
   function beastHit(z, tgt, kind) {
     const b = z.beast; if (kind !== 'wiz' || tgt.ghostT > 0) return;
@@ -1110,7 +1123,15 @@
       if (c.unbound && !c.burst && Math.hypot(c.x - c.sx, c.y - c.sy) >= c.L / 2) { c.burst = 1; c.life = 0; unboundBlast(c); continue; }
       for (const p of projs) if (p.o !== c.o && p.life > 0 && Math.hypot(p.x - c.x, p.y + 40 * HS - c.y) < 36) { p.life = 0; burst(p.x, p.y, 10, ['#c48cff', '#fff'], 150, 3, .3); }
       for (const e of enemyCreatures(c.o)) if (!c.hit.has(e.e) && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 40) { c.hit.add(e.e); hurtCreature(e.e, e.k, c.dmg, 'arcane'); }
-      for (const wl of walls) if (wl.o !== c.o && wallD(wl, c.x, c.y) < 30 && !c.hit.has(wl)) { c.hit.add(wl); wl.hp -= c.dmg * 1.5; wl.flash = .15; }
+      // (1.0.23) Collapse erases what it passes over: enemy walls fall outright, and enemy effects lying on the ground are wiped
+      for (const wl of walls) if (wl.o !== c.o && wl.hp > 0 && wallD(wl, c.x, c.y) < 32 && !c.hit.has(wl)) { c.hit.add(wl); wl.hp = 0; wl.flash = .15; shake = Math.max(shake, 8);
+        for (const cr of (wl.cr || [])) if (!cr.gone) { cr.gone = 1; burst(cr.x, cr.y - 22 * HS, 9, wl.mud ? ['#d8c09a', '#8a6a48', '#c48cff'] : ['#d8f6ff', '#fff', '#c48cff'], 190, 4, .45); } try { sfx('shatter', { x: c.x, vol: .7 }); } catch (e) {} }
+      { const wipe = (g, r, kill) => { if (g.o === c.o || g._col || Math.hypot(g.x - c.x, (g.y - c.y) / SQ) > (r || 20) + 26) return; g._col = 1; kill(g); inkRing(g.x, g.y, '#c48cff', 2, 6, Math.max(40, r || 30), .4); for (let i = 0; i < 12; i++) { const an = rnd(0, 6.283), rr = rnd(4, r || 24); P({ x: g.x + Math.cos(an) * rr, y: g.y + Math.sin(an) * rr * SQ, vx: (c.x - g.x) * 2, vy: -rnd(40, 160), color: i % 2 ? '#c48cff' : '#ffffff', size: rnd(1.6, 3.4), life: rnd(.25, .5) }); } };
+        for (const m of muds) if (m.t < m.dur) wipe(m, m.r, g => { g.t = g.dur; });
+        if (typeof firerings !== 'undefined') for (const g of firerings) if (!g.done) wipe(g, g.r, q => { q.done = 1; });
+        if (typeof pits !== 'undefined') for (const g of pits) if (!g.done) wipe(g, g.r, q => { q.done = 1; });
+        if (typeof patches !== 'undefined') for (const g of patches) if (g.t < g.life) wipe(g, g.r, q => { q.t = q.life; });
+        if (typeof wells !== 'undefined') for (const g of wells) if (g.t < g.dur) wipe(g, g.r * .5, q => { q.t = q.dur; }); }
       const f = c.o.foe; if (!c.hit.has(f) && !f.dead && Math.hypot(f.x - c.x, f.y - c.y) < 40) { c.hit.add(f); if (!ghosted(f)) { damage(f, c.dmg, c.vx * .8, c.vy * .8, '#d9c8ff'); shake = Math.max(shake, 16); addFx({ k: 'implode', x: f.x, y: f.y - 36 * HS, life: .7 }); slow = Math.min(slow, .15); setTimeout(() => { if (!ended) slow = 1; }, 200); scar('crack', f.x, f.y); for (let i = 0; i < 24; i++) { const an = rnd(0, 6.283), v = rnd(120, 360); P({ x: f.x, y: f.y - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v, color: ['#c48cff', '#6fd3ff', '#ff4a4a', '#fff'][i % 4], size: rnd(2, 4.5), life: rnd(.3, .7) }); } } }
       c.arcs = c.arcs || []; if (Math.random() < .5) { const an = rnd(0, 6.283), rr = rnd(30, 62); c.arcs.push({ a: an, r: rr, t: 0, j: [rnd(-8, 8), rnd(-8, 8), rnd(-8, 8)] }); } c.arcs = c.arcs.filter(q => (q.t += dt) < .12);
       if (Math.random() < .5) scar('scorch', c.x + rnd(-6, 6), c.y + rnd(-3, 3), { r: 7, c: '#1a0a30', a: .25, s: .6 });

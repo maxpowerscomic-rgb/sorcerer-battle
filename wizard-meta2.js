@@ -357,7 +357,7 @@
   // round losing streaks (for Chosen One's upgrades): two losses in a row opens them for the rest of the match
   const _er0 = endRound;
   window.endRound = endRound = function (winner) {
-    if (!ended && M) { const loser = winner === 'me' ? 'foe' : 'me'; M.lossRun = M.lossRun || { me: 0, foe: 0 }; M.chosenOpen = M.chosenOpen || {}; M.lossRun[loser]++; M.lossRun[winner] = 0; if (M.lossRun[loser] >= 2) M.chosenOpen[loser] = 1; }
+    if (!ended && M) { const loser = winner === 'me' ? 'foe' : 'me'; M.lossRun = M.lossRun || { me: 0, foe: 0 }; M.chosenOpen = M.chosenOpen || {}; M.lossRun[loser]++; M.lossRun[winner] = 0; if (M.lossRun[loser] >= 2 || (M.chosenShut && M.chosenShut[loser])) M.chosenOpen[loser] = 1;   /* (1.0.23) after a Chosen One upgrade is taken, the next one waits for another lost round */ }
     return _er0.apply(this, arguments);
   };
 
@@ -879,7 +879,7 @@
     return r;
   };
   const _sd = startDuel;
-  window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); try { if (M && M.rival && ents[1]) { ents[1].auraId = M.rival.aura; if (M.round === 1 && window.emoteSay) setTimeout(() => { if (!ended && M && M.rival) emoteSay(ents[1], null, M.rival.line); }, 1100); } } catch (e) {} return r; };
+  window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); try { if (M && M.rival && ents[1]) { ents[1].auraId = M.rival.aura; if (M.round === 1 && window.emoteSay && M.rival.line) setTimeout(() => { if (!ended && M && M.rival && M.rival.line) emoteSay(ents[1], null, M.rival.line); }, 1100); } } catch (e) {} return r; };
 })();
 
 /* ---------------- emotes (F-492) ----------------
