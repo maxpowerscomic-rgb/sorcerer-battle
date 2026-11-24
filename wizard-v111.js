@@ -20,7 +20,13 @@
     const rows = max ? '' : Object.keys(st).filter(s0 => st[s0][sp.lvl] !== undefined && st[s0][sp.lvl] !== st[s0][sp.lvl - 1]).map(s0 => `<span><small>${lbl[s0] || gen[s0] || s0}</small><b>${st[s0][sp.lvl - 1]} ➜ ${st[s0][sp.lvl]}</b></span>`).join('');
     const rune = used ? 'Echo Rune used: these points were doubled.' : PR.mTok > 0 && got ? `Echo Rune (×2): +${got} more, to ${max ? 'the bank' : Math.min(sp.cards + got, 9999) + ' / ' + need}.` : '';
     const ready = !max && sp.cards >= need;
-    return `<b>${esc(SP[k].n)} · Lv ${sp.lvl}</b><p>+${got} skill points this match${max ? '' : ` · ${sp.cards} / ${need}`}</p>${rune ? `<p class="ru">${rune}</p>` : ''}${rows ? `<div class="rwtl">Level ${sp.lvl + 1} gives</div><div class="ostats">${rows}</div>` : max ? '<p>Max level.</p>' : ''}${ready ? `<button class="hbtn" onclick="rwTipClose();openSpell('${k}')">Upgrade now</button>` : ''}`; }
+    return `<b>${esc(SP[k].n)} · Lv ${sp.lvl}</b><p>+${got} skill points this match${max ? '' : ` · ${sp.cards} / ${need}`}</p>${rune ? `<p class="ru">${rune}</p>` : ''}${rows ? `<div class="rwtl">Level ${sp.lvl + 1} gives</div><div class="ostats">${rows}</div>` : max ? '<p>Max level.</p>' : ''}${ready ? `<button class="hbtn" onclick="rwUpgrade('${k}')" ${PR.coins < COST[sp.lvl] ? 'disabled' : ''}>Upgrade now <span class="ci coin-i" style="display:inline-block;width:16px;height:16px;vertical-align:-3px"></span> ${COST[sp.lvl]}</button>${PR.coins < COST[sp.lvl] ? '<p class="ru">Not enough gold yet.</p>' : ''}` : ''}`; }
+  // (1.0.15.1) Upgrade now does the upgrade on the spot: no ability page in between
+  window.rwUpgrade = function (k) { const sp = PR.spells[k]; if (!sp || typeof canUp !== 'function' || !canUp(k)) { try { toast(sp && sp.cards >= (CARDS[sp.lvl] || 1) ? 'Not enough gold' : 'Not ready to upgrade'); } catch (e) {} return; }
+    const cost = COST[sp.lvl], need = CARDS[sp.lvl]; PR.coins -= cost; sp.cards -= need; sp.lvl++; rwTipClose();
+    try { sfx('ui_upgrade'); if (typeof flashScreen === 'function') flashScreen(); if (window.chaChing) chaChing(); } catch (e) {}
+    let lv = 0; try { lv = gainXp(25); } catch (e) {} try { save(); refreshMeta(); if ($('rewards').classList.contains('on')) renderRwCards(); } catch (e) {}
+    try { queueModal(() => showSpellModal(k, sp.lvl - 1, sp.lvl)); if (lv) { delete PR._lvPending; queueModal(showLevelUp); } } catch (e) {} };
   window.rwTipClose = () => { const t = $('rwTip'); if (t) t.classList.remove('on'); };
   function showTip(card, k) { let t = $('rwTip'); if (!t) { document.querySelector('.phone').insertAdjacentHTML('beforeend', '<div id="rwTip"></div>'); t = $('rwTip'); }
     t.innerHTML = tipFor(k); t.classList.add('on'); const p = document.querySelector('.phone').getBoundingClientRect(), r = card.getBoundingClientRect(), w = Math.min(280, p.width - 20); t.style.width = w + 'px';

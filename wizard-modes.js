@@ -129,6 +129,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.15.1', d: '24 Nov 2026', items: ['On the results screen, Upgrade now upgrades the ability on the spot and shows its cost, without opening the ability page.'] },
     { v: '1.0.15', d: '24 Nov 2026', items: ['A Spell Cannon beam burning into a Titan Shell throws wild rays off it until the shell shatters.'] },
     { v: '1.0.14', d: '24 Nov 2026', items: ['Your own fire thaws your frozen units and does them no harm: a Fireball, Ring of Fire, Meteor or Burning Body near a frozen summon unfreezes it.', 'Ice Breakers is now Breakers: zombies tear through mud walls, pillars, totems, turrets and Titan Shells at the faster rate too.'] },
     { v: '1.0.13', d: '24 Nov 2026', items: ['Pets celebrate when you win and droop when you lose, in the arena and on the results screen.', 'A red dot marks Challenges with gold to collect and the Ladder when a rival is ready to fight.', 'Battle Hand icons on the Abilities page are bigger.', 'Fixed: pages and ability sheets now always open at the top.', 'Cast queue icons show a blue number for how many of that ability\'s summons, walls or other things you have on the field right now.'] },
