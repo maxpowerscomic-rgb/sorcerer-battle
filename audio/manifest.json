@@ -526,13 +526,13 @@
  },
  "bgm_menu": {
   "kind": "music",
-  "prompt": "Original smooth, soft synth lounge music for a game's main menu and customization screen. Warm analog synth pads, gentle electric piano chords, a soft sub bass, airy reverb, a relaxed laid-back slow groove with light muted drum machine, dreamy late-night city calm, chill and polished, no big drops. Instrumental only, no vocals, loopable with no ending.",
+  "prompt": "Original lo-fi hip-hop menu music with a mystical feel. Dusty mellow drum loop, warm vinyl crackle, soft Rhodes chords, a sleepy music-box and celesta melody, round sub bass, distant chimes. Slow and chill around 78 BPM, late-night study mood, calm and cosy. Instrumental only, no vocals, loopable with no ending.",
   "ms": 90000,
   "group": "music",
-  "vol": 0.8,
+  "vol": 0.78,
   "loop": true,
   "files": [
-   "audio/bgm_menu.mp3"
+   "audio/bgm_menu_lofi.mp3"
   ]
  },
  "bgm_battle": {
@@ -789,16 +789,6 @@
    "audio/ui_fanfare.mp3"
   ]
  },
- "bgm_menu_whimsy": {
-  "kind": "music",
-  "prompt": "(earlier track, kept for the music picker: Whimsical Tower)",
-  "group": "music",
-  "vol": 0.75,
-  "loop": true,
-  "files": [
-   "audio/bgm_menu_whimsy_backup.mp3"
-  ]
- },
  "bgm_battle_take2": {
   "kind": "music",
   "prompt": "(earlier track, kept for the music picker: Offbeat Duel take 2)",
@@ -864,37 +854,48 @@
    "audio/bgm_battle_finale.mp3"
   ]
  },
- "bgm_menu_tavern": {
+ "bgm_phase1": {
   "kind": "music",
-  "prompt": "Original cozy fantasy tavern menu music. Warm plucked lute and nylon guitar, a playful wooden flute melody, soft hand drum and tambourine, gentle upright bass, a little fiddle. Relaxed medium tempo, friendly and welcoming, hearthside evening mood. Instrumental only, no vocals, loopable with no ending.",
+  "prompt": "Original instrumental battle music for a wizard duel game, in the same world as a cosy mystical lo-fi hip-hop menu theme: dusty vinyl-textured drums, warm Rhodes electric piano, a music-box and celesta melody, round sub bass, distant chimes. This is the OPENING of the fight: confident and curious, a head-nodding boom-bap groove around 92 BPM, punchy swung kick and snare, playful celesta call-and-response, light tension under the calm, room to breathe. Instrumental only, no vocals, loopable with no ending and no fade.",
   "ms": 90000,
   "group": "music",
-  "vol": 0.78,
+  "vol": 0.76,
   "loop": true,
   "files": [
-   "audio/bgm_menu_tavern.mp3"
+   "audio/bgm_phase1.mp3"
   ]
  },
- "bgm_menu_lofi": {
+ "bgm_phase2": {
   "kind": "music",
-  "prompt": "Original lo-fi hip-hop menu music with a mystical feel. Dusty mellow drum loop, warm vinyl crackle, soft Rhodes chords, a sleepy music-box and celesta melody, round sub bass, distant chimes. Slow and chill around 78 BPM, late-night study mood, calm and cosy. Instrumental only, no vocals, loopable with no ending.",
+  "prompt": "Original instrumental battle music for a wizard duel game, in the same world as a cosy mystical lo-fi hip-hop menu theme: dusty vinyl-textured drums, warm Rhodes electric piano, a music-box and celesta melody, round sub bass, distant chimes. This is the MIDDLE of the fight: the stakes are rising. Around 104 BPM, harder swung drums with ghost-note snares, darker minor Rhodes chords, a restless plucked harp arpeggio, a pulsing melodic bass line, low strings creeping in, tension steadily building without release. Instrumental only, no vocals, loopable with no ending and no fade.",
   "ms": 90000,
   "group": "music",
-  "vol": 0.78,
+  "vol": 0.76,
   "loop": true,
   "files": [
-   "audio/bgm_menu_lofi.mp3"
+   "audio/bgm_phase2.mp3"
   ]
  },
- "bgm_menu_synth": {
+ "bgm_phase3": {
   "kind": "music",
-  "prompt": "Original bright retro synthwave menu music for a wizard game. Sparkling arpeggiated synths, punchy gated-reverb drums, a driving but relaxed bass line, a hopeful soaring lead melody, shimmering pads. Medium tempo around 104 BPM, adventurous and optimistic, neon starlit night mood. Instrumental only, no vocals, loopable with no ending.",
+  "prompt": "Original instrumental battle music for a wizard duel game, in the same world as a cosy mystical lo-fi hip-hop menu theme: dusty vinyl-textured drums, warm Rhodes electric piano, a music-box and celesta melody, round sub bass, distant chimes. This is the LATE fight: urgent and driving. Around 116 BPM, heavy boom-bap and trap-hybrid drums with rolling hi-hats, deep 808 sub bass, an insistent celesta ostinato, staccato string stabs, a dark choir pad, the music-box melody now bold and determined, relentless forward motion. Instrumental only, no vocals, loopable with no ending and no fade.",
   "ms": 90000,
   "group": "music",
-  "vol": 0.78,
+  "vol": 0.76,
   "loop": true,
   "files": [
-   "audio/bgm_menu_synth.mp3"
+   "audio/bgm_phase3.mp3"
+  ]
+ },
+ "bgm_final2": {
+  "kind": "music",
+  "prompt": "Original instrumental battle music for a wizard duel game, in the same world as a cosy mystical lo-fi hip-hop menu theme: dusty vinyl-textured drums, warm Rhodes electric piano, a music-box and celesta melody, round sub bass, distant chimes. This is the FINAL ROUND climax: everything on the line. Around 128 BPM, thundering drums and big toms, overdriven Rhodes, a soaring celesta and bell lead melody, sweeping strings and heroic choir, heavy sub bass drops, vinyl crackle still under it all, triumphant and desperate at once, full power from the first bar. Instrumental only, no vocals, loopable with no ending and no fade.",
+  "ms": 90000,
+  "group": "music",
+  "vol": 0.8,
+  "loop": true,
+  "files": [
+   "audio/bgm_final2.mp3"
   ]
  }
 }

@@ -111,7 +111,7 @@
     const startIn = new Set(X.domes.filter(d => d.o !== w && d.t < d.dur && Math.hypot(x0 - d.x, (y0 - d.y) * 1.4) < d.r));
     if (U(w, 'bloodcraft', 'burst') && w.bcN % 3 === 0) { const d = Math.hypot(o.x - w.x, o.y - w.y);
       bloods.push({ k: 'blob', o: w, x: x0, y: y0, sx: x0, sy: y0, tx: o.x, ty: o.y, t: 0, T: Math.max(.5, Math.min(.95, d / 420)), dmg: dmg * 1.8, venom, z: 0 }); text(w.x, w.y - 86 * HS, 'BLOODBURST', '#ff5a6e', true); }
-    else if (U(w, 'bloodcraft', 'lance') && w.bcN % 2 === 0) { bloods.push({ k: 'lance', o: w, x: x0, y: y0, vx: Math.cos(a) * 900, vy: Math.sin(a) * 900, a, life: 1.2, dmg, venom, hit: new Set(), hitW: new Set(), startIn, trail: 0, sx: x0, sy: y0 });
+    else if (U(w, 'bloodcraft', 'lance') && w.bcN % 2 === 0) { bloods.push({ k: 'lance', o: w, x: x0, y: y0, vx: Math.cos(a) * 900, vy: Math.sin(a) * 900, a, life: 1.2, dmg, venom, hit: new Set(), hitW: new Set(), startIn, trail: 0, sx: x0, sy: y0, bend: U(w, 'bloodcraft', 'bend'), pts: [{ x: x0, y: y0 }], seg: 0 });
       text(w.x, w.y - 86 * HS, 'BLOOD LANCE', '#ff5a6e'); shake = Math.max(shake, 5); }
     else { const two = U(w, 'bloodcraft', 'twin'); for (const off of two ? [-.2, .2] : [0]) bloods.push({ k: 'disc', o: w, x: x0, y: y0, vx: Math.cos(a + off) * 360, vy: Math.sin(a + off) * 360, a: a + off, life: 3, dmg: dmg * (two ? .65 : 1), venom, startIn, trail: 0, spin: rnd(0, 6) });
       text(w.x, w.y - 86 * HS, 'BLOODCRAFT', '#ff5a6e'); }
@@ -136,6 +136,12 @@
       if (b.k === 'blob') { b.t += dt; const k = Math.min(1, b.t / b.T); b.x = b.sx + (b.tx - b.sx) * k; b.y = b.sy + (b.ty - b.sy) * k; b.z = Math.sin(k * Math.PI) * 90 * HS + 36 * HS * (1 - k);
         if (Math.random() < .5) pool(w, b.x, b.y, rnd(2, 4));
         if (k >= 1) { b.dead = 1; burstBlob(b); } continue; }
+      if (b.k === 'lance') {   // Living Blood: the lance leans toward wherever the enemy is now, so its path curves
+        if (b.bend && !f.dead) { const sp = Math.hypot(b.vx, b.vy), want = Math.atan2(f.y - b.y, f.x - b.x); let da = want - b.a; while (da > Math.PI) da -= 6.283; while (da < -Math.PI) da += 6.283; b.a += clamp(da, -3.2 * dt, 3.2 * dt); b.vx = Math.cos(b.a) * sp; b.vy = Math.sin(b.a) * sp; }
+        b.seg += Math.hypot(b.vx, b.vy) * dt; if (b.seg > 14) { b.seg = 0; b.pts.push({ x: b.x, y: b.y }); if (b.pts.length > 12) b.pts.shift(); }
+        // it sheds blood as it goes: spots on the floor at random and drops flung off the shaft
+        if (Math.random() < dt * 20) pool(w, b.x + rnd(-14, 14), b.y + rnd(-9, 9), rnd(2, 5));
+        if (Math.random() < dt * 30) P({ x: b.x + rnd(-6, 6), y: b.y - 36 * HS + rnd(-6, 6), vx: -b.vx * .08 + rnd(-60, 60), vy: -b.vy * .08 + rnd(-60, 40), color: CR[Math.random() * 3 | 0], size: rnd(2, 3.6), life: rnd(.25, .5), grav: 420, glow: false }); }
       b.life -= dt; const step = Math.hypot(b.vx, b.vy) * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.trail += step;
       if (b.trail > (b.k === 'lance' ? 26 : 34)) { b.trail = 0; pool(w, b.x, b.y, rnd(2.2, 4.2)); }
       if (b.x < F.x0 - 20 || b.x > F.x1 + 20 || b.y < F.y0 - 30 || b.y > F.y1 + 20) b.life = 0;
@@ -290,10 +296,12 @@
         x.fillStyle = '#c8102e'; x.strokeStyle = '#07020d'; x.lineWidth = 2.6; x.lineJoin = 'round'; x.fill(); x.stroke();
         x.fillStyle = b.venom ? '#b6f06a' : '#ff8a96'; x.beginPath(); x.arc(0, 0, R * .42, 0, 7); x.fill(); x.stroke(); x.fillStyle = 'rgba(255,255,255,.8)'; x.beginPath(); x.ellipse(-R * .3, -R * .35, R * .22, R * .1, -.6, 0, 7); x.fill(); x.restore();
         x.save(); x.globalAlpha = .3; x.fillStyle = '#000'; x.beginPath(); x.ellipse(b.x, b.y + 2, 10 * SC, 3.5 * SC, 0, 0, 7); x.fill(); x.restore(); }
-      else if (b.k === 'lance') { const L = Math.min(150, Math.hypot(b.x - b.sx, b.y - b.sy)); x.save(); x.translate(b.x, b.y - 36 * HS); x.rotate(b.a); x.lineCap = 'round';
-        x.strokeStyle = '#07020d'; x.lineWidth = 8; x.beginPath(); x.moveTo(-L, 0); x.lineTo(6, 0); x.stroke(); const g = x.createLinearGradient(-L, 0, 6, 0); g.addColorStop(0, 'rgba(200,16,46,0)'); g.addColorStop(.5, '#c8102e'); g.addColorStop(1, '#ff8a96'); x.strokeStyle = g; x.lineWidth = 5; x.stroke();
-        x.strokeStyle = b.venom ? '#d9ffa0' : '#fff'; x.lineWidth = 1.6; x.beginPath(); x.moveTo(-L * .5, 0); x.lineTo(6, 0); x.stroke();
-        x.fillStyle = '#ff8a96'; x.strokeStyle = '#07020d'; x.lineWidth = 2; x.beginPath(); x.moveTo(16, 0); x.lineTo(2, -5.5); x.lineTo(2, 5.5); x.closePath(); x.fill(); x.stroke(); x.restore(); }
+      else if (b.k === 'lance') { const P2 = b.pts.concat([{ x: b.x, y: b.y }]), n = P2.length, yo = -36 * HS; x.save(); x.lineCap = 'round'; x.lineJoin = 'round';
+        const path = () => { x.beginPath(); P2.forEach((q, i) => i ? x.lineTo(q.x, q.y + yo) : x.moveTo(q.x, q.y + yo)); };
+        x.strokeStyle = '#07020d'; x.lineWidth = 8; x.globalAlpha = .9; path(); x.stroke();
+        for (let i = 1; i < n; i++) { const u = i / (n - 1 || 1); x.globalAlpha = .25 + .75 * u; x.strokeStyle = u > .6 ? '#ff5a6e' : '#c8102e'; x.lineWidth = 2 + 3.4 * u; x.beginPath(); x.moveTo(P2[i - 1].x, P2[i - 1].y + yo); x.lineTo(P2[i].x, P2[i].y + yo); x.stroke(); }
+        x.globalAlpha = 1; if (n > 2) { x.strokeStyle = b.venom ? '#d9ffa0' : '#fff'; x.lineWidth = 1.5; x.beginPath(); for (let i = Math.max(0, n - 5); i < n; i++) i === Math.max(0, n - 5) ? x.moveTo(P2[i].x, P2[i].y + yo) : x.lineTo(P2[i].x, P2[i].y + yo); x.stroke(); }
+        x.translate(b.x, b.y + yo); x.rotate(b.a); x.fillStyle = '#ff8a96'; x.strokeStyle = '#07020d'; x.lineWidth = 2; x.beginPath(); x.moveTo(16, 0); x.lineTo(2, -5.5); x.lineTo(2, 5.5); x.closePath(); x.fill(); x.stroke(); x.restore(); }
       else { const wob = 1 + Math.sin(b.t * 30) * .08, R = 15 * SC; x.save(); x.globalAlpha = .3; x.fillStyle = '#000'; x.beginPath(); x.ellipse(b.x, b.y + 2, R * .9, R * .32, 0, 0, 7); x.fill(); x.restore();
         x.save(); x.translate(b.x, b.y - b.z); x.scale(wob, 2 - wob); x.fillStyle = '#c8102e'; x.strokeStyle = '#07020d'; x.lineWidth = 3; x.beginPath(); x.arc(0, 0, R, 0, 7); x.fill(); x.stroke();
         x.fillStyle = '#7a0a18'; x.beginPath(); x.arc(R * .2, R * .25, R * .62, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.85)'; x.beginPath(); x.ellipse(-R * .35, -R * .4, R * .28, R * .14, -.6, 0, 7); x.fill(); x.restore(); } }
@@ -302,5 +310,5 @@
     x.restore();
     return r;
   };
-  window.BLOOD_DEBUG = { get pools() { return pools; }, get bloods() { return bloods; }, get cuts() { return cuts; }, get drops() { return drops; }, recall };
+  window.BLOOD_DEBUG = { pool, splat, get pools() { return pools; }, get bloods() { return bloods; }, get cuts() { return cuts; }, get drops() { return drops; }, recall };
 })();

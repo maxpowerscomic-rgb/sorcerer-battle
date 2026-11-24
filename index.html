@@ -1276,8 +1276,8 @@ function threatsFor(w){const th=[];for(const m of meteors)if(m.o!==w&&!m.done)th
 function doBlink(w){const f=w.foe,dist0=S(w,'blink','dist'),fromX=w.x,fromY=w.y;let tx,ty;
  if(U(w,'blink','ambush')){const d=dist(w,f)||1;tx=f.x+(f.x-w.x)/d*55;ty=f.y+(f.y-w.y)/d*55;}
  else{const th=threatsFor(w);let best=null,bs=-1e9;for(let i=0;i<16;i++){const a=i/16*6.283,cx=clamp(w.x+Math.cos(a)*dist0,F.x0+15,F.x1-15),cy=clamp(w.y+Math.sin(a)*dist0,F.y0+15,F.y1-15);let sc=0;for(const t of th)sc+=Math.min(0,Math.hypot(cx-t.x,cy-t.y)-t.r)*3;sc-=Math.abs(Math.hypot(cx-f.x,cy-f.y)-SP[w.book[w.i]].range)*.2;if(sc>bs){bs=sc;best=[cx,cy]}}[tx,ty]=best;}
- tx=clamp(tx,F.x0,F.x1);ty=clamp(ty,F.y0,F.y1);afters.push({x:fromX,y:fromY,face:w.face,t:0,life:1,look:w,blast:U(w,'blink','blast')});
- if(U(w,'blink','echo'))decoys.push(Object.assign({},w,{isDecoy:1,o:w,x:fromX,y:fromY,vx:0,vy:0,hp:1,dmax:1,flash:0,recoil:0,dead:0,ghostT:0,wt:9,tx:fromX,ty:fromY,echoT:1}));
+ tx=clamp(tx,F.x0,F.x1);ty=clamp(ty,F.y0,F.y1);afters.push({x:fromX,y:fromY,face:w.face,t:0,life:U(w,'blink','echo')?2:1,look:w,blast:U(w,'blink','blast')});
+ if(U(w,'blink','echo'))decoys.push(Object.assign({},w,{isDecoy:1,o:w,x:fromX,y:fromY,vx:0,vy:0,hp:1,dmax:1,flash:0,recoil:0,dead:0,ghostT:0,wt:9,tx:fromX,ty:fromY,echoT:2}));
  for(let i=0;i<10;i++){const q=i/10;P({x:fromX+(tx-fromX)*q,y:fromY-30*HS+(ty-fromY)*q,vx:rnd(-20,20),vy:rnd(-20,20),color:['#f0d2ff','#b06bff'][i%2],size:4,life:.5});}
  burst(tx,ty-30*HS,20,['#f0d2ff','#fff','#b06bff'],160,4,.4);inkRing(fromX,fromY-30*HS,'#b06bff',1,6,30);w.x=tx;w.y=ty;w.vx=w.vy=0;w.petX=tx;w.petY=ty;}
 function smoke(x,y,n,sc=1){for(let i=0;i<n;i++)P({x:x+rnd(-14,14)*sc,y:y+rnd(-6,6)*sc,vx:rnd(-18,18),vy:rnd(-40,-15),color:['#3b3346','#4d4458','#2e2838'][i%3],size:rnd(5,9)*sc,life:rnd(1.1,1.8),glow:false,shrink:false,grow:1.8,drag:.85})}
@@ -2087,8 +2087,12 @@ nav('home');
 <script src="wizard-beasts.js"></script>
 <script src="wizard-techniques.js"></script>
 <script src="wizard-blood.js"></script>
+<script src="wizard-rules.js"></script>
 <script src="wizard-vfx.js"></script>
 <script src="wizard-meta2.js"></script>
 <script src="wizard-onboard.js"></script>
+<script src="wizard-modes.js"></script>
+<script src="wizard-ladder.js"></script>
+<script src="wizard-cosmetics.js"></script>
 <script src="wizard-release.js"></script>
 </body></html>

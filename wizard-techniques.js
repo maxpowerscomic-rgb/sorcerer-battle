@@ -258,7 +258,7 @@
     if (k === 'doubletake') { if (w.dtLoop === loop) { text(w.x, w.y - 80 * HS, 'ALREADY SWAPPED', '#bbb'); return; } w.dtLoop = loop; }
     if (k === 'polarity') { if (w.polLoop === loop) { text(w.x, w.y - 80 * HS, 'POLARITY SPENT', '#bbb'); return; } w.polLoop = loop;
       if (w.bndSpent) { w.bndSpent = 0; w.boundary = 1; text(w.x, w.y - 80 * HS, 'BOUNDARY REFILLED', '#bcd2ff'); addFx({ k: 'refill', w, life: .6 }); return; } }
-    if (k === 'sanctum') { const rest = (U(w, k, 'rite') ? 1 : 2) + (w.sancBurn || 0); if (w.sancLoop >= 0 && loop - w.sancLoop < rest) { text(w.x, w.y - 80 * HS, loop === w.sancLoop ? 'SANCTUM SPENT' : w.sancBurn ? 'BURNOUT' : 'SANCTUM RESTING', w.sancBurn ? '#ff9a6b' : '#bbb'); return; } w.sancLoop = loop; w.sancBurn = 0; }
+    if (k === 'sanctum') { const rest = U(w, k, 'rite') ? 1 : 2, burnt = loop < (w.sancFree || 0); if (burnt || (w.sancLoop >= 0 && loop - w.sancLoop < rest)) { text(w.x, w.y - 80 * HS, burnt ? 'BURNOUT' : loop === w.sancLoop ? 'SANCTUM SPENT' : 'SANCTUM RESTING', burnt ? '#ff9a6b' : '#bbb'); return; } w.sancLoop = loop; w.sancFree = 0; }
     // once per loop, so stacked defences can't loop forever (Ghost Form, Spell Shield, Hourglass, Titan Shell, Counter Stance)
     if (LOOP_ONCE[k]) { w.once = w.once || {}; if (w.once[k] === loop) { text(w.x, w.y - 80 * HS, LOOP_ONCE[k], '#bbb'); return; } w.once[k] = loop; }
     // Disoriented: the cast is aimed at a random spot (or one of the caster's own creatures)
@@ -275,7 +275,7 @@
     // the boosted cast (and Sure Hit) only lands on an enemy standing inside your dome; it waits while they're outside
     if (w.sanctNext && k !== 'sanctum' && isDamaging(k)) { const live = domes.filter(d => d.o === w && d.t < d.dur && !d.left);
       if (!live.length) w.sanctNext = null;
-      else if (!w.foe.dead && live.some(d => Math.hypot(w.foe.x - d.x, (w.foe.y - d.y) * 1.4) < d.r)) { const sn = w.sanctNext; w.sanctNext = null; domainBlast(w, k, sn); } }
+      else if (!w.foe.dead && live.some(d => d.open || Math.hypot(w.foe.x - d.x, (w.foe.y - d.y) * 1.4) < d.r)) { const sn = w.sanctNext; w.sanctNext = null; domainBlast(w, k, sn); } }
     // Copy Cast: the armed side casts the same thing back at once
     const c = w.foe;
     if (!copying && c && c.copyArmed > 0 && !c.dead && !ended && k !== 'copycast') {
@@ -340,6 +340,8 @@
     if (o.shell) { o.shell = null; o.shellDown = 1; shellShatter(o); text(o.x, o.y - 110 * HS, 'RIPPED OUT', '#9fb8ff', true); try { sfx('shatter', { x: o.x }); } catch (e) {} }
     const d0 = dist(w, o) || 1; o.drag = { by: w, t: 0, dur: .62, a0: Math.atan2(o.y - w.y, o.x - w.x), r0: d0, dir: Math.random() < .5 ? 1 : -1, dmg }; if (o.rush) o.rush = null; text(o.x, o.y - 96 * HS, 'CRESCENT DRAG', '#6fd3ff', true);
   }
+  // Stunning Force: whatever Draw catches or Repel strikes is stunned for a second (summons freeze)
+  function joltHit(w, e, k) { if (!U(w, 'polarity', 'jolt')) return; if (k === 'wiz') { if (!e.dead && !ghosted(e)) { e.stunT = Math.max(e.stunT || 0, 1); e.stunImm = Math.max(e.stunImm || 0, 1.9); addFx({ k: 'stars', w: e, life: 1 }); } } else if (k === 'z') e.stun = Math.max(e.stun || 0, 1); else e.bndT = Math.max(e.bndT || 0, 1); }
   const colTag = w => { if (!U(w, 'polarity', 'collapse')) return ''; const need = U(w, 'polarity', 'rapid') ? 3 : 5; return ' ' + (w.polN % need) + '/' + need; };
   function techCast(w, k) {
     const o = w.foe, hx = w.x + w.face * 22, hy = w.y;
@@ -358,12 +360,12 @@
     }
     if (k === 'sanctum') {
       const vast = U(w, k, 'vast') ? 1.5 : 1, r = S(w, k, 'radius') * (vast > 1 ? 1.4375 : 1);   /* Vast dome = the old Vast dome x1.15 on the 20% bigger base; the blast keeps x1.5 */
-      const dome = { o: w, x: w.x, y: w.y, r, t: 0, dur: S(w, k, 'dur') * (U(w, k, 'linger') ? 2 : 1), hp: 100, max: 100, hit: 0, trap: [] }; domes.push(dome);
+      const dome = { o: w, x: w.x, y: w.y, r, t: 0, dur: S(w, k, 'dur') * (U(w, k, 'linger') ? 2 : 1), hp: 100, max: 100, hit: 0, trap: [], oneway: U(w, k, 'oneway') }; domes.push(dome);
       const inD0 = e => Math.hypot(e.x - w.x, (e.y - w.y) * 1.4) < r; if (!o.dead && inD0(o) && !o.domeFree) { dome.trap.push(o); text(o.x, o.y - 96 * HS, 'TRAPPED', '#bcd2ff', true); }
       for (const c of enemyCreatures(w)) if (c.e.x !== undefined && inD0(c.e)) dome.trap.push(c.e);
       for (const wl of walls) { let n = 0; for (const c of wl.cr) if (!c.gone && inD0(c)) { c.gone = 1; n++; burst(c.x, c.y - 20 * HS, 12, wl.mud ? ['#d8c09a', '#8a6a48'] : ['#d8f6ff', '#fff'], 180, 4, .4); } if (n) { const live = wl.cr.filter(c => !c.gone).length; wl.hp = live ? Math.min(wl.hp, wl.max * live / wl.cr.length) : 0; } }
       w.sanctNext = { sure: U(w, k, 'surehit'), vast }; inkRing(w.x, w.y, COL.ward[1], 2, 20, r, .5); text(w.x, w.y - 90 * HS, 'SANCTUM', '#bcd2ff', true);
-      const rival = domes.find(d => d !== dome && d.o !== w && d.t < d.dur && Math.hypot(d.x - dome.x, (d.y - dome.y) * 1.4) < d.r + dome.r);
+      const rival = domes.find(d => d !== dome && d.o !== w && d.t < d.dur && !d.open && Math.hypot(d.x - dome.x, (d.y - dome.y) * 1.4) < d.r + dome.r);
       if (rival) sanctumClash(dome, rival);
     }
     if (k === 'doubletake') doSwap(w, false);
@@ -678,6 +680,7 @@
     text(mx, my - 40 * HS, 'SANCTUM CLASH', '#ffd75e', true); try { sfx('boom', { x: mx, vol: 1.2 }); } catch (e) {}
     for (let i = 0; i < 60; i++) { const an = rnd(0, 6.283), v = rnd(160, 520); P({ x: mx, y: my - 40 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .7, color: ['#ffffff', '#bcd2ff', '#ffd75e', '#ff9a6b'][i % 4], size: rnd(2, 4.5), life: rnd(.4, 1), grav: 200 }); }
   }
+  const loopNow = w => Math.floor(((w.castN || 1) - 1) / Math.max(1, w.book.length));
   function clashBreak(dm, cols) { dm.t = dm.dur; dm.trap = []; dm.o.sanctNext = null; shatterDome(dm, cols); try { sfx('shatter', { x: dm.x }); } catch (e) {} shake = Math.max(shake, 12); }
   function clashUpdate(dt) {
     for (const c of clashes) {
@@ -687,10 +690,10 @@
         shake = Math.max(shake, 2 + 4 * k);
         if (Math.random() < dt * 40) { const an = rnd(0, 6.283), v = rnd(80, 300); P({ x: c.x + rnd(-30, 30), y: c.y - 40 * HS + rnd(-20, 20), vx: Math.cos(an) * v, vy: Math.sin(an) * v * .7, color: ['#ffffff', '#ffd75e', '#bcd2ff'][Math.random() * 3 | 0], size: rnd(1.6, 3.4), life: rnd(.2, .5) }); } }
       if (k >= 1 && !c.done) { c.done = 1;
-        if (c.win) { const L = c.lose.o, Wn = c.win.o; clashBreak(c.lose, ['#ffd6c2', '#ff9a6b']); L.sancBurn = 2; Wn.sancBurn = 1;
+        if (c.win) { const L = c.lose.o, Wn = c.win.o; clashBreak(c.lose, ['#ffd6c2', '#ff9a6b']); L.sancFree = loopNow(L) + 3; Wn.sancFree = loopNow(Wn) + 2;   // out for 2 loops and 1 loop
           if (!L.dead) { L.stunT = Math.max(L.stunT || 0, 1); L.stunImm = 1.9; addFx({ k: 'stars', w: L, life: 1 }); text(L.x, L.y - 110 * HS, 'BURNOUT', '#ff9a6b', true); }
           if (!Wn.dead) text(Wn.x, Wn.y - 110 * HS, 'CLASH WON', '#ffd75e', true); }
-        else { clashBreak(c.a); clashBreak(c.b); c.a.o.sancBurn = c.b.o.sancBurn = 1; text(c.x, c.y - 70 * HS, 'DRAW', '#e6f0ff', true); c.done2 = 1; } }
+        else { clashBreak(c.a); clashBreak(c.b); c.a.o.sancFree = loopNow(c.a.o) + 2; c.b.o.sancFree = loopNow(c.b.o) + 2; text(c.x, c.y - 70 * HS, 'DRAW', '#e6f0ff', true); c.done2 = 1; } }
       if (c.done && !c.done2 && c.t > c.D + .3) { c.done2 = 1; clashBreak(c.win); }   // the winner's dome gives out a beat later
     }
     clashes = clashes.filter(c => c.t < c.D + .7);
@@ -709,7 +712,7 @@
       x.restore(); }
   }
   function sanctumEcho(w, dmg, skip, cols) {
-    const dm = domes.find(d => d.o === w && d.t < d.dur && !d.left); if (!dm || !(dmg > 0)) return; const inD = e => Math.hypot(e.x - dm.x, (e.y - dm.y) * 1.4) < dm.r, f = w.foe, c = (cols && cols[1]) || '#7aa6ff';
+    const dm = domes.find(d => d.o === w && d.t < d.dur && !d.left); if (!dm || !(dmg > 0)) return; const inD = e => dm.open || Math.hypot(e.x - dm.x, (e.y - dm.y) * 1.4) < dm.r, f = w.foe, c = (cols && cols[1]) || '#7aa6ff';
     const zap = e => { addFx({ k: 'redir', x: w.x, y: w.y - 40 * HS, x2: e.x, y2: e.y - 30 * HS, life: .22 }); burst(e.x, e.y - 30 * HS, 6, ['#fff', c], 120, 3, .3); };
     const keep = SRC; SRC = 'sanctum';
     if (f !== skip && !f.dead && !ghosted(f) && !f.domeFree && inD(f)) { zap(f); damage(f, dmg, 0, 0, '#d9c8ff'); }
@@ -722,12 +725,12 @@
     addFx({ k: 'domain', x: o.x, y: o.y, life: .8, r: R, c: m, l, sure: sn.sure });
     text(o.x, o.y - 100 * HS, sn.sure ? 'SURE HIT' : 'SANCTUM BLAST', sn.sure ? '#ffe08a' : '#bcd2ff', true); shake = Math.max(shake, 8);
     SRC = 'sanctum';
-    const insideNow = domes.some(d => d.o === w && d.t < d.dur && Math.hypot(o.x - d.x, (o.y - d.y) * 1.4) < d.r);
+    const insideNow = domes.some(d => d.o === w && d.t < d.dur && (d.open || Math.hypot(o.x - d.x, (o.y - d.y) * 1.4) < d.r));
     if (o.domeFree) text(o.x, o.y - 70 * HS, 'UNBOUND', '#ff8a96');
     else if (sn.sure && insideNow) { const keep = o.shell; o.shell = null; if (!o.dead) damage(o, dmg, 0, 0, '#d9c8ff'); o.shell = keep; }
     else if (!ghosted(o) && !wallBetween(w, { x: w.x, y: w.y }, { x: o.x, y: o.y })) damage(o, dmg, 0, 0, '#d9c8ff');
     else text(o.x, o.y - 70 * HS, 'BLOCKED', '#9fb8ff');
-    const inDome = e => domes.some(d => d.o === w && d.t < d.dur && Math.hypot(e.x - d.x, (e.y - d.y) * 1.4) < d.r);
+    const inDome = e => domes.some(d => d.o === w && d.t < d.dur && (d.open || Math.hypot(e.x - d.x, (e.y - d.y) * 1.4) < d.r));
     enemyCreatures(w).forEach(c => { if (Math.hypot(c.e.x - o.x, c.e.y - o.y) < R && inDome(c.e)) hurtCreature(c.e, c.k, dmg * .7, 'arcane'); });
   }
 
@@ -782,6 +785,7 @@
         if (src === 'zombies' || src === 'zodiac' || src === 'golem') { let bd = 70; for (const e of enemyCreatures(w)) { const dd = dist(w, e.e); if (dd < bd) { bd = dd; bit = e; } } if (bit) { hurtCreature(bit.e, bit.k, 5, 'crush'); addFx({ k: 'redir', x: w.x, y: w.y - 50 * HS, x2: bit.e.x, y2: bit.e.y - 20 * HS, life: .2 }); } }
         if (!bit && f && !f.dead && !f.shell) { addFx({ k: 'redir', x: w.x, y: w.y - 50 * HS, x2: f.x, y2: f.y - 40 * HS, life: .22 }); _damage(f, 5, 0, 0, '#bcd2ff'); }
         SRC = src; }
+      if (!w.shell) return;         // the bite-back set off something (a bloated zombie bursting) that already broke this shell
       if (SRC === 'rush') d *= 2;   // fists crack the shell twice as fast
       w.shell.hp -= d; w.shell.hit = .18; text(w.x + rnd(-8, 8), w.y - 100 * HS, Math.round(d), '#9fb8ff');
       burst(w.x + rnd(-14, 14), w.y - rnd(30, 80) * HS, 8, ['#e6f0ff', '#7aa6ff'], 140, 4, .35);
@@ -842,13 +846,19 @@
         for (const wl of walls) for (const c of wl.cr) if (!c.gone && Math.hypot(c.x - w.x, c.y - w.y) < 26) { c.gone = 1; burst(c.x, c.y - 20 * HS, 12, wl.mud ? ['#d8c09a', '#8a6a48'] : ['#d8f6ff', '#fff'], 180, 4, .4); const live = wl.cr.filter(c2 => !c2.gone).length; wl.hp = live ? Math.min(wl.hp, wl.max * live / wl.cr.length) : 0; shake = Math.max(shake, 5); }
         for (const c of enemyCreatures(b)) if (c.e.x !== undefined && Math.hypot(c.e.x - w.x, c.e.y - w.y) < 24) hurtCreature(c.e, c.k, 60, 'crush');
         if (Math.random() < .9) P({ x: w.x + rnd(-8, 8), y: w.y - rnd(10, 60) * HS, vx: rnd(-30, 30), vy: rnd(-30, 30), color: '#6fd3ff', size: 3, life: .35 });
-        if (k >= 1) { w.drag = null; SRC = 'polarity'; damage(w, g.dmg, 0, 0, '#bfe9ff'); dazeW(w, .5); shake = Math.max(shake, 8); inkRing(w.x, w.y, '#6fd3ff', 2, 8, 46, .6); } }
+        // the body is dragged through the floor: a gouged arc, flying debris and dust behind it
+        if (g.lx === undefined) { g.lx = w.x; g.ly = w.y; } else if (Math.hypot(w.x - g.lx, w.y - g.ly) > 12) { try { scar('trench', 0, 0, { x0: g.lx, y0: g.ly + 5, x1: w.x, y1: w.y + 5 }); if (Math.random() < .4) scar('pebbles', w.x, w.y + 5, { r: 16 }); if (Math.random() < .35) scar('crack', w.x, w.y + 5); } catch (e) {} g.lx = w.x; g.ly = w.y; }
+        for (let i = 0; i < 2; i++) { const an = rnd(0, 6.283), v = rnd(60, 230); P({ x: w.x + rnd(-8, 8), y: w.y + rnd(-2, 4), vx: Math.cos(an) * v, vy: -Math.abs(Math.sin(an)) * v - 40, color: ['#6e6250', '#8a7a5a', '#4a4038', '#a08f6c'][Math.random() * 4 | 0], size: rnd(2.2, 4.6), life: rnd(.4, .8), grav: 620, glow: false }); }
+        if (Math.random() < .7) P({ x: w.x + rnd(-10, 10), y: w.y + rnd(-2, 4), vx: rnd(-20, 20), vy: -rnd(14, 40), color: ['#8a8078', '#5e5650', '#b0a698'][Math.random() * 3 | 0], size: rnd(5, 9), life: rnd(.7, 1.3), glow: false, grow: 2.2, drag: .88, fade: .4, shrink: false });
+        if (k >= 1) { w.drag = null; SRC = 'polarity'; damage(w, g.dmg, 0, 0, '#bfe9ff'); dazeW(w, .5); shake = Math.max(shake, 12); inkRing(w.x, w.y, '#6fd3ff', 2, 8, 46, .6);
+          try { scar('crack', w.x, w.y); scar('crack', w.x + 6, w.y + 3); scar('scorch', w.x, w.y + 4, { s: 2, a: .5 }); scar('pebbles', w.x, w.y, { r: 46 }); if (typeof smoke === 'function') smoke(w.x, w.y, 7, 1.1); } catch (e) {}
+          for (let i = 0; i < 16; i++) { const an = rnd(0, 6.283), v = rnd(90, 300); P({ x: w.x, y: w.y, vx: Math.cos(an) * v, vy: -Math.abs(Math.sin(an)) * v - 60, color: ['#6e6250', '#8a7a5a', '#4a4038'][i % 3], size: rnd(2.5, 5.5), life: rnd(.5, 1), grav: 640, glow: false }); } } }
       // Boundary: one shot stopped just before it lands
       if (w.boundary === undefined && U(w, 'polarity', 'boundary')) w.boundary = 1;
       // Boundary also stops a summon about to hit you: it freezes in place for a second
       if (w.boundary) { const near = zombies.find(z => z.o !== w && z.hp > 0 && z.rise >= 1 && !(z.stun > 0) && Math.hypot(z.x - w.x, z.y - w.y) < 30) || golems.find(g => g.o !== w && g.hp > 0 && !(g.bndT > 0) && Math.hypot(g.x - w.x, g.y - w.y) < 40);
         if (near) { w.boundary = 0; w.bndSpent = 1; near.bndT = 1; if (zombies.includes(near)) near.stun = 1; text(near.x, near.y - 70 * HS, 'BOUNDARY', '#bcd2ff', true); inkRing(w.x, w.y, '#bcd2ff', 2, 30, 36, .6); addFx({ k: 'ping', x: near.x, y: near.y - 20 * HS, life: .4 }); burst(near.x, near.y - 30 * HS, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); } }
-      if (w.boundary) for (const p of projs) if (p.o !== w && p.life > 0 && p.held === undefined && Math.hypot(p.x - w.x, p.y + 40 * HS - w.y) < 36) { const fa = Math.atan2(o.y - w.y, o.x - w.x) + (Math.random() < .5 ? 1 : -1) * Math.PI / 2; p.held = 1; p.vx = 0; p.vy = 0; p.home = 0; p.flingA = fa; p.life = 2; w.boundary = 0; w.bndSpent = 1; text(w.x, w.y - 96 * HS, 'BOUNDARY', '#bcd2ff', true); addFx({ k: 'ping', x: p.x, y: p.y + 40 * HS, life: .4 }); inkRing(w.x, w.y, '#bcd2ff', 2, 30, 36, .6); burst(p.x, p.y, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); break; }
+      if (w.boundary) for (const p of projs) if (p.o !== w && p.life > 0 && p.held === undefined && Math.hypot(p.x - w.x, p.y + 40 * HS - w.y) < 36) { p.held = 1; p.vx = 0; p.vy = 0; p.home = 0; p.bndBy = w; p.life = 2; w.boundary = 0; w.bndSpent = 1; text(w.x, w.y - 96 * HS, 'BOUNDARY', '#bcd2ff', true); addFx({ k: 'ping', x: p.x, y: p.y + 40 * HS, life: .4 }); inkRing(w.x, w.y, '#bcd2ff', 2, 30, 36, .6); burst(p.x, p.y, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); break; }
       // Spirit Arrow: the shell shoots while it stands
       if (w.shell && U(w, 'titan', 'arrow') && o && !o.dead) { w.shell.acd = (w.shell.acd === undefined ? 1 : w.shell.acd) - dt; if (w.shell.acd <= 0) { w.shell.acd = 2; const a = Math.atan2(o.y - w.y, o.x - w.x); tarrows.push({ o: w, x: w.x + Math.cos(a) * 24, y: w.y + Math.sin(a) * 24, vx: Math.cos(a) * 430, vy: Math.sin(a) * 430, life: 1.6, dmg: 7 }); } }
       // bleeding casters drip blood pools
@@ -964,8 +974,12 @@
       // outside (by steering, or being shoved out) makes the dome crumble
       { const dx = w.x - dm.x, dy = (w.y - dm.y) * 1.4, d = Math.hypot(dx, dy) || 1, steering = w.me && window.STEER && STEER.p;
         if (!w.dead && dm.t < dm.dur) {
-          if (d > dm.r + 4) crumbleDome(dm);
+          if (dm.open) {} else if (d > dm.r + 4) crumbleDome(dm);
           else if (!steering && d > dm.r - 26) { const k = Math.min(1, (d - (dm.r - 26)) / 26); w.vx -= dx / d * 260 * k * dt * 6; w.vy -= dy / d / 1.4 * 260 * k * dt * 6; } } }
+      // One-Way Walls: enemies that step in after it went up are caught too
+      if (dm.oneway && dm.t < dm.dur) { const f = w.foe, deep = e => Math.hypot(e.x - dm.x, (e.y - dm.y) * 1.4) < dm.r - 14;
+        if (!f.dead && !f.domeFree && !dm.trap.includes(f) && deep(f)) { dm.trap.push(f); text(f.x, f.y - 96 * HS, 'TRAPPED', '#bcd2ff', true); inkRing(dm.x, dm.y, '#bcd2ff', 1, dm.r - 6, dm.r, .3); }
+        for (const c of enemyCreatures(w)) if (c.e.x !== undefined && !dm.trap.includes(c.e) && deep(c.e)) dm.trap.push(c.e); }
       // enemies caught inside when it went up cannot leave until it falls
       for (const e of dm.trap) { if (e.dead || e.hp <= 0) continue; const dx = e.x - dm.x, dy = (e.y - dm.y) * 1.4, d = Math.hypot(dx, dy), lim = dm.r - 8; if (d > lim) { e.x = dm.x + dx / d * lim; e.y = dm.y + dy / d * lim / 1.4; if (e.vx !== undefined) { e.vx *= .3; e.vy *= .3; } } }
       if (dm.hp <= 0 && dm.t < dm.dur && !dm.clash) { dm.t = dm.dur; text(dm.x, dm.y - 110 * HS, 'SANCTUM BROKEN', '#bcd2ff', true); shake = Math.max(shake, 10); shatterDome(dm); try { sfx('shatter', { x: dm.x }); } catch (e) {} }
@@ -1015,7 +1029,7 @@
           burst(c.x, c.y - 36 * HS, 16, ['#3b9bff', '#bfe6ff', '#061030'], 150, 4, .45); shake = Math.max(shake, 5);
           if (got.k === 'wiz' && anchored(f)) { c.life = 0; text(f.x, f.y - 96 * HS, 'ANCHORED', '#bcd2ff', true); }
           else if (got.k === 'wiz' && dragReady(w, c.loop)) { c.life = 0; w.dragLoop = c.loop; crescentDrag(w, f, c.dmg); }
-          else { c.held.push(got); if (got.k === 'wiz' && f.rush) f.rush = null; text(got.e.x, got.e.y - 90 * HS, 'CAUGHT', '#6fd3ff'); } }
+          else { c.held.push(got); if (got.k === 'wiz' && f.rush) f.rush = null; text(got.e.x, got.e.y - 90 * HS, 'CAUGHT', '#6fd3ff'); joltHit(w, got.e, got.k); } }
         else if (c.x < F.x0 - 30 || c.x > F.x1 + 30 || c.y < F.y0 - 40 || c.y > F.y1 + 30) c.life = 0;
         for (let i = 0; i < 2; i++) P({ x: c.x + rnd(-8, 8), y: c.y - 36 * HS + rnd(-8, 8), vx: -c.vx * .1 + rnd(-20, 20), vy: -c.vy * .1 - rnd(5, 30), color: ['#6fb8ff', '#0a1a5a', '#c8e6ff'][Math.random() * 3 | 0], size: rnd(3, 6), life: rnd(.3, .6), glow: Math.random() < .5, shrink: false, grow: 1.6, drag: .9, fade: .5 });
         continue; }
@@ -1036,8 +1050,8 @@
       if (c.repel) {
         const f = c.o.foe, sp = Math.hypot(c.vx, c.vy) || 1, ux = c.vx / sp, uy = c.vy / sp;
         if (!c.bounced) {   // first pass: everything it touches is hurt once and shoved along its path; enemy shots are turned around
-          if (!f.dead && !ghosted(f) && !c.hit.has(f) && Math.hypot(f.x - c.x, f.y - c.y) < 28) { c.hit.add(f); damage(f, c.dmg, ux * 520 * c.str, uy * 520 * c.str, '#ffb0b0'); addFx({ k: 'repel', x: f.x, y: f.y, life: .35, r: 60 }); shake = Math.max(shake, 7); }
-          for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined && !c.hit.has(e.e) && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 26) { c.hit.add(e.e); hurtCreature(e.e, e.k, c.dmg * .6, 'crush'); const q = inArena(e.e.x + ux * 70 * c.str, e.e.y + uy * 70 * c.str); e.e.x = q.x; e.e.y = q.y; }
+          if (!f.dead && !ghosted(f) && !c.hit.has(f) && Math.hypot(f.x - c.x, f.y - c.y) < 28) { c.hit.add(f); damage(f, c.dmg, ux * 520 * c.str, uy * 520 * c.str, '#ffb0b0'); addFx({ k: 'repel', x: f.x, y: f.y, life: .35, r: 60 }); shake = Math.max(shake, 7); joltHit(c.o, f, 'wiz'); }
+          for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined && !c.hit.has(e.e) && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 26) { c.hit.add(e.e); hurtCreature(e.e, e.k, c.dmg * .6, 'crush'); const q = inArena(e.e.x + ux * 70 * c.str, e.e.y + uy * 70 * c.str); e.e.x = q.x; e.e.y = q.y; joltHit(c.o, e.e, e.k); }
           for (const p of projs) if (p.o !== c.o && p.life > 0 && Math.hypot(p.x - c.x, p.y + 40 * HS - c.y) < 26) { p.vx = ux * 300; p.vy = uy * 300; p.o = c.o; p.tgt = null; }
           for (const q of slashes) if (q.o !== c.o && Math.hypot(q.x - c.x, q.y - c.y) < 26) { q.vx = ux * 380; q.vy = uy * 380; q.o = c.o; q.hit = new Set(); }
         }
@@ -1097,7 +1111,7 @@
   window.startDuel = startDuel = function () {
     slashes = []; domes = []; orbsC = []; halves = []; tarrows = []; clashes = []; sshards = []; fx = []; springs = []; motes = []; cleaves = []; muds = []; flames = []; EYE = null;
     const r = _startDuel.apply(this, arguments);
-    if (typeof ents !== 'undefined') ents.forEach(w => { w.shell = null; w.shellDown = 0; w.copyArmed = 0; w.copyGlow = 0; w.sanctNext = null; w.rush = null; w.jump = 0; w.infused = 0; w.cleaveN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].c) || 0; w.counter = null; w.qdSpent = 0; w.polN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].p) || 0; w.zn = 0; w.zbag = null; w.ceaseT = 0; w.viviT = 0; w.viviLoop = undefined; w.pull = null; w.sw = null; w.swPause = 0; w.healAcc = 0; w.qdFill = 0; w.infArm = 0; w.repelT = 0; w.cdNum = 0; w.bleeds = null; w.braceT = 0; w.mom = 0; w.dmgSince = 0; w.finalUsed = 0; w.finalBoost = 0; w.fate = 0; w.fateUsed = 0; w.castN = 0; w.flyN = 0; w.dtLoop = -1; w.polLoop = -1; w.once = {}; w.mirN = 0; w.sancBurn = 0; w.sancLoop = -9; w.dragLoop = undefined; w.bo = null; w.chosenSaid = 0; w.dizzyT = 0; w.drag = null; w.boundary = undefined; w.bndSpent = 0; w._hpLast = w.hp; w._hpSeen = w.hp; });
+    if (typeof ents !== 'undefined') ents.forEach(w => { w.shell = null; w.shellDown = 0; w.copyArmed = 0; w.copyGlow = 0; w.sanctNext = null; w.rush = null; w.jump = 0; w.infused = 0; w.cleaveN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].c) || 0; w.counter = null; w.qdSpent = 0; w.polN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].p) || 0; w.zn = 0; w.zbag = null; w.ceaseT = 0; w.viviT = 0; w.viviLoop = undefined; w.pull = null; w.sw = null; w.swPause = 0; w.healAcc = 0; w.qdFill = 0; w.infArm = 0; w.repelT = 0; w.cdNum = 0; w.bleeds = null; w.braceT = 0; w.mom = 0; w.dmgSince = 0; w.finalUsed = 0; w.finalBoost = 0; w.fate = 0; w.fateUsed = 0; w.castN = 0; w.flyN = 0; w.dtLoop = -1; w.polLoop = -1; w.once = {}; w.mirN = 0; w.sancBurn = 0; w.sancFree = 0; w.sancLoop = -9; w.dragLoop = undefined; w.bo = null; w.chosenSaid = 0; w.dizzyT = 0; w.drag = null; w.boundary = undefined; w.bndSpent = 0; w._hpLast = w.hp; w._hpSeen = w.hp; });
     return r;
   };
 
@@ -1175,7 +1189,7 @@
   function crescentPath(x, r, a0) { x.beginPath(); x.arc(0, 0, r, -a0, a0); x.arc(-r * .42, 0, r * .92, a0 * .86, -a0 * .86, true); x.closePath(); }
   function drawTech(x) {
     // Sanctum domes (under the shells)
-    for (const dm of domes) {
+    for (const dm of domes) { if (dm.open) continue;
       const w = dm.o, k = dm.t / dm.dur, a = Math.min(1, dm.t * 5) * (k > .85 ? (1 - k) / .15 : 1), R = dm.r * Math.min(1, .2 + dm.t * 6), RY = R / 1.4, H = R * .95, hot = dm.hit > 0 ? 1 : 0, pl = Math.max(0, dm.pulse || 0) * 4, q = Math.max(0, dm.hp / dm.max);
       x.save(); x.translate(dm.x, dm.y); x.globalAlpha = a;
       // floor: tinted disc, a bright double rim and glyph ticks turning on it
@@ -1216,11 +1230,11 @@
     for (const w of ents) if (w.copyArmed > 0 && !w.dead) { const ex = w.x + w.face * 3 * SC, ey = w.y - 47 * SC; x.save(); x.globalCompositeOperation = 'lighter'; const gg = x.createRadialGradient(ex, ey, 0, ex, ey, 12); gg.addColorStop(0, 'rgba(255,60,80,.9)'); gg.addColorStop(1, 'rgba(255,0,40,0)'); x.fillStyle = gg; x.beginPath(); x.arc(ex, ey, 12 + Math.sin(T * 10) * 2, 0, 7); x.fill(); x.restore(); }
     // slashes (bigger, brighter and with a gold core as Dissection is levelled and upgraded)
     for (const s of slashes) {
-      const a = Math.atan2(s.vy, s.vx), tr = s.tier || 1; x.save(); x.translate(s.x, s.y - 36 * HS); x.rotate(a); x.scale(SC * s.sz * 1.45, SC * s.sz * 1.45);
-      for (let i = 2 + tr; i >= 1; i--) { x.save(); x.translate(-i * 7, 0); x.globalAlpha = .16 * (3 + tr - i) / (1 + tr * .3); x.fillStyle = tr >= 3 ? '#ffb020' : '#ff3b4a'; crescentPath(x, 17, 1.15); x.fill(); x.restore(); }
-      x.globalCompositeOperation = 'lighter'; x.fillStyle = tr >= 3 ? 'rgba(255,190,60,.6)' : 'rgba(255,60,80,.55)'; crescentPath(x, 19 + tr, 1.2); x.fill();
-      x.globalCompositeOperation = 'source-over'; x.fillStyle = '#fff'; x.strokeStyle = '#2a0006'; x.lineWidth = 1.6; crescentPath(x, 16, 1.1); x.fill(); x.stroke();
-      if (tr >= 2) { x.fillStyle = tr >= 3 ? '#ffe08a' : '#ffd6d2'; crescentPath(x, 11, .8); x.fill(); }
+      const a = Math.atan2(s.vy, s.vx), tr = s.tier || 1, gd = s.o && s.o.atkSkin === 'gilded'; x.save(); x.translate(s.x, s.y - 36 * HS); x.rotate(a); x.scale(SC * s.sz * 1.45, SC * s.sz * 1.45);   /* gd: the Gilded Blood skin, blood red with a gold edge */
+      for (let i = 2 + tr; i >= 1; i--) { x.save(); x.translate(-i * 7, 0); x.globalAlpha = .16 * (3 + tr - i) / (1 + tr * .3); x.fillStyle = gd ? '#7a0a18' : tr >= 3 ? '#ffb020' : '#ff3b4a'; crescentPath(x, 17, 1.15); x.fill(); x.restore(); }
+      x.globalCompositeOperation = 'lighter'; x.fillStyle = gd ? 'rgba(255,200,60,.55)' : tr >= 3 ? 'rgba(255,190,60,.6)' : 'rgba(255,60,80,.55)'; crescentPath(x, 19 + tr, 1.2); x.fill();
+      x.globalCompositeOperation = 'source-over'; x.fillStyle = gd ? '#b00d24' : '#fff'; x.strokeStyle = gd ? '#ffd75e' : '#2a0006'; x.lineWidth = gd ? 2.2 : 1.6; crescentPath(x, 16, 1.1); x.fill(); x.stroke();
+      if (gd) { x.fillStyle = '#ffd75e'; crescentPath(x, 7, .7); x.fill(); } else if (tr >= 2) { x.fillStyle = tr >= 3 ? '#ffe08a' : '#ffd6d2'; crescentPath(x, 11, .8); x.fill(); }
       x.restore();
       if (tr >= 2 && Math.random() < .5) P({ x: s.x + rnd(-6, 6), y: s.y - 36 * HS + rnd(-8, 8), vx: -s.vx * .1, vy: -s.vy * .1, color: tr >= 3 ? '#ffe08a' : '#ff8a96', size: 2, life: .25 });
     }
@@ -1266,7 +1280,7 @@
     drawImpacts(x);
     drawScatter(x);
     // Not Yet: a steady light-blue halo until the destined hit lands
-    for (const w of ents) if (w.fate && !w.dead) { x.save(); x.translate(w.x, w.y - 44 * HS); x.globalCompositeOperation = 'lighter'; x.globalAlpha = .6 + Math.sin(T * 10) * .2; x.strokeStyle = '#bff0ff'; x.lineWidth = 3; x.beginPath(); x.ellipse(0, 0, 24 * SC, 52 * HS, 0, 0, 7); x.stroke(); x.restore(); }
+    for (const w of ents) if (w.fate && !w.dead) { x.save(); x.translate(w.x, w.y - 44 * HS); x.globalCompositeOperation = 'lighter'; x.globalAlpha = .6 + Math.sin(T * 10) * .2; x.strokeStyle = '#ffffff'; x.lineWidth = 3; x.beginPath(); x.ellipse(0, 0, 24 * SC, 52 * HS, 0, 0, 7); x.stroke(); x.restore(); }
     // Braced (Held Stance): a gold guard shimmer
     for (const w of ents) if (w.braceT > 0 && !w.dead) { x.save(); x.translate(w.x, w.y - 44 * HS); x.globalCompositeOperation = 'lighter'; x.globalAlpha = Math.min(1, w.braceT) * (.45 + Math.sin(T * 12) * .15); x.strokeStyle = '#ffe08a'; x.lineWidth = 3; x.beginPath(); x.ellipse(0, 0, 26 * SC, 50 * HS, 0, 0, 7); x.stroke(); x.restore(); }
     // Grand Cleave countdown: 3, 2, 1 over the head while the cleaving cast charges
@@ -1401,6 +1415,7 @@
      lightning crawls over it and chips of floor lift off the ground. drawAuraFront adds low flames in front of the feet. */
   function drawInkAura(x, w, inten, l, m, big) {
     if (inten <= .01) return;
+    { const sty = w && (w.auraStyle || (!w.book && typeof PR !== 'undefined' && PR.look && PR.look.aurastyle)); if (sty && sty !== 'flame' && window.AURA_STYLES && AURA_STYLES[sty]) return AURA_STYLES[sty](x, w, inten, l, m, big); }   // other aura styles (wizard-cosmetics.js)
     const S2 = 1.5, CW = 190, CH = 270, ox = CW / 2, oy = 204, mk = () => { const c = document.createElement('canvas'); c.width = CW * S2; c.height = CH * S2; return c; };
     const st = drawInkAura.st || (drawInkAura.st = { m: mk(), t: mk() }), mx = st.m.getContext('2d'), tx = st.t.getContext('2d');
     const t = T + (w.t || 0) * .37, k = Math.min(1.3, inten) * (big ? 1.25 : 1), RX = 18 * SC, RY = 40 * HS, cy0 = -40 * HS;
@@ -1481,8 +1496,8 @@
     mx.globalAlpha = 1;
     const tint = col => { tx.setTransform(1, 0, 0, 1, 0, 0); tx.globalCompositeOperation = 'source-over'; tx.clearRect(0, 0, CW * S2, CH * S2); tx.drawImage(st.m, 0, 0); tx.globalCompositeOperation = 'source-in'; tx.fillStyle = col; tx.fillRect(0, 0, CW * S2, CH * S2); return st.t; };
     const X0 = w.x - ox, Y0 = w.y - oy; x.save();
-    const ink = tint('#05182b'); x.globalAlpha = Math.min(1, .6 + inten * .4); for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; x.drawImage(ink, X0 + Math.cos(a) * 2.6, Y0 + Math.sin(a) * 2.6, CW, CH); }
-    x.globalAlpha = Math.min(1, .6 + inten * .35); x.drawImage(tint('#57c3f2'), X0, Y0, CW, CH);
+    const ink = tint(w.fate ? '#2a2a3a' : '#05182b'); x.globalAlpha = Math.min(1, .6 + inten * .4); for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; x.drawImage(ink, X0 + Math.cos(a) * 2.6, Y0 + Math.sin(a) * 2.6, CW, CH); }
+    x.globalAlpha = Math.min(1, .6 + inten * .35); x.drawImage(tint(w.fate ? '#ffffff' : '#57c3f2'), X0, Y0, CW, CH);
     x.globalCompositeOperation = 'lighter'; x.globalAlpha = .18 + inten * .22; x.drawImage(tint('#cff3ff'), X0 + 1, Y0 - 2.5, CW, CH);
     x.restore();
   }
@@ -1498,7 +1513,7 @@
   }
 
   function drawShell(x, w) {
-    const sh = w.shell, f = sh.form, q = sh.hp / sh.max, H = 100, Wd = 44, t = sh.t, ac = auraOf(w), rgb = h => { const n = parseInt(h.slice(1), 16); return `${n >> 16},${n >> 8 & 255},${n & 255}`; }, cL = rgb(ac[0]), cM = rgb(ac[1]), fort = U(w, 'titan', 'fortified');
+    const sh = w.shell, f = sh.form, q = sh.hp / sh.max, H = 100, Wd = 44, t = sh.t, ac = sh.crimson ? ['#ffd6d2', '#ff2a3a'] : auraOf(w), rgb = h => { const n = parseInt(h.slice(1), 16); return `${n >> 16},${n >> 8 & 255},${n & 255}`; }, cL = rgb(ac[0]), cM = rgb(ac[1]), fort = U(w, 'titan', 'fortified');
     // liquid smoke outline: two slow, wobbling ink bands that hug the shell
     x.save(); x.translate(w.x, w.y); x.scale(SC, SC); x.lineJoin = 'round';
     for (let L2 = fort ? 2 : 1; L2 >= 0; L2--) { const off = 6 + L2 * 7, pts = []; for (let i = 0; i <= 40; i++) { const an = Math.PI + i / 40 * Math.PI, wob = Math.sin(an * 5 + t * 2.2 + L2 * 2) * 3.2 + Math.sin(an * 9 - t * 3.1 + L2) * 1.8; pts.push([Math.cos(an) * (Wd + off + wob), Math.sin(an) * (H * .6 + off + wob) - H * .42]); }
@@ -1871,7 +1886,8 @@
     if (p.held > 0) {
       p.held -= dt; p.life = Math.max(p.life, 1);
       if (Math.random() < dt * 8) P({ x: p.x + rnd(-14, 14), y: p.y + rnd(-14, 14), vx: rnd(-20, 20), vy: rnd(-20, 20), color: '#bcd2ff', size: 2, life: .3 });
-      if (p.held <= 0) { p.vx = Math.cos(p.flingA) * 380; p.vy = Math.sin(p.flingA) * 380; p.life = 1.4; burst(p.x, p.y, 10, ['#e6f0ff', '#7aa6ff'], 150, 3, .3); inkRing(p.x, p.y, '#bcd2ff', 1, 6, 24); }
+      if (p.held <= 0) { const src = p.o, fa = Math.atan2(src.y - 40 * HS - p.y, src.x - p.x); if (p.bndBy) p.o = p.bndBy; p.tgt = null; p.vx = Math.cos(fa) * 420; p.vy = Math.sin(fa) * 420; p.life = 1.6; burst(p.x, p.y, 10, ['#e6f0ff', '#7aa6ff'], 150, 3, .3); inkRing(p.x, p.y, '#bcd2ff', 1, 6, 24);
+        if (p.bndBy) { p.held = undefined; p.hitZ = new Set(); return false; } }   // sent back: it is a live shot again, now the catcher's
     } else { p.x += p.vx * dt; p.y += p.vy * dt; if (p.x < F.x0 - 60 || p.x > F.x1 + 60 || p.y < F.y0 - 100 || p.y > F.y1 + 60) p.life = 0; }
     const sp2 = Math.hypot(p.vx, p.vy) || 1;
     for (let q = 0; q < 2; q++) fireFx.push({ x: p.x - p.vx / sp2 * rnd(0, 10) + rnd(-3, 3), y: p.y - p.vy / sp2 * rnd(0, 10) + rnd(-3, 3), vx: -p.vx * .12 + rnd(-12, 12), vy: -p.vy * .12 - rnd(10, 30), t: 0, life: rnd(.22, .38), s: rnd(6, 10) * (p.r / 9), seed: rnd(0, 99), smoke: 0 });
@@ -1886,6 +1902,6 @@
     if (sh.hp <= 0) { w.shell = null; w.shellDown = 1; shake = Math.max(shake, 10); text(w.x, w.y - 104 * HS, 'SHELL BROKEN', '#9fb8ff', true); shellShatter(w); try { sfx('shatter', { x: w.x }); } catch (e) {} }
     return true;
   };
-  window.TECHX = { addFx, addBleed, dazeW, ghosted, anchored, inArena, sanctumEcho, shatterDome, rushPick, rushWall, tPos, tAlive, wallBetween: (typeof wallBetween === 'function' ? wallBetween : null), get domes() { return domes; }, get impacts() { return impacts; }, get clashes() { return clashes; } };
+  window.TECHX = { addFx, addBleed, dazeW, ghosted, anchored, inArena, sanctumEcho, shatterDome, rushPick, rushWall, tPos, tAlive, wallBetween: (typeof wallBetween === 'function' ? wallBetween : null), get domes() { return domes; }, get impacts() { return impacts; }, get clashes() { return clashes; }, get orbsC() { return orbsC; }, get slashes() { return slashes; }, get cleaves() { return cleaves; }, get tarrows() { return tarrows; }, drawInkAura, isCopying: () => copying };
   window.TECH_DEBUG = { get muds() { return muds; }, castEarth, addBleed, get cleaves() { return cleaves; }, get springs() { return springs; }, get slashes() { return slashes; }, get domes() { return domes; }, get orbs() { return orbsC; }, get fx() { return fx; }, eyeFlash, doSwap, drawSorc };
 })();

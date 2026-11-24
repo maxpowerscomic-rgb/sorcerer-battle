@@ -631,32 +631,37 @@
    Every track has a name, can be starred as a favourite, and each slot (menus, battles) can play one chosen track or
    Shuffle: a random pick every time, from your favourites in that slot if you have any. Switching crossfades. */
 (function () {
-  const TRACKS = [['bgm_menu', 'Moonlit Study', 'menu'], ['bgm_menu_whimsy', 'Tower of Whimsy', 'menu'], ['bgm_menu_tavern', 'The Copper Kettle Inn', 'menu'], ['bgm_menu_lofi', 'Candlelit Grimoire', 'menu'], ['bgm_menu_synth', 'Starfall Arcade', 'menu'],
-    ['bgm_battle', "Duelist's Pulse", 'battle'], ['bgm_battle_take2', "Duelist's Pulse (Reprise)", 'battle'], ['bgm_battle_dark', 'Hexed Ostinato', 'battle'], ['bgm_battle_calm', 'Still Waters', 'battle'],
-    ['bgm_battle_final', 'The Turning Tide', 'final'], ['bgm_battle_finale', 'Last Spell Standing', 'final']];
+  // Menus always play Candlelit Grimoire. Battles follow the fight by default: one track per phase, a harder one each time.
+  const TRACKS = [['bgm_menu', 'Candlelit Grimoire', 'menu'],
+    ['bgm_phase1', 'Opening Gambit', 'p1'], ['bgm_phase2', 'Rising Hex', 'p2'], ['bgm_phase3', 'Midnight Reckoning', 'p3'], ['bgm_battle_final', 'The Turning Tide', 'p3'],
+    ['bgm_final2', 'Last Candle', 'final'], ['bgm_battle_finale', 'Last Spell Standing', 'final'],
+    ['bgm_battle', "Duelist's Pulse", 'battle'], ['bgm_battle_take2', "Duelist's Pulse (Reprise)", 'battle'], ['bgm_battle_dark', 'Hexed Ostinato', 'battle'], ['bgm_battle_calm', 'Still Waters', 'battle']];
+  const CAT_LBL = { menu: 'Menus', battle: 'Battles', p1: 'Rounds 1 and 2', p2: 'Rounds 3 and 4', p3: 'Rounds 5 and 6', final: 'Round 7' };
   window.MUSIC_TRACKS = TRACKS;
   const favs = () => (SET().bgmFav = SET().bgmFav || []);
   const poolOf = cat => { const all = TRACKS.filter(t => t[2] === cat).map(t => t[0]), f = all.filter(k => favs().includes(k)); return f.length ? f : all; };
   const cur = { menu: null, battle: null };
   const roll = cat => { let last = null; try { last = localStorage.getItem('sb.last.' + cat); } catch (e) {} const p = poolOf(cat), q = p.filter(k => k !== last && k !== cur[cat]); cur[cat] = (q.length ? q : p)[Math.random() * (q.length ? q.length : p.length) | 0]; try { localStorage.setItem('sb.last.' + cat, cur[cat]); } catch (e) {} return cur[cat]; };
-  const choice = slot => { const v = SET()[slot === 'menu' ? 'bgmMenu' : 'bgmBattle']; return !v || v === 'shuffle' || v === 'random' ? 'shuffle' : v; };
-  const pick = slot => { const c = choice(slot); return c === 'shuffle' ? (cur[slot] || roll(slot)) : c; };
+  const choice = slot => { if (slot === 'menu') return 'bgm_menu'; const v = SET().bgmBattle; return !v || v === 'phase' ? 'phase' : v === 'shuffle' || v === 'random' || !TRACKS.some(t => t[0] === v) ? 'shuffle' : v; };
+  window.bgmChoice = choice;
+  const pick = slot => { const c = choice(slot); return c === 'shuffle' || c === 'phase' ? (cur[slot] || roll(slot)) : c; };
   let slot = null;
   const _mu = window.music;
   window.music = music = function (id) { if (id === 'bgm_menu') { if (slot !== 'menu') roll('menu'); slot = 'menu'; id = pick('menu'); } else if (id === 'bgm_battle') { slot = 'battle'; id = pick('battle'); } else slot = null; return _mu(id); };
   // a new battle song each match when battle music is on shuffle
-  const _nm = newMatch; window.newMatch = newMatch = function () { if (choice('battle') === 'shuffle') roll('battle'); return _nm.apply(this, arguments); };
-  window.setBgm = function (which, id) { SET()[which === 'menu' ? 'bgmMenu' : 'bgmBattle'] = id; try { save(); } catch (e) {} if (id === 'shuffle') id = roll(which); try { auInit(); } catch (e) {} _mu(id); };
+  const _nm = newMatch; window.newMatch = newMatch = function () { if (choice('battle') !== 'phase' && choice('battle') === 'shuffle') roll('battle'); else if (choice('battle') === 'phase') roll('battle'); return _nm.apply(this, arguments); };
+  window.setBgm = function (which, id) { SET()[which === 'menu' ? 'bgmMenu' : 'bgmBattle'] = id; try { save(); } catch (e) {} if (id === 'shuffle') id = roll(which); else if (id === 'phase') id = 'bgm_phase1'; try { auInit(); } catch (e) {} _mu(id); };
   window.toggleFav = function (id) { const f = favs(), i = f.indexOf(id); if (i >= 0) f.splice(i, 1); else f.push(id); try { save(); } catch (e) {} openMusic(); };
   window.playTrack = function (id) { try { auInit(); } catch (e) {} _mu(id); };
-  window.openMusic = function () { const row = ([id, n, cat]) => `<div class="mrow"><button class="mplay" onclick="playTrack('${id}')">▶</button><span>${n}<small>${cat === 'menu' ? 'Menus' : cat === 'battle' ? 'Battles' : cat === 'final' && id === 'bgm_battle_finale' ? 'Round 7' : 'Rounds 5 and 6'}</small></span><button class="mfav ${favs().includes(id) ? 'on' : ''}" onclick="toggleFav('${id}')" aria-label="Favourite">${favs().includes(id) ? '★' : '☆'}</button></div>`;
-    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Music</div><div class="ssub" style="margin:0">Tap ▶ to listen, ★ to favourite. Shuffle picks from your favourites.</div>${sel('menu')}${sel('battle')}<div class="mlist">${TRACKS.map(row).join('')}</div><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="sheetBack()">Back</button>`;
+  window.openMusic = function () { const row = ([id, n, cat]) => `<div class="mrow"><button class="mplay" onclick="playTrack('${id}')">▶</button><span>${n}<small>${CAT_LBL[cat] || ''}</small></span><button class="mfav ${favs().includes(id) ? 'on' : ''}" onclick="toggleFav('${id}')" aria-label="Favourite">${favs().includes(id) ? '★' : '☆'}</button></div>`;
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Music</div><div class="ssub" style="margin:0">Tap ▶ to listen, ★ to favourite. Random picks from your favourite battle tracks.</div>${sel('battle')}<div class="mlist">${TRACKS.map(row).join('')}</div><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="sheetBack()">Back</button>`;
     $('sheet').classList.add('on'); };
   // Back returns to where the player came from: the pause screen mid-match (just close this sheet), otherwise Options
   window.sheetBack = function () { const pz = document.getElementById('pause'); if (pz && pz.classList.contains('on')) { closeSheet(); try { music('bgm_battle'); } catch (e) {} } else openOptions(); };   /* mid-match, the fight's music comes back after previewing tracks */
-  const sel = which => { const c = choice(which), list = TRACKS.filter(t => t[2] === which); if (c === 'shuffle' && !cur[which]) roll(which);   /* so Random can name the song that is (or will be) playing */ return `<div class="opt"><span>${which === 'menu' ? 'Menu music' : 'Battle music'}</span><select class="bgmsel" onchange="setBgm('${which}',this.value)"><option value="shuffle" ${c === 'shuffle' ? 'selected' : ''}>${(() => { const now = cur[which] && TRACKS.find(t => t[0] === cur[which]); return 'Random' + (favs().some(k => list.some(t => t[0] === k)) ? ' ★' : '') + (now ? ': ' + now[1] : ''); })()}</option>${list.map(([id, n]) => `<option value="${id}" ${c === id ? 'selected' : ''}>${favs().includes(id) ? '★ ' : ''}${n}</option>`).join('')}</select></div>`; };
+  const sel = which => { const c = choice(which), list = TRACKS.filter(t => t[2] === 'battle'); if (c === 'shuffle' && !cur[which]) roll(which);
+    return `<div class="opt"><span>Battle music</span><select class="bgmsel" onchange="setBgm('battle',this.value)"><option value="phase" ${c === 'phase' ? 'selected' : ''}>Follows the fight</option><option value="shuffle" ${c === 'shuffle' ? 'selected' : ''}>Random${favs().some(k => list.some(t => t[0] === k)) ? ' ★' : ''}</option>${list.map(([id, n]) => `<option value="${id}" ${c === id ? 'selected' : ''}>${favs().includes(id) ? '★ ' : ''}${n}</option>`).join('')}</select></div>`; };
   const _sh = settingsHTML;
-  window.settingsHTML = settingsHTML = function () { const h = _sh.apply(this, arguments); return h.replace(/<\/div>$/, sel('menu') + sel('battle') + `<button class="hbtn out" style="width:100%;margin-top:6px" onclick="openMusic()">♫ All music and favourites</button></div>`); };
+  window.settingsHTML = settingsHTML = function () { const h = _sh.apply(this, arguments); return h.replace(/<\/div>$/, sel('battle') + `<button class="hbtn out" style="width:100%;margin-top:6px" onclick="openMusic()">♫ All music and favourites</button></div>`); };
   const css = document.createElement('style');
   css.textContent = `.bgmsel{font:13px 'Lilita One';background:#1a1236;color:#e8e0ff;border:2px solid #000;border-radius:9px;padding:5px 8px;max-width:58%}
   .mlist{display:flex;flex-direction:column;gap:5px}.mrow{display:flex;align-items:center;gap:8px;background:#0006;border:2px solid #000;border-radius:12px;padding:6px 8px}.mrow span{flex:1;font:14px 'Lilita One';color:#e8e0ff;display:flex;flex-direction:column}.mrow small{font:11px Nunito;font-weight:800;color:#9a8cc4}
@@ -862,7 +867,7 @@
   const _nm = newMatch;
   window.newMatch = newMatch = function (o) {
     o = o || {}; let rv = null;
-    if (!window.ONB_ACTIVE && !o.tut && !o.profile && !o.name && Math.random() < .35) { PR.metRivals = PR.metRivals || {}; const pool = R.filter(q => q.hand.every(k => SP[k])); const fresh = pool.filter(q => !PR.metRivals[q.id]); rv = (fresh.length ? fresh : pool)[Math.random() * (fresh.length ? fresh.length : pool.length) | 0]; }
+    if (!window.ONB_ACTIVE && !o.tut && !o.profile && !o.name && Math.random() < .35) { PR.metRivals = PR.metRivals || {}; let pool = R.filter(q => q.hand.every(k => SP[k])); if (window.RIVAL_FILTER) { const f = pool.filter(RIVAL_FILTER); if (f.length) pool = f; } const fresh = pool.filter(q => !PR.metRivals[q.id]); rv = (fresh.length ? fresh : pool)[Math.random() * (fresh.length ? fresh.length : pool.length) | 0]; }
     if (rv) o = Object.assign({}, o, { name: rv.n, look: Object.assign({}, rv.look, { cls: rv.cls, aura: rv.aura }) });
     const r = _nm.call(this, o);
     try { if (rv && M) { M.rival = rv; M.foe.pool = rv.hand.slice(); M.profile = Object.assign({}, M.profile, { n: rv.title }); PR.metRivals[rv.id] = (PR.metRivals[rv.id] || 0) + 1; } } catch (e) {}
@@ -970,7 +975,13 @@
 (function () {
   const FINAL = 5;
   const _mu = window.music;
-  window.music = music = function (id) { try { if (id === 'bgm_battle' && typeof M !== 'undefined' && M && M.round >= FINAL && AU.man) { if (M.round >= 7 && AU.man.bgm_battle_finale) return _mu('bgm_battle_finale'); if (AU.man.bgm_battle_final) return _mu('bgm_battle_final'); } } catch (e) {} return _mu.apply(this, arguments); };
+  // battle music by round. "Follows the fight" (the default): rounds 1-2, 3-4, 5-6 and 7 each have their own track, with two
+  // alternatives for the last two phases chosen once per match. Any other choice keeps the old rule: harder music from round 5.
+  const ready = id => { const e = AU.man && AU.man[id]; return !!(e && e.files && AU.buf[e.files[0]] !== null); };
+  window.music = music = function (id) { try { if (id === 'bgm_battle' && typeof M !== 'undefined' && M && AU.man) { const r = M.round || 1, mode = typeof bgmChoice === 'function' ? bgmChoice('battle') : 'shuffle';
+      M.musPick = M.musPick || [Math.random() < .5 ? 'bgm_phase3' : 'bgm_battle_final', Math.random() < .5 ? 'bgm_final2' : 'bgm_battle_finale'];
+      if (mode === 'phase') { const want = r >= 7 ? M.musPick[1] : r >= 5 ? M.musPick[0] : r >= 3 ? 'bgm_phase2' : 'bgm_phase1'; if (ready(want)) return _mu(want); }
+      if (r >= FINAL) { if (r >= 7 && ready(M.musPick[1])) return _mu(M.musPick[1]); if (ready(M.musPick[0])) return _mu(M.musPick[0]); } } } catch (e) {} return _mu.apply(this, arguments); };
   const _sd = startDuel;
   window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); try { if (M && M.round >= FINAL) { music('bgm_battle'); if (M.round === FINAL && !M._finalSaid) { M._finalSaid = 1; setTimeout(() => { try { toast('Final stretch! Each draft now includes a counter card.'); } catch (e) {} }, 600); } } } catch (e) {} return r; };
   // one counter card per offer from round 5
@@ -1364,7 +1375,7 @@ window.buyGems = function (id) { const iap = window.webkit && window.webkit.mess
 
 /* ---------------- Sanctum: +20% damage while you stand inside your own dome (F-554) ---------------- */
 (function () {
-  const inOwnDome = w => { if (!w || w.dead || !window.TECH_DEBUG) return false; return TECH_DEBUG.domes.some(d => d.o === w && d.t < d.dur && Math.hypot(w.x - d.x, (w.y - d.y) * 1.4) < d.r); };
+  const inOwnDome = w => { if (!w || w.dead || !window.TECH_DEBUG) return false; return TECH_DEBUG.domes.some(d => d.o === w && d.t < d.dur && (d.open || Math.hypot(w.x - d.x, (w.y - d.y) * 1.4) < d.r)); };
   window.inOwnDome = inOwnDome;
   const _dm = damage;
   window.damage = damage = function (t, d) { if (d > 0 && t && t.foe && t.foe !== t && inOwnDome(t.foe)) arguments[1] = d * 1.2; return _dm.apply(this, arguments); };
