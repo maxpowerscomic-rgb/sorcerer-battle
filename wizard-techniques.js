@@ -1003,10 +1003,16 @@
       if (dm.oneway && dm.t < dm.dur) { const f = w.foe, deep = e => Math.hypot(e.x - dm.x, (e.y - dm.y) * 1.4) < dm.r - 14;
         if (!f.dead && !f.domeFree && !dm.trap.includes(f) && deep(f)) { dm.trap.push(f); text(f.x, f.y - 96 * HS, 'TRAPPED', '#bcd2ff', true); inkRing(dm.x, dm.y, '#bcd2ff', 1, dm.r - 6, dm.r, .3); }
         for (const c of enemyCreatures(w)) if (c.e.x !== undefined && !dm.trap.includes(c.e) && deep(c.e)) dm.trap.push(c.e); }
+      // Unmaking: enemy walls, pillars, totems and turrets standing inside the dome lose 15% of their full health every second
+      if (dm.t < dm.dur && U(w, 'sanctum', 'unmake')) { const inD = (x0, y0) => dm.open || Math.hypot(x0 - dm.x, (y0 - dm.y) * 1.4) < dm.r;
+        for (const wl of walls) if (wl.o !== w && wl.hp > 0 && (wl.cr || []).some(c => !c.gone && inD(c.x, c.y))) { wl.hp -= (wl.max || 60) * .15 * dt; if (Math.random() < dt * 6) { const c = wl.cr.find(q => !q.gone && inD(q.x, q.y)); if (c) P({ x: c.x + rnd(-6, 6), y: c.y - rnd(4, 30) * HS, vx: rnd(-20, 20), vy: -rnd(20, 60), color: Math.random() < .5 ? '#e6f0ff' : '#9fb8ff', size: rnd(1.6, 3), life: .4 }); } }
+        try { const keep = SRC; SRC = 'sanctum'; for (const [L, k] of [[typeof totems !== 'undefined' ? totems : [], 'tm'], [typeof archers !== 'undefined' ? archers : [], 'a']]) for (const e of L) if (e.o !== w && e.hp > 0 && inD(e.x, e.y)) { e._mx = e._mx || e.maxHp || e.max || e.hp; hurtCreature(e, k, e._mx * .15 * dt / (window.inOwnDome && inOwnDome(w) ? 1.5 : 1), 'arcane'); }   /* the dome's own damage bonus must not stack on this: it is a flat 15% a second */ SRC = keep; } catch (e) {} }
       // enemies caught inside when it went up cannot leave until it falls
       for (const e of dm.trap) { if (e.dead || e.hp <= 0) continue; const dx = e.x - dm.x, dy = (e.y - dm.y) * 1.4, d = Math.hypot(dx, dy), lim = dm.r - 8; if (d > lim) { e.x = dm.x + dx / d * lim; e.y = dm.y + dy / d * lim / 1.4; if (e.vx !== undefined) { e.vx *= .3; e.vy *= .3; } } }
       if (dm.hp <= 0 && dm.t < dm.dur && !dm.clash) { dm.t = dm.dur; text(dm.x, dm.y - 110 * HS, 'SANCTUM BROKEN', '#bcd2ff', true); shake = Math.max(shake, 10); shatterDome(dm); try { sfx('shatter', { x: dm.x }); } catch (e) {} }
     }
+    // a Sanctum that simply runs out breaks into shards too: it never just fades
+    for (const d of domes) if (d.t >= d.dur && !d.shat) { shatterDome(d, ['#e6f0ff', '#9fb8ff']); try { sfx('shatter', { x: d.x, vol: .55 }); } catch (e) {} }
     domes = domes.filter(d => d.t < d.dur);
     // Collapse orbs
     // a Draw orb meeting a Repel orb, whoever cast them: the two forces fuse and go off as a Collapse blast where they touch

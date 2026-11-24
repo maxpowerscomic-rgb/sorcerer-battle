@@ -44,7 +44,12 @@
   if (typeof startDuel === 'function') { const _s = startDuel; window.startDuel = startDuel = function () { const r = _s.apply(this, arguments); try { setName(); if (M) { M.zone = Math.max(0, Z.indexOf(PR.behavior || 'default')); if (M.zone < 0) M.zone = 1; M.zoneCd = 0; } paint(); } catch (e) {} return r; }; }
   if (typeof update === 'function') { const _u = update;
     window.update = update = function (dt) { const on = typeof M !== 'undefined' && M && !M.practice && M.steer !== 'steer' && M.zone !== undefined && !(window.YARD && YARD.on); if (!on) return _u.apply(this, arguments);
-      const keep = PR.behavior; PR.behavior = Z[M.zone]; try { return _u.apply(this, arguments); } finally { PR.behavior = keep; if (M.zoneCd > 0) M.zoneCd -= dt; paint(); } }; }
+      const keep = PR.behavior; PR.behavior = Z[M.zone]; try { return _u.apply(this, arguments); } finally { PR.behavior = keep; if (M.zoneCd > 0) M.zoneCd -= dt;
+        // hold the range: an extra push toward the zone's distance, so a rival that backs off or presses in does not decide it for you
+        try { const me = ents[0], fo = me && me.foe; if (me && fo && !ended && !me.dead && !fo.dead && !(me.stunT > 0) && !(me.rootT > 0) && !(me.pitT > 0) && !(me.grabT > 0) && !me.shell && !me.rush && !me.bo && !me.drag && !me.pull && !(me.beamT > 0)) {
+            const dx = fo.x - me.x, dy = fo.y - me.y, d = Math.hypot(dx, dy) || 1, err = d - window.STANCE.D[M.zone]; if (Math.abs(err) > 10) { const st = Math.sign(err) * Math.min(Math.abs(err), 60 * dt), q = window.TECHX && TECHX.inArena ? TECHX.inArena(me.x + dx / d * st, me.y + dy / d * st) : { x: me.x + dx / d * st, y: me.y + dy / d * st };
+              const blocked = typeof walls !== 'undefined' && typeof wallD === 'function' && walls.some(wl => wl.hp > 0 && wallD(wl, q.x, q.y) < 14); if (!blocked) { me.x = q.x; me.y = q.y; } } } } catch (e) {}
+        paint(); } }; }
   // a swipe is a short, quick, mostly vertical stroke on the arena
   try { const cv = $('cv'); let s0 = null;
     cv.addEventListener('pointerdown', e => { if (active()) s0 = { x: e.clientX, y: e.clientY, t: performance.now() }; });
@@ -78,6 +83,7 @@
   .qi{position:relative}.qi .lvb{top:auto!important;width:auto!important;height:14px!important;box-sizing:border-box;bottom:-5px;left:auto;right:-6px;transform:none;font-size:9px!important;line-height:11px!important;padding:0 3px!important;border-width:1.500px;display:block}
   .tile.t5,.qi.t5{background:linear-gradient(#3fae5a,#1d6a35)!important}.tile.t10,.qi.t10{background:linear-gradient(#4f8dff,#1f4fc0)!important}.tile.t15,.qi.t15{background:linear-gradient(#ff5a5a,#a8182a)!important}
   .tile.t5 .lvb,.qi.t5 .lvb{border-color:#7ee08a}.tile.t10 .lvb,.qi.t10 .lvb{border-color:#9fc4ff}.tile.t15 .lvb,.qi.t15 .lvb{border-color:#ffb0b0}.qi.t5,.qi.t10,.qi.t15{border-radius:9px}
+  #order .rwhy{display:none}#loopt{margin:2px 0!important}#loopt .syn{margin-top:0!important;gap:4px}#loopt .syn .sy{font-size:10px;padding:0 6px}#loopt:empty{display:none}.pzn{font:800 11px Nunito;color:#b9a6ee;text-align:center;margin-top:2px}#behav{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:5px 8px}#behav .bl{margin:0!important;font-size:10.500px;text-align:left;white-space:nowrap}#behav .bseg{margin:0!important}#behav .mvh{grid-column:1/-1;font-size:10.500px;margin:0}#behav .rtag{font-size:9px}.upsbtn{cursor:pointer}.upsbtn.on{background:#ffd45e!important;color:#2a1a00!important}
   #rwTip{position:absolute;z-index:60;display:none;background:#0b0816f7;border:2px solid #ffd45e;border-radius:14px;padding:9px 11px;box-shadow:0 4px 0 #000;color:#f1eaff}#rwTip.on{display:block;animation:pop .18s}
   #rwTip>b{font:15px 'Lilita One';font-weight:400;color:#ffd45e}#rwTip p{margin:3px 0 0;font:800 12px/1.3 Nunito}#rwTip p.ru{color:#c9b8ff}#rwTip .rwtl{font:11px 'Lilita One';color:#b9a6ee;letter-spacing:.4px;text-transform:uppercase;margin:7px 0 3px}#rwTip .hbtn{margin-top:8px;padding:6px;font-size:14px}
   #rwTip .ostats{display:flex;flex-wrap:wrap;gap:5px}#rwTip .ostats span{display:inline-flex;gap:6px;align-items:baseline;background:#0008;border:2px solid #000;border-radius:9px;padding:2px 8px}#rwTip .ostats small{font:800 11px Nunito;color:#cfc3f2}#rwTip .ostats b{font:13px 'Lilita One';font-weight:400;color:#7ee0a0}
@@ -88,5 +94,6 @@
   .stz{display:flex;flex-direction:column;gap:3px}.stz i{width:8px;height:8px;border-radius:50%;background:#ffffff30;border:1.500px solid #000}.stz i.on{background:#ffd45e;box-shadow:0 0 6px #ffd45e}`;
   document.head.appendChild(css);
   setName();
-  window.STANCE = { Z, CD };
+  // D: the distance each zone holds (close, mid, far). on(): swipe stance is steering the player's range right now.
+  window.STANCE = { Z, CD, D: [48, 150, 300], on: () => typeof M !== 'undefined' && M && !M.practice && M.steer !== 'steer' && M.zone !== undefined && !(window.YARD && YARD.on) };
 })();

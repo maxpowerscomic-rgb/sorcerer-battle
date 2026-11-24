@@ -42,7 +42,8 @@
   // syn is a synergyOf() result; only bonuses this ability belongs to count
   window.dmgBreak = function (k, key, lv, syn) { const st = STATS[k] && STATS[k][key]; if (!st) return null; const base = st[0], cur = st[Math.min(lv, st.length) - 1]; let pct = 0;
     if (syn) { const a = syn['el:' + ELEM_OF[k]], b = syn['ty:' + TYPE_OF[k]], c = typeof SCHOOL_OF === 'function' ? syn['sc:' + SCHOOL_OF(k)] : null; pct = (a ? a.pct : 0) + (b ? b.pct : 0) + (c ? c.pct : 0); }
-    const bonus = cur * pct, parts = [f(base) + ' base']; if (cur - base > .04) parts.push('+' + f(cur - base) + ' level'); if (bonus > .04) parts.push('+' + f(bonus) + ' bonus');
+    const bonus = cur * pct, parts = [`<i class="b0" title="Base">${f(base)}</i>`]; if (cur - base > .04) parts.push(`<i class="b1" title="Level bonus">+${f(cur - base)}</i>`); if (bonus > .04) parts.push(`<i class="b2" title="Hand bonuses">+${f(bonus)}</i>`);
+    // colour says what each part is: white base, green level bonus, gold hand bonuses
     return { total: f(cur + bonus), txt: parts.length > 1 ? '(' + parts.join(' ') + ')' : '', base, level: cur - base, bonus }; };
   // spell book: the damage rows get the same breakdown (hand bonuses count only while the ability is in your hand)
   if (typeof openSpell === 'function') { const _os = openSpell;
@@ -53,7 +54,7 @@
           const val = row.lastElementChild, nx = val.querySelector('.nx'); val.firstChild && val.firstChild.nodeType === 3 ? (val.firstChild.textContent = bk.total) : null; row.insertAdjacentHTML('beforeend', `<em class="dbk">${bk.txt}</em>`); } } catch (e) {}
       return r; }; }
   const css = document.createElement('style');
-  css.textContent = `.dbk{font:800 10.500px Nunito;font-style:normal;color:#b9a6ee;margin-left:5px;white-space:nowrap}.srow{flex-wrap:wrap}.srow .dbk{flex-basis:100%;text-align:right;margin:1px 0 0}`;
+  css.textContent = `.dbk{font:800 11.500px Nunito;font-style:normal;color:#8f80b8;margin-left:5px;white-space:nowrap}.dbk i{font-style:normal}.dbk .b0{color:#fff}.dbk .b1{color:#6ee58a}.dbk .b2{color:#ffd45e}.srow{flex-wrap:wrap}.srow .dbk{flex-basis:100%;text-align:right;margin:1px 0 0}`;
   document.head.appendChild(css);
 })();
 
@@ -77,4 +78,26 @@
   .card.prize .ic::after{content:"★";position:absolute;top:-4px;right:-6px;font-size:17px;color:#ffd45e;text-shadow:0 0 6px #fff,0 1px 0 #000;animation:prizeStar 1.2s ease-in-out var(--pd,.45s) infinite alternate both}.card.prize .ic{position:relative}
   @keyframes prizeShine{from{transform:translateX(-140%) skewX(-18deg)}to{transform:translateX(420%) skewX(-18deg)}}@keyframes prizeGlow{0%,100%{box-shadow:inset 0 0 0 2px #ffd45e,0 0 10px #ffd45e66}50%{box-shadow:inset 0 0 0 3px #fff3b0,0 0 26px #ffd45e}}@keyframes prizeStar{from{transform:scale(.8) rotate(-12deg);opacity:.7}to{transform:scale(1.2) rotate(12deg);opacity:1}}`;
   document.head.appendChild(css);
+})();
+
+/* ---------------- a sound of its own when a summon dies ---------------- */
+(function () {
+  'use strict';
+  let seen = new Map(), lastT = 0;
+  // a hollow thump dropping in pitch with a dry crumble over it, made on the spot (no audio file)
+  function summonDown(pan) { try { if (typeof AU === 'undefined' || !AU.ctx) return; if (window.YARD && YARD.on && PR.yardMute === true) return; const c = AU.ctx, now = c.currentTime; if (now - lastT < .07) return; lastT = now; let out = (AU.g && (AU.g.sfx || AU.g.master)) || c.destination;
+      try { const p = c.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, pan || 0)); p.connect(out); out = p; } catch (e) {}
+      const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(240, now); o.frequency.exponentialRampToValueAtTime(58, now + .28); g.gain.setValueAtTime(.3, now); g.gain.exponentialRampToValueAtTime(.001, now + .34); o.connect(g).connect(out); o.start(now); o.stop(now + .36);
+      const n = c.createBufferSource(), buf = c.createBuffer(1, c.sampleRate * .22, c.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2.2); n.buffer = buf; const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = .8; const gn = c.createGain(); gn.gain.value = .26; n.connect(bp).connect(gn).connect(out); n.start(now + .02); } catch (e) {} }
+  window.summonDownSfx = summonDown;
+  if (typeof update === 'function') { const _u = update;
+    window.update = update = function (dt) { const r = _u.apply(this, arguments);
+      try { if (typeof ents === 'undefined' || !ents || !ents.length) return r; const next = new Map();
+        const look = (L, alive) => { for (const e of L) { const a = alive(e); next.set(e, a); if (seen.get(e) === true && !a) summonDown(((e.x || 195) - 195) / 150); } };
+        if (typeof zombies !== 'undefined') look(zombies, e => e.hp > 0); if (typeof golems !== 'undefined') look(golems, e => e.hp > 0); if (typeof archers !== 'undefined') look(archers, e => e.hp > 0); if (typeof decoys !== 'undefined') look(decoys, e => !e.gone);
+        // one that was alive last frame and is no longer in its list at all also counts as down
+        if (!ended) for (const [e, a] of seen) if (a === true && !next.has(e)) summonDown(((e.x || 195) - 195) / 150);
+        seen = next; } catch (e) {}
+      return r; }; }
+  if (typeof startDuel === 'function') { const _s = startDuel; window.startDuel = startDuel = function () { seen = new Map(); return _s.apply(this, arguments); }; }
 })();

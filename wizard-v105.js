@@ -30,7 +30,7 @@
   if (typeof renderShop === 'function') { const _rs = renderShop;
     window.renderShop = renderShop = function () { const r = _rs.apply(this, arguments);
       try { const el = $('tokConv'); if (el) el.innerHTML = `<div class="tktrade"><b>Trade spare tokens</b><small>A token still unlocks any ability. Spare ones can become skill points, gold or gems.</small>${Object.keys(KIND).map(kind => { const K = KIND[kind], n = PR[kind] || 0, off = n > 0 ? '' : 'disabled';
-          return `<div class="tkrow"><img src="${tokenImg(K.sc === 'sorc' ? 'sorc' : undefined)}"><span><b>${K.n}s</b><small>You have ${n}</small></span><button ${off} onclick="tradeToken('${kind}','pts')">${PTS} pts</button><button ${off} onclick="tradeToken('${kind}','gold')"><i class="ci coin-i"></i>${GOLD}</button><button ${off} class="gm" onclick="tradeToken('${kind}','gems')"><i class="ci">${SVG.gem}</i>${GEMS}</button></div>`; }).join('')}</div>`; } catch (e) {}
+          return `<div class="tkrow"><img src="${tokenImg(K.sc === 'sorc' ? 'sorc' : undefined)}"><span><b>${K.n}s</b><small>You have ${n}. Each: ${PTS} ${K.what} points, ${GOLD} gold or ${GEMS} gems</small></span><button ${off} onclick="tradeToken('${kind}','pts')" aria-label="${PTS} ${K.what} points">${window.ptIcon ? ptIcon(K.sc) : ''}${PTS}</button><button ${off} onclick="tradeToken('${kind}','gold')"><i class="ci coin-i"></i>${GOLD}</button><button ${off} class="gm" onclick="tradeToken('${kind}','gems')"><i class="ci">${SVG.gem}</i>${GEMS}</button></div>`; }).join('')}</div>`; } catch (e) {}
       return r; }; }
 
   /* ---------------- pause an ability for a round ---------------- */
@@ -50,7 +50,7 @@
             renderBook(); }; });
         if (!window.ONB_ACTIVE) { const hint = $('hint'); if (hint) hint.textContent = b.length < 2 ? 'Draft more abilities to build a combo' : M.moveArm ? 'Tap the slot to move it to' : 'Tap an ability to see it. Move changes the order.'; }
         const d = $('detail'); if (d && b[sel] !== undefined && !window.ONB_ACTIVE) d.insertAdjacentHTML('beforeend', `<div class="odbtns">${b.length > 1 ? `<button class="pzbtn mvbtn ${M.moveArm ? 'on' : ''}" onclick="orderMove(${sel})">${M.moveArm ? '✕ Cancel move' : '⇄ Move'}</button>` : ''}<button class="pzbtn ${p[sel] ? 'on' : ''}" onclick="togglePause(${sel})">${p[sel] ? '▶ Resume' : '⏸ Pause this round'}</button></div>`);
-        const act = b.filter((k, j) => !p[j]); if (p.some(Boolean)) $('loopt').innerHTML = 'One full loop: ' + act.reduce((a, k) => a + SP[k].t, 0).toFixed(1) + 's · ' + (b.length - act.length) + ' paused' + (typeof synHTML === 'function' ? synHTML(PR.hand, 1) : ''); } catch (e) {}
+        const act = b.filter((k, j) => !p[j]); if (p.some(Boolean)) $('loopt').innerHTML = (typeof synHTML === 'function' ? synHTML(PR.hand, 1) : '') + `<div class="pzn">${b.length - act.length} paused this round</div>`; } catch (e) {}
       return r; }; }
   { const _sd = startDuel; window.startDuel = startDuel = function () { const p = (typeof M !== 'undefined' && M && M.pz) ? M.pz.slice() : []; const r = _sd.apply(this, arguments);
       try { const me = ents[0]; me.pz = p.some(Boolean) && p.length <= me.book.length ? p : null; M.pz = [];   // a pause lasts one round

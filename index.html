@@ -955,9 +955,9 @@ function renderBook(){renderBehav();$('scoreO').innerHTML=scoreHTML();const b=M.
  $('ring').querySelectorAll('.tile[data-i]').forEach(t=>t.onclick=()=>{const i=+t.dataset.i;
   if(M.swapSel===null)M.swapSel=i;else{if(M.swapSel!==i){[b[M.swapSel],b[i]]=[b[i],b[M.swapSel]];}M.swapSel=null;}renderBook();});
  const k=b[M.swapSel??(M.lastAdded>=0?M.lastAdded:0)];const s=SP[k];
- $('detail').innerHTML=`<img src="${ICON[k]}"><div style="flex:1"><b>${s.n}</b> <span style="font-size:12px;color:#b9a6ee">⏱ ${s.t}s</span><div class="ups">${(()=>{const own=UPG[k].filter(u=>M.me.up.has(k+'.'+u.id)),rest=UPG[k].filter(u=>!M.me.up.has(k+'.'+u.id)),all=M.showAllUps===k,list=all?own.concat(rest):own,chip=u=>`<span class="${M.me.up.has(k+'.'+u.id)?'':'off'}" onclick="upInfo('${k}','${u.id}',this)">${u.n}</span>`;return (list.map(chip).join('')||'<span class="none">No upgrades yet</span>')+(rest.length?`<span class="more" onclick="M.showAllUps=M.showAllUps==='${k}'?null:'${k}';renderBook()">${all?'Show less':'+'+rest.length+' more'}</span>`:'')})()}</div><div class="upinfo" id="upInfo"></div></div>`;
+ $('detail').innerHTML=`<img src="${ICON[k]}"><div style="flex:1"><b>${s.n}</b> <span style="font-size:12px;color:#b9a6ee">⏱ ${s.t}s</span><div class="ups">${(()=>{const own=UPG[k].filter(u=>M.me.up.has(k+'.'+u.id)),rest=UPG[k].filter(u=>!M.me.up.has(k+'.'+u.id)),all=M.showAllUps===k,list=all?own.concat(rest):own,chip=u=>`<span class="${M.me.up.has(k+'.'+u.id)?'':'off'}" onclick="upInfo('${k}','${u.id}',this)">${u.n}</span>`;/* (1.0.12) one button with the count; tap to list them, tap again to fold them away */return `<span class="more upsbtn ${all?'on':''}" onclick="M.showAllUps=M.showAllUps==='${k}'?null:'${k}';renderBook()">${own.length} of ${UPG[k].length} upgrades ${all?'▴':'▾'}</span>`+(all?list.map(chip).join(''):'')})()}</div><div class="upinfo" id="upInfo"></div></div>`;
  $('hint').textContent=b.length<2?'Draft more abilities to build a combo':(M.swapSel===null?'Tap two abilities to swap them':'Now tap where it should go');
- $('loopt').innerHTML='One full loop: '+b.reduce((a,k)=>a+SP[k].t,0).toFixed(1)+'s'+synHTML(PR.hand,1);}
+ $('loopt').innerHTML=synHTML(PR.hand,1);}
 $('duelBtn').onclick=()=>{show('battle');startDuel();};
 
 /* ================= DUEL ================= */
@@ -1686,12 +1686,12 @@ function update(dt){SRC=null;shake*=Math.pow(.02,dt);updateDecals(dt);for(const 
   if(w.ghostT>0){w.ghostT-=dt;if(w.ghostT<=0)ghostEnd(w);}if(w.slowT>0)w.slowT-=dt;
   if(w.stunImm>0)w.stunImm-=dt;if(w.stunT>0){w.stunT-=dt;w.vx*=.85;w.vy*=.85;continue;}
   if(w.burn>0){w.burn-=dt;w.lastSrc=w.burnSrc||'fireball';w.lastCat='fire';w.hp=Math.max(.1,w.hp-(w.burnD||3)*dt);if(Math.random()<.5)P({x:w.x+rnd(-10,10),y:w.y-rnd(10,60),vx:0,vy:-60,color:'#ff7a3a',size:4,life:.4})}
-  const k=w.book[w.i],s=SP[k];w.p+=dt*(hgs.some(h=>h.o===w&&h.hasten)?1.3:1)*((w.slowT>0||(o.ghostT>0&&U(o,'ghost','haunt')))?.6:1);
+  const k=w.book[w.i],s=SP[k];w.p+=dt*(window.inOwnDome&&inOwnDome(w)?1.2:1)/* Sanctum: its caster charges 20% faster inside */*(hgs.some(h=>h.o===w&&h.hasten)?1.3:1)*((w.slowT>0||(o.ghostT>0&&U(o,'ghost','haunt')))?.6:1);
   if(w.p>=castT(w,k)){cast(w,k);w.p=0;w.i=(w.i+1)%w.book.length;}
   if(Math.random()<.6){const [l]=COL[SP[w.book[w.i]].el];const a=rnd(0,6.28),rr=rnd(18,30);P({x:w.x+w.face*22+Math.cos(a)*rr,y:w.y-66*HS+Math.sin(a)*rr,vx:-Math.cos(a)*rr*2.5,vy:-Math.sin(a)*rr*2.5,color:l,size:2.5,life:.35})}
-  const dx=o.x-w.x,dy=o.y-w.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;let want=SP[w.book[w.i]].range;if(w.me){const bh=PR.behavior||'default';if(bh==='push')want=Math.min(want,60);else if(bh==='away')want=Math.max(want,280);}
+  const dx=o.x-w.x,dy=o.y-w.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;let want=SP[w.book[w.i]].range;if(w.me){const bh=PR.behavior||'default';if(bh==='push')want=Math.min(want,60);else if(bh==='away')want=Math.max(want,280);/* swipe stance: three fixed ranges, held firmly */if(window.STANCE&&STANCE.on()){want=STANCE.D[M.zone];w.stanceOn=1;}else w.stanceOn=0;}
   w.orbitT-=dt;if(w.orbitT<0){w.orbit*=-1;w.orbitT=rnd(1.2,3.2);}
-  const inMet=meteors.some(m=>m.o!==w&&!m.done&&m.t>=0&&Math.hypot(w.x-m.tx,w.y-m.ty)<m.r);w.inMet=inMet;if(w.beamT>0)w.beamT-=dt;const rad=clamp((d-want)/40,-1.4,1.4),spd=(w.bodyT>0?1.5:1)*(w.pitT>0?.35:1)*(w.beamT>0?.15:1)*((w.grabT=(w.grabT||0)-dt)>0?.35:1)*70*(w.recoil>0?.25:1);
+  const inMet=meteors.some(m=>m.o!==w&&!m.done&&m.t>=0&&Math.hypot(w.x-m.tx,w.y-m.ty)<m.r);w.inMet=inMet;if(w.beamT>0)w.beamT-=dt;const rad=clamp((d-want)/40,-1.4,1.4),spd=(w.bodyT>0?1.5:1)*(w.pitT>0?.35:1)*(w.beamT>0?.15:1)*((w.grabT=(w.grabT||0)-dt)>0?.35:1)*70*(w.recoil>0?.25:1)*(w.stanceOn?1.45:1);
   let tx=ux*rad*spd+(-uy)*w.orbit*spd*.8,ty=uy*rad*spd+ux*w.orbit*spd*.8;
   for(const m of meteors)if(m.o!==w&&!m.done&&m.t>=0){const md=Math.hypot(w.x-m.tx,w.y-m.ty)||1;if(md<m.r+14){/* inside a meteor ring: run for the nearest edge */const ex=md>2?(w.x-m.tx)/md:(w.orbit||1),ey=md>2?(w.y-m.ty)/md:0;tx+=ex*150;ty+=ey*150;tx-=ux*rad*spd*.8;ty-=uy*rad*spd*.8;}}
   for(const z of zombies)if(z.o!==w&&z.rise>=1){const zd=Math.hypot(w.x-z.x,w.y-z.y)||1;if(zd<50){tx+=(w.x-z.x)/zd*22;ty+=(w.y-z.y)/zd*22}}

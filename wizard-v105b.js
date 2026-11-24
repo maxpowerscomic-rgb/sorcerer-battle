@@ -111,7 +111,7 @@
     const sy = typeof synergyOf === 'function' ? synergyOf(h) : {}, sk = Object.keys(sy).sort((a, b) => sy[b].n - sy[a].n);
     const synName = key => { const [kind, id] = key.split(':'), m = kind === 'el' ? ELEMS[id] : kind === 'sc' ? SCHOOL_SYN[id] : TYPE_SYN[id]; return m ? m.t || m.n : 'shared'; };
     const clash = short.length >= 2 && long.length >= 2;
-    const good = [], bad = [], G = (w, t) => good.push([w, t]), Bd = (w, t) => bad.push([w, t]);
+    const good = [], bad = [], G = (w, t) => good.push([w, t]), Bd = (w, t, fix) => bad.push([w, t, fix]);
     if (dmg.length >= 3) G(3, dmg.length === 4 ? 'all 4 abilities deal damage' : '3 of 4 abilities deal damage');
     { const el = sk.filter(q => q.slice(0, 2) !== 'sc')[0], key = el || sk[0]; if (key) G(el ? 2.2 + sy[key].n * .3 : 1.5, `the ${synName(key)} bonus boosts ${sy[key].n === 4 ? 'all 4' : sy[key].n + ' of them'}`); }
     if (loop <= 6.5) G(2, `the ${loop.toFixed(1)}s loop is quick`);
@@ -119,26 +119,34 @@
     if (heal.length) G(1.6, `${names(heal.slice(0, 2))} heal${heal.length > 1 ? '' : 's'} you`);
     if (ctrl.length >= 2) G(2.1, `${names(ctrl.slice(0, 2))} lock the rival down`); else if (ctrl.length === 1) G(1, `${SP[ctrl[0]].n} controls the rival`);
     if (summons.length >= 2) G(1.8, 'summons soak hits for you');
-    if (!cover.length && !heal.length) Bd(3, 'nothing in it blocks, dodges or heals');
-    if (dmg.length <= 1) Bd(3.2, dmg.length ? 'only one ability deals damage' : 'nothing in it deals damage');
-    if (loop >= 9.5) Bd(2, `the ${loop.toFixed(1)}s loop is slow`);
+    if (!cover.length && !heal.length) Bd(3, 'nothing in it blocks, dodges or heals', k => COVER.has(k) || HEAL.has(k));
+    if (dmg.length <= 1) Bd(3.2, dmg.length ? 'only one ability deals damage' : 'nothing in it deals damage', k => DMG.has(k));
+    if (loop >= 9.5) Bd(2, `the ${loop.toFixed(1)}s loop is slow`, k => (SP[k].t || 9) <= 1.4);
     if (clash) Bd(2.1, 'half of it wants to brawl and half wants range');
-    if (!walls.length) Bd(1.6, 'it has no way past walls');
-    if (!swarm.length) Bd(1.5, 'it has no answer to summon swarms');
-    if (short.length >= 3) Bd(1.4, 'everything needs you up close');
-    if (!ctrl.length) Bd(.8, 'nothing slows or stuns the rival');
-    if (!sk.length) Bd(.5, 'no two abilities share a bonus');
+    if (!walls.length) Bd(1.6, 'it has no way past walls', k => WALLS.has(k));
+    if (!swarm.length) Bd(1.5, 'it has no answer to summon swarms', k => SWARM.has(k));
+    if (short.length >= 3) Bd(1.4, 'everything needs you up close', k => LONG.has(k));
+    if (!ctrl.length) Bd(.8, 'nothing slows or stuns the rival', k => CTRL.has(k));
+    if (!sk.length) Bd(.5, 'no two abilities share a bonus', k => h.some(q => ELEM_OF[q] === ELEM_OF[k] || TYPE_OF[q] === TYPE_OF[k]));
     let s = 0; s += dmg.length >= 3 ? 1 : dmg.length === 2 ? .5 : dmg.length ? -1 : -2; s += cover.length ? .75 : heal.length ? 0 : -1; s += heal.length ? .5 : 0; s += ctrl.length ? .5 : 0; s += walls.length ? .25 : -.5; s += swarm.length ? .25 : -.5;
     s += loop <= 6.5 ? .5 : loop >= 9.5 ? -.5 : 0; s += clash ? -.5 : 0; s += sk.length >= 2 ? .5 : sk.length ? .25 : 0;
     const stars = Math.max(1, Math.min(5, Math.round(2.75 + s * .5)));
-    const top = (L, n) => L.sort((a, b) => b[0] - a[0]).slice(0, n).map(q => q[1]), g = top(good, 2), b = top(bad.filter(q => q[0] >= 1).length ? bad.filter(q => q[0] >= 1) : bad, 2);
-    return { stars, good: g.length ? cap(g[0]) + (g[1] ? ', and ' + g[1] : '') + '.' : 'An even spread with no standout.', bad: b.length ? cap(b[0]) + (b[1] ? ', and ' + b[1] : '') + '.' : 'No clear gap: upgrades and cast order will decide it.' };
+    const top = (L, n) => L.sort((a, b) => b[0] - a[0]).slice(0, n).map(q => q[1]), g = top(good, 2), badL = bad.filter(q => q[0] >= 1).length ? bad.filter(q => q[0] >= 1) : bad, b = top(badL, 2);
+    // up to three abilities that would cover the biggest gap: ones you own first, never ones already in the hand
+    const fixes = []; { const un = typeof unlockedSpells === 'function' ? unlockedSpells() : [], pool = Object.keys(SP).filter(k => !h.includes(k) && !(window.VARIANTS && VARIANTS[k]) && TYPE_OF[k]), sch = typeof SCHOOL_OF === 'function' ? SCHOOL_OF(h[0]) : null;
+      for (const q of badL.slice(0, 2)) { if (!q[2]) continue; const c = pool.filter(k => { try { return q[2](k); } catch (e) { return false; } }).sort((x, y) => (un.includes(y) - un.includes(x)) || ((SCHOOL_OF(y) === sch) - (SCHOOL_OF(x) === sch)) || ((PR.spells[y] ? PR.spells[y].lvl : 0) - (PR.spells[x] ? PR.spells[x].lvl : 0)));
+        for (const k of c) { if (fixes.length < 3 && !fixes.includes(k)) fixes.push(k); } if (fixes.length >= 3) break; } }
+    return { stars, fixes, good: g.length ? cap(g[0]) + (g[1] ? ', and ' + g[1] : '') + '.' : 'An even spread with no standout.', bad: b.length ? cap(b[0]) + (b[1] ? ', and ' + b[1] : '') + '.' : 'No clear gap: upgrades and cast order will decide it.' };
   }
   window.rateHand = rateHand;
   const WORD = ['', 'Shaky', 'Patchy', 'Solid', 'Strong', 'Complete'];
-  function rateHTML() { const r = rateHand(PR.hand); if (!r) return `<div class="hrate none">Fill all 4 slots to see how this hand rates.</div>`;
-    return `<div class="hrate"><div class="hst"><span class="stars">${'★'.repeat(r.stars)}<i>${'★'.repeat(5 - r.stars)}</i></span><b>${WORD[r.stars]}</b></div><p class="hg"><b>Strength</b>${esc(r.good)}</p><p class="hb"><b>Weakness</b>${esc(r.bad)}</p></div>`; }
-
+  // the review is Hoot's: the owl says it, with up to three abilities worth a look
+  function rateHTML() { const r = rateHand(PR.hand); if (!r) return `<div class="hrate hoot none"><canvas class="hootc" width="96" height="96"></canvas><div class="hbub"><b class="who">Hoot</b><p>Fill all 4 slots and I will tell you what I think of the hand.</p></div></div>`;
+    return `<div class="hrate hoot"><canvas class="hootc" width="96" height="96"></canvas><div class="hbub"><div class="hst"><b class="who">Hoot</b><span class="stars">${'★'.repeat(r.stars)}<i>${'★'.repeat(5 - r.stars)}</i></span><b>${WORD[r.stars]}</b></div><p class="hg"><b>Strength</b>${esc(r.good)}</p><p class="hb"><b>Weakness</b>${esc(r.bad)}</p>${r.fixes.length ? `<div class="hfix"><small>Worth a look</small>${r.fixes.map(k => `<button onclick="openSpell('${k}')"><img src="${ICON[k]}"><span>${esc(SP[k].n)}</span></button>`).join('')}</div>` : ''}</div></div>`; }
+  function hootDraw() { try { const c = document.querySelector('#handX .hootc'); if (!c) return; const x = c.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, 96, 96); x.translate(48, 104); x.scale(2.7, 2.7); drawPet(x, 'owl', performance.now() / 1000, 1); } catch (e) {} }
+  setInterval(() => { const sp = $('spells'); if (sp && sp.classList.contains('on')) hootDraw(); }, 60);
+  // small icons for skill points: a violet rune stone for spell points, a red octagon for technique points
+  window.ptIcon = sc => sc === 'sorc' ? '<svg class="pti" viewBox="0 0 24 24"><path d="M8 2.500h8l5.500 5.500v8L16 21.500H8L2.500 16V8z" fill="#e0483e" stroke="#000" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.500v11M6.500 12h11" stroke="#fff" stroke-width="2.600" stroke-linecap="round"/></svg>' : '<svg class="pti" viewBox="0 0 24 24"><path d="M12 2 21 12 12 22 3 12z" fill="#8a6bff" stroke="#000" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.500v11M6.500 12h11" stroke="#fff" stroke-width="2.600" stroke-linecap="round"/></svg>';
   if (typeof renderSpells === 'function') { const _rs = renderSpells;
     window.renderSpells = renderSpells = function () { const r = _rs.apply(this, arguments);
       try { const bar = $('handBar'); if (bar) { let x = $('handX'); if (!x) { x = document.createElement('div'); x.id = 'handX'; bar.after(x); } x.innerHTML = rateHTML() + decksHTML(); } } catch (e) { try { window.logCrash && logCrash(e, 'handX'); } catch (e2) {} }
@@ -154,6 +162,9 @@
   .stkhero{display:flex;align-items:center;justify-content:center;gap:6px;margin:4px 0 8px}.stkhero .stkf{width:54px;height:54px}.stkhero b{font:44px 'Lilita One';font-weight:400;color:#ffd45e;-webkit-text-stroke:2px #000;paint-order:stroke fill}
   .stkgoals{display:flex;flex-direction:column;gap:6px;margin-top:10px}.stkgoals div{display:flex;align-items:center;gap:8px;background:#0006;border:2px solid #000;border-radius:12px;padding:7px 10px}.stkgoals b{font:14px 'Lilita One';font-weight:400;color:#ffd45e;white-space:nowrap}.stkgoals span{flex:1;font:800 12px Nunito;color:#d9cdfa}.stkgoals em{font:13px 'Lilita One';font-style:normal;color:#b9a6ee}.stkgoals .ok{border-color:#7ee08a}.stkgoals .ok em{color:#7ee08a}
   #rwScore{display:flex;align-items:center;justify-content:center;gap:10px}#rwRune{display:inline-flex;align-items:center;gap:3px;background:#0008;border:2px solid #000;border-radius:11px;padding:2px 9px 2px 5px;cursor:pointer;box-shadow:0 2px 0 #000}#rwRune .mtk{width:22px;height:22px}#rwRune b{font:16px 'Lilita One';font-weight:400;color:#e2d6ff}#rwRune.zero{opacity:.55}#rwRune.bump{animation:pop .35s}
+  .pti{width:18px;height:18px;vertical-align:-4px;margin-right:3px}.tkrow span small{display:block;line-height:1.25}
+  .hrate.hoot{display:flex;gap:9px;align-items:flex-start;padding:8px 10px}.hootc{flex:none;width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#5a3fa8,#1d1240);border:2px solid #000;box-shadow:0 2px 0 #000}.hbub{flex:1;min-width:0;position:relative;background:#1a1236;border:2px solid #000;border-radius:12px;padding:7px 10px}.hbub::before{content:"";position:absolute;left:-8px;top:14px;border:6px solid transparent;border-right-color:#000;border-left:0}.hbub .who{font:13px 'Lilita One';font-weight:400;color:#ffd45e;margin-right:2px}.hrate.hoot.none{text-align:left}.hrate.hoot.none p{margin:2px 0 0;color:#cfc3f2}
+  .hfix{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:7px}.hfix small{font:11px 'Lilita One';color:#b9a6ee;letter-spacing:.4px;text-transform:uppercase;width:100%}.hfix button{all:unset;cursor:pointer;display:flex;align-items:center;gap:4px;background:#0007;border:2px solid #000;border-radius:10px;padding:2px 8px 2px 3px}.hfix img{width:24px;height:24px}.hfix span{font:12px 'Lilita One';color:#f1eaff;white-space:nowrap}
   #handX{display:flex;flex-direction:column;gap:8px;margin:8px 0 10px}
   .hrate{background:#0007;border:2px solid #000;border-radius:14px;padding:8px 11px;box-shadow:0 3px 0 #000}.hrate.none{font:800 12px Nunito;color:#8f80b8;text-align:center}
   .hrate .hst{display:flex;align-items:center;gap:8px;margin-bottom:4px}.hrate .stars{font-size:16px;letter-spacing:1px;color:#ffd45e;text-shadow:0 1px 0 #000}.hrate .stars i{font-style:normal;color:#ffffff26;text-shadow:none}.hrate .hst b{font:14px 'Lilita One';font-weight:400;color:#f3ecff;letter-spacing:.3px}

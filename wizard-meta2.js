@@ -1374,14 +1374,14 @@ window.buyGems = function (id) { const iap = window.webkit && window.webkit.mess
    the player just asked for, so it now stacks above pause, reward cards and level-up screens (below toasts and the curtain). */
 (function () { const css = document.createElement('style'); css.textContent = `.sheet{z-index:29!important}`; document.head.appendChild(css); })();
 
-/* ---------------- Sanctum: +20% damage while you stand inside your own dome (F-554) ---------------- */
+/* ---------------- Sanctum: +50% damage (was 20% until 1.0.12) while you stand inside your own dome (F-554, F-728) ---------------- */
 (function () {
   const inOwnDome = w => { if (!w || w.dead || !window.TECH_DEBUG) return false; return TECH_DEBUG.domes.some(d => d.o === w && d.t < d.dur && (d.open || Math.hypot(w.x - d.x, (w.y - d.y) * 1.4) < d.r)); };
   window.inOwnDome = inOwnDome;
   const _dm = damage;
-  window.damage = damage = function (t, d) { if (d > 0 && t && t.foe && t.foe !== t && inOwnDome(t.foe)) arguments[1] = d * 1.2; return _dm.apply(this, arguments); };
+  window.damage = damage = function (t, d) { if (d > 0 && t && t.foe && t.foe !== t && inOwnDome(t.foe)) arguments[1] = d * 1.5; return _dm.apply(this, arguments); };
   const _hc = hurtCreature;
-  window.hurtCreature = hurtCreature = function (c, k, d) { if (d > 0 && c && c.o && c.o.foe && inOwnDome(c.o.foe)) arguments[2] = d * 1.2; return _hc.apply(this, arguments); };
+  window.hurtCreature = hurtCreature = function (c, k, d) { if (d > 0 && c && c.o && c.o.foe && inOwnDome(c.o.foe)) arguments[2] = d * 1.5; return _hc.apply(this, arguments); };
 })();
 
 /* challenge Collect button and the ready dot (F-555) */
