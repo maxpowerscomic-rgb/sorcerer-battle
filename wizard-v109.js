@@ -37,7 +37,7 @@
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Music</div>
       <div class="munow"><i>♫</i><span><small>Now playing</small><b>${now || 'Nothing yet'}</b></span><button class="hbtn" onclick="musToggle()">${musOpen ? 'Done' : 'Change'}</button></div>
       ${musOpen ? `<div class="muh">Main menu</div>${TR().filter(t => t[2] === 'menu').map(row).join('')}
-      <div class="muh">Battle</div>${mode('phase', 'Follows the fight', 'Changes with the round')}${mode('shuffle', 'Random', '★ favourites first')}${TR().filter(t => t[2] !== 'menu').map(row).join('')}` : ''}
+      <div class="muh">Battle</div>${mode('phase', 'Auto', 'A new song every 2 rounds')}${mode('shuffle', 'Random', '★ favourites first')}${TR().filter(t => t[2] !== 'menu').map(row).join('')}` : ''}
       <button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050);margin-top:10px" onclick="sheetBack()">Back</button>`;
     $('sheet').classList.add('on'); };
   window.musToggle = function () { musOpen = !musOpen; openMusic(1); };
@@ -45,7 +45,7 @@
   window.musFav = function (id) { const f = (SET().bgmFav = SET().bgmFav || []), i = f.indexOf(id); if (i >= 0) f.splice(i, 1); else f.push(id); try { save(); } catch (e) {} openMusic(1); };
   if (typeof settingsHTML === 'function') { const _sh = settingsHTML;
     window.settingsHTML = settingsHTML = function () { let h = _sh.apply(this, arguments);
-      try { h = h.replace(/<div class="opt"><span>Battle music<\/span><select class="bgmsel" onchange="setBgm[\s\S]*?<\/select><\/div>/, '').replace(/(onclick="openMusic\(\)">)[^<]*</, `$1♫ ${nameOf(nowId()) || 'Music'}<`); } catch (e) {}
+      try { h = h.replace(/<div class="opt"><span>Battle music<\/span>\s*<select[\s\S]*?<\/select>\s*<\/div>/g, '').replace(/(onclick="openMusic\(\)">)[^<]*</, `$1♫ ${nameOf(nowId()) || 'Music'}<`); } catch (e) {}
       return h; }; }
 
   const css = document.createElement('style');
