@@ -20,11 +20,15 @@
   const loopOf = w => Math.floor(((w.castN || 1) - 1) / Math.max(1, w.book.length));
 
   /* ---------------- shared: pools of spilled blood ---------------- */
-  function pool(o, x, y, r) { const q = X.inArena(x, y); pools.push({ o, x: q.x + rnd(-3, 3), y: q.y + rnd(-2, 2), r, t: 0, sq: rnd(.35, .5), rot: rnd(0, 3) }); if (pools.length > 110) pools.shift(); }
-  function splat(o, x, y, n) { for (let i = 0; i < n; i++) { const a = rnd(0, 6.283), d = rnd(0, 20); pool(o, x + Math.cos(a) * d, y + Math.sin(a) * d * .6, rnd(3.5, 7.5)); }
+  function pool(o, x, y, r, f) { const q = X.inArena(x, y); pools.push({ o, f: f ? 1 : 0, x: q.x + rnd(-3, 3), y: q.y + rnd(-2, 2), r, t: 0, sq: rnd(.35, .5), rot: rnd(0, 3) }); if (pools.length > 110) pools.shift(); }
+  function splat(o, x, y, n) { for (let i = 0; i < n; i++) { const a = rnd(0, 6.283), d = rnd(0, 20); pool(o, x + Math.cos(a) * d, y + Math.sin(a) * d * .6, rnd(3.5, 7.5), 1); }   /* blood knocked out of whoever was hit: not the caster's own */
     for (let i = 0; i < n * 3; i++) { const a = rnd(0, 6.283), v = rnd(60, 220); P({ x, y: y - 30 * HS, vx: Math.cos(a) * v, vy: Math.sin(a) * v * .7 - 40, color: CR[i % 3], size: rnd(2, 4), life: rnd(.3, .6), grav: 420, glow: false }); } }
   // every loop the caster's spilled blood lifts off the floor and streams back into them
-  function recall(w) { const mine = pools.filter(p => p.o === w); if (!mine.length) return; pools = pools.filter(p => p.o !== w);
+  // Bloodthirst: every pool on the floor is drawn in, whoever spilled it. Blood that is not the caster's own (knocked out of an
+  // enemy, or spilled by the enemy's blood arts) feeds a damage bonus for the next loop: 2% a pool, up to 50%.
+  function recall(w) { const thirst = U(w, 'bloodcraft', 'absorb'), mine = pools.filter(p => thirst || p.o === w);
+    if (thirst) { const n = mine.filter(p => p.f || p.o !== w).length, b = Math.min(.5, n * .02); w.bloodBuff = b; if (b > 0) { try { text(w.x, w.y - 104 * HS, '+' + Math.round(b * 100) + '% DAMAGE', '#ff5a6e', true); inkRing(w.x, w.y, '#ff5a6e', 2, 40, 10, .5); } catch (e) {} } }
+    if (!mine.length) return; pools = pools.filter(p => !mine.includes(p));
     for (const p of mine) drops.push({ o: w, x: p.x, y: p.y, x0: p.x, y0: p.y, r: p.r, t: -Math.min(.35, Math.hypot(p.x - w.x, p.y - w.y) / 900) - rnd(0, .1), life: rnd(.45, .7) }); }
 
   /* ---------------- Blood Oath: the sword string ---------------- */
@@ -179,12 +183,13 @@
   // no recordings of their own yet: borrow the nearest cast sounds
   { const _sfx = sfx, AL = { c_bloodoath: ['c_rush', 1.1], c_bloodcraft: ['c_dissect', .82] }; window.sfx = sfx = function (id, o) { const al = AL[id]; return al && !(typeof AU !== 'undefined' && AU.man && AU.man[id]) ? _sfx(al[0], Object.assign({ rate: al[1] }, o || {})) : _sfx.apply(this, arguments); }; }   /* only until their own recordings exist */
   window.TECH_CAST = Object.assign(window.TECH_CAST || {}, { bloodoath: oathCast, bloodcraft: bloodCast });
+  { const _d = damage; window.damage = damage = function (t, d) { try { const a = t && t.foe; if (a && a.bloodBuff > 0 && d > 0 && !(SRC && t.book && t.book.includes(SRC) && !(a.book && a.book.includes(SRC)))) arguments[1] = d * (1 + a.bloodBuff); } catch (e) {} return _d.apply(this, arguments); }; }
   try { ONE_COPY.add('bloodoath'); } catch (e) {}
 
   // each new loop of a Bloodcraft caster calls their blood home
   const _cast = cast;
   window.cast = cast = function (w, k) {
-    if (w && w.book && w.castN > 0 && w.castN % Math.max(1, w.book.length) === 0 && (inBook(w, 'bloodcraft') || pools.some(p => p.o === w))) recall(w);
+    if (w && w.book && w.castN > 0 && w.castN % Math.max(1, w.book.length) === 0 && (inBook(w, 'bloodcraft') || pools.some(p => p.o === w))) recall(w); else if (w && w.bloodBuff && w.castN > 0 && w.castN % Math.max(1, w.book.length) === 0) w.bloodBuff = 0;
     return _cast.apply(this, arguments);
   };
 

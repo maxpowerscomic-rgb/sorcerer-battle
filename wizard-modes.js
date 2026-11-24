@@ -129,6 +129,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.11.1', d: '24 Nov 2026', items: ['New Bloodcraft upgrade, Bloodthirst: each loop you draw in all blood on the field. Blood that is not your own adds 2% damage per pool for the next loop, up to 50%.'] },
     { v: '1.0.11', d: '24 Nov 2026', items: ['Swipe to move: in Auto movement, swipe up on the arena to close in a zone, swipe down to fall back. Each move takes 1.3 seconds; two arrows at the side show the cooldown.', 'Boundary now sends what it catches back at the enemy caster instead of off at random.', 'New Polarity upgrade, Cornered Force: below half health, Draw and Repel gain 2% damage for every 1% of health missing.', 'Targets has a new choice: Structures (walls, pillars, totems, hourglasses, turrets).', 'On the results screen, tapping an ability shows a small tooltip instead of its whole page.', 'The battle bar shows your name instead of "You".'] },
     { v: '1.0.10.2', d: '24 Nov 2026', items: ['Music: during a fight, Loop this song keeps the current song for the rest of the match.', 'Double-tap a song to favourite it. Favourites sit right under Now playing.', 'The tutorial now covers the training yard, the Ladder, streaks, rematches, saved hands, the hand rating and the battle report.', 'The open slot in the draft tray now turns clockwise instead of pulsing.'] },
     { v: '1.0.10.1', d: '24 Nov 2026', items: ['Options shows the name of the song that is playing. The "Follows the fight" wording is gone; that choice is now called Auto.'] },
