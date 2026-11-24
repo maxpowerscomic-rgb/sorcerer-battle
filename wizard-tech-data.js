@@ -56,7 +56,7 @@ const TECH_STATS = {
   bloodoath:  { dmg: [6, 6.6, 7.3, 8.1, 9], regen: [1, 1.1, 1.2, 1.3, 1.4] },
   bloodcraft: { dmg: [10, 11, 12, 14, 16] },
   chosen:     { haste: [25, 26, 27, 28, 30] },
-  earthm:     { dur: [6, 6, 6.5, 6.5, 7], radius: [95, 98, 102, 106, 112], wall: [75, 82, 90, 100, 112] },
+  earthm:     { dur: [6, 6, 6.5, 6.5, 7], radius: [95, 98, 102, 106, 112], wall: [65, 71, 78, 87, 97] },
 };
 for (const k in TECH_STATS) for (const st in TECH_STATS[k]) {
   const a = TECH_STATS[k][st], step = (a[4] - a[0]) / 4 * (LEVEL_SCALED.has(st) ? LEVEL_GROWTH : 1), dec = a.some(v => v % 1) ? 1 : 0;
