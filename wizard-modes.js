@@ -129,6 +129,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.11.3', d: '24 Nov 2026', items: ['Ability tiles show their level, separate from the cast order number.', 'Tiles change colour with level: green from 5, blue from 10, red from 15. This shows on the order screen and in your cast queue.', 'Buying anything now plays a cha-ching.'] },
     { v: '1.0.11.2', d: '24 Nov 2026', items: ['Order screen: tapping an ability now only selects it. To change the order, tap Move, then tap the slot it should go to.'] },
     { v: '1.0.11.1', d: '24 Nov 2026', items: ['New Bloodcraft upgrade, Bloodthirst: each loop you draw in all blood on the field. Blood that is not your own adds 2% damage per pool for the next loop, up to 50%.'] },
     { v: '1.0.11', d: '24 Nov 2026', items: ['Swipe to move: in Auto movement, swipe up on the arena to close in a zone, swipe down to fall back. Each move takes 1.3 seconds; two arrows at the side show the cooldown.', 'Boundary now sends what it catches back at the enemy caster instead of off at random.', 'New Polarity upgrade, Cornered Force: below half health, Draw and Repel gain 2% damage for every 1% of health missing.', 'Targets has a new choice: Structures (walls, pillars, totems, hourglasses, turrets).', 'On the results screen, tapping an ability shows a small tooltip instead of its whole page.', 'The battle bar shows your name instead of "You".'] },
