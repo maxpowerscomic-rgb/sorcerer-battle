@@ -104,11 +104,13 @@
     jets = jets.filter(j => !j.done);
     // a beam held off by Boundary: the charge lasts as long as the beam does
     for (const w of ents) if (w.bndBeam) { const c = w.bndBeam; if (c.t >= c.dur || c.done || !cannons.includes(c)) { w.bndBeam = null; w.bndSpent = 1; rays = rays.filter(r => r.c !== c); } }
-    for (const r of rays) { const c = r.c, g = c.g; if (!g || !g.bnd) { r.live = 0; continue; } r.live = 1; r.va += rnd(-60, 60) * dt; r.va = clamp(r.va, -7, 7); r.off += r.va * dt; if (Math.abs(r.off) > 2.7 || Math.abs(r.off) < .35) { r.va = -r.va; r.off = clamp(Math.abs(r.off), .36, 2.69) * Math.sign(r.off || 1); }
-      const a = c.ang + r.off, E0 = g.E, far = { x: E0.x + Math.cos(a) * 520, y: E0.y + Math.sin(a) * 520 * .8 }, E = typeof clipToField === 'function' ? clipToField(E0, far) : far; r.x0 = E0.x; r.y0 = E0.y; r.x1 = E.x; r.y1 = E.y;
+    rays = rays.filter(r => !r.sh || (cannons.includes(r.c) && r.c.o && r.c.o.foe && r.c.o.foe.shell && !(r.c.t >= r.c.dur)));   // shell rays end with the beam or the shell
+    for (const r of rays) { const c = r.c, g = c.g; if (!g || !(g.bnd || (r.sh && g.shl))) { r.live = 0; continue; } r.live = 1; r.va += rnd(-60, 60) * dt; r.va = clamp(r.va, -7, 7); r.off += r.va * dt; if (Math.abs(r.off) > 2.7 || Math.abs(r.off) < .35) { r.va = -r.va; r.off = clamp(Math.abs(r.off), .36, 2.69) * Math.sign(r.off || 1); }
+      const a = c.ang + r.off, E0 = r.sh ? g.shlP : g.E, far = { x: E0.x + Math.cos(a) * 520, y: E0.y + Math.sin(a) * 520 * .8 }, E = typeof clipToField === 'function' ? clipToField(E0, far) : far; r.x0 = E0.x; r.y0 = E0.y; r.x1 = E.x; r.y1 = E.y;
       r.sc -= dt; if (r.sc <= 0) { r.sc = .16; try { beamTrails.push({ O: { x: E0.x, y: E0.y }, E: { x: E.x, y: E.y }, t: 0, w: .45 }); } catch (e) {} }
       if (Math.random() < .5) P({ x: E.x, y: E.y - 20 * HS, vx: rnd(-90, 90), vy: rnd(-120, 10), color: Math.random() < .5 ? '#ffffff' : '#4fe3ff', size: rnd(2, 3.6), life: .35 });
       // the wild rays still burn whatever they sweep across, the beam's own caster included, but lightly
+      if (r.sh) continue;   /* off a Titan Shell the wild rays are only light: the shell is taking the beam, nothing else is burned */
       SRC = 'beam'; for (const e of [c.o].concat(ents.filter(q => q !== c.o && q !== g.bnd))) if (!e.dead && e.ghostT <= 0) { const q = closestOn(E0, E, e.x, e.y); if (Math.hypot(e.x - q.x, e.y - q.y) < 14 && Math.hypot(q.x - E0.x, q.y - E0.y) > 30) { e.hp = Math.max(1, e.hp - 9 * dt); e.flash = .05; } } }
     shake = rays.some(r => r.live) ? Math.max(shake, 3) : shake;
   }
@@ -118,6 +120,10 @@
       if (f && !f.dead && !ended && (f.bndBeam === c || ((f.boundary || f.bndWin > 0) && !f.bndBeam))) { const q = closestOn(g.O, g.E, f.x, f.y), d = Math.hypot(f.x - q.x, f.y - q.y), along = Math.hypot(q.x - g.O.x, q.y - g.O.y);
         if (d < 40 && along > 44) { if (f.bndBeam !== c) { f.bndBeam = c; bndOpen(f); for (let i = 0; i < 5; i++) rays.push({ c, off: (i - 2) * .9 + rnd(-.2, .2) || .5, va: rnd(-4, 4), sc: rnd(0, .16), live: 1 }); }
           const L = along - 40, ux = (q.x - g.O.x) / along, uy = (q.y - g.O.y) / along; g.E = { x: g.O.x + ux * L, y: g.O.y + uy * L }; g.blk = null; g.bnd = f; } }
+      // (1.0.15) a beam burning into a Titan Shell throws wild rays off the point where it strikes, for as long as the shell holds
+      if (f && !f.dead && !ended && f.shell && !g.bnd) { const q = closestOn(g.O, g.E, f.x, f.y), d = Math.hypot(f.x - q.x, f.y - q.y), along = Math.hypot(q.x - g.O.x, q.y - g.O.y);
+        if (d < 34 && along > 44) { const L = Math.max(10, along - 30), ux = (q.x - g.O.x) / along, uy = (q.y - g.O.y) / along; g.shl = f; g.shlP = { x: g.O.x + ux * L, y: g.O.y + uy * L };
+          if (!rays.some(r => r.c === c && r.sh)) for (let i = 0; i < 4; i++) rays.push({ c, sh: 1, off: (i - 1.5) * 1.1 + rnd(-.2, .2) || .6, va: rnd(-4, 4), sc: rnd(0, .16), live: 1 }); } }
       return g; }; }
 
   /* ---------------- hooks ---------------- */
