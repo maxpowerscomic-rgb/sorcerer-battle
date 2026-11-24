@@ -1,6 +1,6 @@
 /* The version shown at the bottom of Options. Bump the last number with every update pushed live (1.0 -> 1.0.1 -> 1.0.2);
    bump the middle number for a big content drop. */
-const GAME_VERSION = '1.0.21';
+const GAME_VERSION = '1.0.22';
 /* =====================================================================
    SPELLBINDER: GAME DATA
    Pure data, no rendering. Port these tables straight into the real build.
@@ -255,7 +255,13 @@ const DEFAULT_LOOK = { robe: 'azure', hat: 'pointy', staff: 'oak', beard: 'white
 const EMBLEMS = [
   { id: 'founder', n: 'Founder',      c: ['#e0c2ff', '#6a3fd6'], glyph: 'flame', unlock: { type: 'free' } },
   ...RANKS.map((r, i) => ({ id: 'rank' + i, n: r.n, rank: i, unlock: { type: 'rank', v: i } })),
-  { id: 'storm',   n: 'Storm Caller', c: ['#fff7b0', '#d9a514'], glyph: 'bolt',  unlock: { type: 'gems', v: 25 } },
+  { id: 'storm',   n: 'Storm Caller', c: ['#fff7b0', '#d9a514'], glyph: 'bolt',  fx: ['sparks'], fc: '#fff7b0', r: 'rare', unlock: { type: 'gems', v: 25 } },
+  /* (1.0.22) animated emblems */
+  { id: 'inferno', n: 'Inferno',      c: ['#ffb347', '#c9361a'], glyph: 'flame', fx: ['flames'], fc: '#ffd45e', r: 'epic', unlock: { type: 'gems', v: 120 } },
+  { id: 'aurora',  n: 'Aurora',       c: ['#a8fff0', '#3b6bff'], glyph: 'star',  fx: ['shine', 'pulse'], fc: '#a8fff0', r: 'epic', unlock: { type: 'gems', v: 150 } },
+  { id: 'voidstar', n: 'Void Star',   c: ['#d8c8ff', '#2a0f6a'], glyph: 'star',  fx: ['orbit', 'sparks'], fc: '#c48cff', r: 'legendary', unlock: { type: 'gems', v: 220 } },
+  { id: 'tempest', n: 'Tempest',      c: ['#e6f0ff', '#2f6bd6'], glyph: 'bolt',  fx: ['pulse', 'sparks', 'shine'], fc: '#bcd2ff', r: 'legendary', unlock: { type: 'gems', v: 300 } },
+  { id: 'phoenix', n: 'Phoenix',      c: ['#fff3b0', '#ff5a1f'], glyph: 'flame', fx: ['flames', 'orbit', 'shine'], fc: '#fff3b0', r: 'legendary', unlock: { type: 'streak', v: 50 } },
 ];
 
 /* ---------- AI opponent profiles ----------

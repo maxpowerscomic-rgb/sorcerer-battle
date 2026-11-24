@@ -196,7 +196,11 @@
   function counterRows(k) {
     const strong = Object.keys(COUNTERS).filter(pk => SP[pk] && pk !== k && COUNTERS[pk].includes(k)), weak = (COUNTERS[k] || []).filter(q => SP[q] && q !== k);
     const row = (lbl, list, cls) => list.length ? `<div class="crow ${cls}"><span>${lbl}</span><div>${list.slice(0, 7).map(q => `<img src="${ICON[q]}" title="${SP[q].n}" onclick="event.stopPropagation();toast('${SP[q].n.replace(/'/g, "\\'")}')">`).join('')}</div></div>` : '';
-    const h = row('Strong against', strong, 'g') + row('Watch out for', weak, 'b');
+    // works well with: every ability that shares its element or its type (those pairs earn the hand bonuses), element matches first
+    const base = q => (window.VARIANTS && VARIANTS[q] && VARIANTS[q].base) || q, all = Object.keys(SP).filter(q => q !== k && !(window.VARIANTS && VARIANTS[q]) && TYPE_OF[q]);
+    const el = all.filter(q => ELEM_OF[q] && ELEM_OF[q] === ELEM_OF[base(k)]), ty = all.filter(q => !el.includes(q) && TYPE_OF[q] === TYPE_OF[base(k)] && SCHOOL_OF(q) === SCHOOL_OF(base(k))), well = el.concat(ty);
+    const wrow = well.length ? `<div class="crow s"><span>Works well with</span><div class="cwrap">${well.map(q => `<img src="${ICON[q]}" title="${SP[q].n}" onclick="event.stopPropagation();toast('${SP[q].n.replace(/'/g, "\\'")} · ${ELEM_OF[q] === ELEM_OF[base(k)] ? 'same element' : 'same type'}')">`).join('')}</div></div>` : '';
+    const h = row('Strong against', strong, 'g') + row('Watch out for', weak, 'b') + wrow;
     return h ? `<div class="ctrs">${h}</div>` : '';
   }
   for (const nm of ['openSpell', 'openLocked']) { const f = window[nm]; if (typeof f !== 'function') continue;
