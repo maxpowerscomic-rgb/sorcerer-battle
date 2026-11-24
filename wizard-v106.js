@@ -100,11 +100,23 @@
   if (typeof pickItem === 'function') { const _pi = pickItem; window.pickItem = pickItem = function (i) { try { const it = catItems(wCat)[i]; if (it && it.unlock && it.unlock.type === 'trialwins' && !ownsItem(wCat, it)) return toast(`Win ${it.unlock.v} matches with ${it.n} in your hand to earn its icon (${winsOf(it.unlock.k)}/${it.unlock.v})`); } catch (e) {} return _pi.apply(this, arguments); }; }
   try { if (PR.icon && PR.icon.slice(0, 6) === 'spell:' && winsOf(PR.icon.slice(6)) < ICON_WINS) { PR.icon = 'wizard'; save(); } } catch (e) {}
 
+  /* ---------------- 5. a new unlock can go straight into the Battle Hand (1.0.6.1) ---------------- */
+  const hbox = () => { let b = $('upHandBox'); if (!b && $('upOk')) { $('upOk').insertAdjacentHTML('afterend', '<div id="upHandBox"></div>'); b = $('upHandBox'); } return b; };
+  const hdone = msg => { try { save(); sfx('ui_deal'); } catch (e) {} try { refreshMeta(); } catch (e) {} const b = hbox(); if (b) b.innerHTML = ''; $('upm').classList.remove('on'); toast(msg); nextModal(); };
+  window.upToHand = function (k) { PR.hand = PR.hand || []; if (PR.hand.includes(k)) return hdone(SP[k].n + ' is already in your hand');
+    if (PR.hand.length < 4) { PR.hand.push(k); return hdone(SP[k].n + ' added to your hand'); }
+    hbox().innerHTML = `<div class="uphl">Swap ${esc(SP[k].n)} in for:</div><div class="uphs">${PR.hand.map((h, i) => `<button onclick="upSwap(${i},'${k}')"><img src="${ICON[h]}"><small>${esc(SP[h].n)}</small></button>`).join('')}</div><button class="uphx" onclick="upHandBtn('${k}')">Keep my hand</button>`; };
+  window.upSwap = function (i, k) { const old = PR.hand[i]; PR.hand[i] = k; hdone(`${SP[k].n} replaced ${SP[old] ? SP[old].n : 'it'}`); };
+  window.upHandBtn = function (k) { const b = hbox(); if (b) b.innerHTML = k && !window.ONB_ACTIVE ? `<button class="btn uphb" onclick="upToHand('${k}')">Add to my hand</button>` : ''; };
+  if (typeof showSpellModal === 'function') { const _sm = showSpellModal; window.showSpellModal = showSpellModal = function (k, from, to, unlockRankName) { const r = _sm.apply(this, arguments); try { upHandBtn(unlockRankName && SP[k] ? k : null); } catch (e) {} return r; }; }
+  if (typeof window.showTokenModal === 'function' || typeof showTokenModal === 'function') { try { const _tm = showTokenModal; window.showTokenModal = showTokenModal = function () { try { upHandBtn(null); } catch (e) {} return _tm.apply(this, arguments); }; } catch (e) {} }
+
   const css = document.createElement('style');
   css.textContent = `.updv{text-align:center;font:800 11px Nunito;color:#8f80b8;margin-top:5px}
   .lo::before{content:"";position:absolute;inset:-5px;border-radius:50%;background:conic-gradient(#ffd45e calc(var(--p,0)*360deg),#ffffff22 0);-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 4.5px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,#0000 calc(100% - 4.5px),#000 calc(100% - 4px));opacity:0;transition:opacity .15s}
   .lo.now::before{opacity:1}.lo.now{transform:translateY(-3px) scale(1.08)}.lo.now img{filter:drop-shadow(0 0 6px #ffd45eaa)}
   #rwRep{width:100%;margin:0 0 8px}
+  #upHandBox{width:100%;margin-top:8px}#upHandBox:empty{display:none}.uphb{width:100%;background:linear-gradient(#8a6bff,#5b3bd1)!important;color:#fff!important}.uphl{font:13px 'Lilita One';color:#e6defc;margin-bottom:6px}.uphs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.uphs button{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 2px;border-radius:12px;background:#0007;border:2px solid #ffd45e}.uphs img{width:40px;height:40px}.uphs small{font:800 9.5px/1.1 Nunito;color:#e6defc;text-align:center}.uphx{all:unset;cursor:pointer;display:block;margin:8px auto 0;font:800 12px Nunito;color:#b9a6ee;text-decoration:underline}
   .txsum{background:#0007;border:2px solid #000;border-radius:13px;padding:8px 11px;margin-bottom:10px}.txsum p{margin:2px 0;font:800 12.5px/1.35 Nunito;color:#e6defc}.txsum b{font:13px 'Lilita One';font-weight:400}.txsum .me,.txc.me .txh b{color:#7ee0a0}.txsum .foe,.txc.foe .txh b{color:#ff8a96}
   .txlist{display:flex;flex-direction:column;gap:10px;max-height:56vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
   .txrd{border:2px solid #000;border-radius:14px;overflow:hidden;background:#0006;flex:none}.txt{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:#2b2050}.txt b{font:14px 'Lilita One';font-weight:400}.txt span{font:800 11.5px Nunito;color:#d9cdfa}.txt.me{background:linear-gradient(90deg,#1f5a3a,#2b2050)}.txt.foe{background:linear-gradient(90deg,#2b2050,#6a1f2c)}

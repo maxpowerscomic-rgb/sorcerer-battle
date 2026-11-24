@@ -38,14 +38,18 @@
     return needsAttacker(me) ? me : null;
   }
   function step(dt) {
-    const me = ents[0], fo = ents[1], pin = () => { fo.x = AX; fo.y = AY; fo.vx = fo.vy = 0; fo.hp = fo.maxHp; fo.dead = 0; fo.p = 0; fo.stunT = 0; fo.burn = 0; fo.bleeds = null; fo.poisonT = 0; fo.drag = null; fo.pull = null; };
+    const me = ents[0], fo = ents[1], mov = PR.yardMove === true, pin = () => { if (!mov) { fo.x = AX; fo.y = AY; fo.vx = fo.vy = 0; fo.drag = null; fo.pull = null; } else { fo.x = Math.max(F.x0 + 24, Math.min(F.x1 - 24, fo.x)); fo.y = Math.max(F.y0 + 30, Math.min(F.y1 - 40, fo.y)); } fo.hp = fo.maxHp; fo.dead = 0; fo.p = 0; fo.stunT = 0; fo.burn = 0; fo.bleeds = null; fo.poisonT = 0; };
     pin(); clock = LIMIT; if (me.hp < me.maxHp * .5) me.hp = me.maxHp; if (!me._oath) me.hp = Math.max(me.hp, me.maxHp * .6);
-    if (Math.hypot(me.x - AX, me.y - AY) < 34 && !(me.rush || me.bo)) { me.x = AX - 60; me.y = AY + 150; }      // a swap dropped the fighter onto the dummy: step back out
+    if (Math.hypot(me.x - fo.x, me.y - fo.y) < 34 && !(me.rush || me.bo)) { me.x = fo.x - 60; me.y = Math.min(F.y1 - 30, fo.y + 150); }      // a swap dropped the fighter onto the dummy: step back out
     // the practice turret
-    Y.shot -= dt; if (Y.shot <= 0) { Y.shot = 2.6; const t = sparTarget(me); if (t) { const mk = { x: me.x, y: me.y }; fo.x = TX; fo.y = TY; me.x = t.x; me.y = t.y; try { cast(fo, 'fireball'); } catch (e) {} finally { me.x = mk.x; me.y = mk.y; fo.x = AX; fo.y = AY; } Y.puff = .3; } }
+    Y.shot -= dt; if (Y.shot <= 0) { Y.shot = 2.6; const t = sparTarget(me); if (t) { const mk = { x: me.x, y: me.y }, fk = { x: fo.x, y: fo.y }; fo.x = TX; fo.y = TY; me.x = t.x; me.y = t.y; try { cast(fo, 'fireball'); } catch (e) {} finally { me.x = mk.x; me.y = mk.y; fo.x = fk.x; fo.y = fk.y; } Y.puff = .3; } }
     if (Y.puff > 0) Y.puff -= dt;
     const bh = PR.behavior, b = $('battle'); let rec = bh; try { rec = (typeof recDistance === 'function' && recDistance() && recDistance().id) || bh; } catch (e) {}
-    try { PR.behavior = rec; b.classList.add('on'); T += dt; update(dt); pin(); render(); drawProps(); }
+    const px = fo.x, py = fo.y;
+    try { PR.behavior = rec; b.classList.add('on'); T += dt; update(dt); pin();
+      // a movable dummy is shoved, pulled and thrown like a fighter, then is walked back to its mark once left alone
+      if (mov) { if (Math.hypot(fo.x - px, fo.y - py) > .4 || fo.drag || fo.pull) Y.idle = 0; else Y.idle = (Y.idle || 0) + dt; if (Y.idle > 2.2) { const k = Math.min(1, dt * 2.2); fo.x += (AX - fo.x) * k; fo.y += (AY - fo.y) * k; } }
+      render(); drawProps(); }
     finally { b.classList.remove('on'); PR.behavior = bh; }
     if (ended || me.dead || T > 46) build();                                    // a fresh yard now and then, so it never fills up
   }
@@ -80,11 +84,19 @@
   // no sound from the yard (menu clicks still play)
   { const _s = sfx; window.sfx = sfx = function (id) { if (Y.on && !/^(ui_|j_)/.test(id || '')) return; return _s.apply(this, arguments); }; }
 
-  function canvas() { let c = $('yardCv'); if (!c) { const st = document.querySelector('#home .stage'); if (!st) return null; c = document.createElement('canvas'); c.id = 'yardCv'; st.insertBefore(c, st.firstChild.nextSibling); } return c; }
+  // tap the dummy: one icon button appears over it that lets hits move it (or pins it again)
+  const ICO = { free: '<svg viewBox="0 0 24 24"><path d="M12 2.5 15.2 6h-2.2v5h5V8.800L21.500 12 18 15.200V13h-5v5h2.200L12 21.500 8.800 18H11v-5H6v2.200L2.500 12 6 8.800V11h5V6H8.800z" fill="currentColor" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/></svg>',
+    pin: '<svg viewBox="0 0 24 24"><path d="M12 3a2.600 2.600 0 0 1 1.100 4.960V10h3v2.200h-3v6.500c2.300-.5 4-2.300 4.300-4.700l-1.600.6 2.400-4.100 2.300 4.100-1.500-.5c-.5 4.200-3.700 7.200-7 7.400-3.300-.2-6.500-3.200-7-7.400l-1.500.5 2.300-4.100 2.400 4.100-1.600-.6c.3 2.400 2 4.200 4.300 4.700V12.200h-3V10h3V7.960A2.600 2.600 0 0 1 12 3z" fill="currentColor" stroke="#000" stroke-width="1.200" stroke-linejoin="round"/></svg>' };
+  function tip(px, py) { const st = document.querySelector('#home .stage'); if (!st) return; let t = $('yardTip'); if (!t) { st.insertAdjacentHTML('beforeend', '<button id="yardTip" aria-label="Let hits move the dummy"></button>'); t = $('yardTip'); t.onclick = e => { e.stopPropagation(); PR.yardMove = PR.yardMove !== true; Y.idle = 0; try { save(); sfx('ui_pick'); } catch (x) {} paint(); arm(); }; }
+    const paint = () => { const on = PR.yardMove === true; t.innerHTML = on ? ICO.free : ICO.pin; t.classList.toggle('free', on); }, arm = () => { clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 3200); };
+    t.style.left = px + 'px'; t.style.top = py + 'px'; paint(); t.classList.add('on'); arm(); }
+  function canvas() { let c = $('yardCv'); if (!c) { const st = document.querySelector('#home .stage'); if (!st) return null; c = document.createElement('canvas'); c.id = 'yardCv'; st.insertBefore(c, st.firstChild.nextSibling);
+      c.addEventListener('pointerdown', e => { try { if (!Y.on || !Y.cam || !ents[1]) return; const r = c.getBoundingClientRect(), bx = Y.cam.sx + (e.clientX - r.left) / Y.cam.sc, by = Y.cam.sy + (e.clientY - r.top) / Y.cam.sc, d = ents[1];
+          if (Math.abs(bx - d.x) < 30 && by > d.y - 82 * SC && by < d.y + 14) tip((d.x - Y.cam.sx) * Y.cam.sc, (d.y - 96 * SC - Y.cam.sy) * Y.cam.sc); else { const t = $('yardTip'); if (t) t.classList.remove('on'); } } catch (x) {} }); } return c; }
   function blit() { const c = canvas(); if (!c) return; const r = c.getBoundingClientRect(), w = r.width, h = r.height; if (!w || !h) return; const d2 = Math.min(2, devicePixelRatio || 1);
     if (c.width !== Math.round(w * d2) || c.height !== Math.round(h * d2)) { c.width = Math.round(w * d2); c.height = Math.round(h * d2); }
     const g = c.getContext('2d'), me = ents[0], sw = 350, sc = w / sw, sh = h / sc, sx = 20; let cy = (me.y + AY) / 2 - 30; Y.camY += (cy - Y.camY) * .08; const sy = Math.max(120, Math.min(H - sh - 40, Y.camY - sh / 2));
-    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height); g.imageSmoothingEnabled = true; g.drawImage(cv, sx * dpr, sy * dpr, sw * dpr, sh * dpr, 0, 0, c.width, c.height); }
+    Y.cam = { sx, sy, sc }; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height); g.imageSmoothingEnabled = true; g.drawImage(cv, sx * dpr, sy * dpr, sw * dpr, sh * dpr, 0, 0, c.width, c.height); }
   function frame(now) { if (!Y.on) return; Y.raf = requestAnimationFrame(frame); const dt = Math.min(.033, (now - Y.last) / 1000); Y.last = now; if (document.hidden || sheetOn() || !homeOn() || dt <= 0) return;
     try { if (typeof M === 'undefined' || !M || !M.practice || typeof ents === 'undefined' || !ents || !ents[1] || !ents[1].isDummy) build(); step(dt); blit(); }
     catch (e) { Y.fails++; try { if (window.logCrash) logCrash('yard', e && e.message, '', e && e.stack); } catch (x) {} stop(); } }
@@ -103,7 +115,8 @@
       return h.replace('<div class="opt"><span>Music</span>', `<label class="opt"><span>Training yard on the home screen</span><input type="checkbox" ${PR.yard !== false ? 'checked' : ''} onchange="setYard(this.checked)"><i></i></label><div class="opt"><span>Music</span>`); }; }
 
   const css = document.createElement('style');
-  css.textContent = `#yardCv{position:absolute;inset:0;width:100%;height:100%;display:none}.stage.yard #yardCv{display:block}.stage.yard #heroCv{visibility:hidden}.stage.yard{background-image:none!important;background:#1a1228}`;
+  css.textContent = `#yardCv{position:absolute;inset:0;width:100%;height:100%;display:none}.stage.yard #yardCv{display:block}.stage.yard #heroCv{visibility:hidden}.stage.yard{background-image:none!important;background:#1a1228}
+  #yardTip{position:absolute;z-index:3;width:42px;height:42px;margin:-42px 0 0 -21px;padding:7px;border-radius:50%;border:2px solid #000;background:linear-gradient(#4a3a80,#2b2050);color:#b9a6ee;box-shadow:0 3px 0 #000;cursor:pointer;display:none;-webkit-tap-highlight-color:transparent}#yardTip.on{display:block;animation:pop .25s}#yardTip.free{background:linear-gradient(#ffd45e,#d99a14);color:#fff}#yardTip svg{width:100%;height:100%;display:block}`;
   document.head.appendChild(css);
   setTimeout(() => { try { if (homeOn()) start(); } catch (e) {} }, 1200);
 })();
