@@ -129,6 +129,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.22.1', d: '25 Nov 2026', items: ['A Spell Cannon beam that reaches the enemy caster now stops on them and refracts, instead of passing straight through.'] },
     { v: '1.0.22', d: '25 Nov 2026', items: ['Ten more Ladder rivals: the base Ladder now has 30.', 'Seven new aura styles: Live Wire, Petal Whirl, Moons, Rune Circle, Shadow Tendrils, Frost Crown and Eclipse.',
       'Eight new trails: Frostbite, Falling Leaves, Bubbles, Voltage, Ink Blots, Coin Shower, Grave Wisps and Prism.', 'Animated emblems: Storm Caller now sparks, and Inferno, Aurora, Void Star, Tempest and Phoenix are new.',
       'New streak rewards: Prism trail at 30 in a row, Eclipse aura at 40, Phoenix emblem at 50.', 'Ability pages have a Works well with row.'] },
