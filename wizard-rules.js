@@ -105,12 +105,13 @@
     // a beam held off by Boundary: the charge lasts as long as the beam does
     for (const w of ents) if (w.bndBeam) { const c = w.bndBeam; if (c.t >= c.dur || c.done || !cannons.includes(c)) { w.bndBeam = null; w.bndSpent = 1; rays = rays.filter(r => r.c !== c); } }
     rays = rays.filter(r => !r.sh || (cannons.includes(r.c) && r.c.o && r.c.o.foe && r.c.o.foe.shell && !(r.c.t >= r.c.dur)));   // shell rays end with the beam or the shell
-    for (const r of rays) { const c = r.c, g = c.g; if (!g || !(g.bnd || (r.sh && g.shl))) { r.live = 0; continue; } r.live = 1; r.va += rnd(-60, 60) * dt; r.va = clamp(r.va, -7, 7); r.off += r.va * dt; if (Math.abs(r.off) > 2.7 || Math.abs(r.off) < .35) { r.va = -r.va; r.off = clamp(Math.abs(r.off), .36, 2.69) * Math.sign(r.off || 1); }
-      const a = c.ang + r.off, E0 = r.sh ? g.shlP : g.E, far = { x: E0.x + Math.cos(a) * 520, y: E0.y + Math.sin(a) * 520 * .8 }, E = typeof clipToField === 'function' ? clipToField(E0, far) : far; r.x0 = E0.x; r.y0 = E0.y; r.x1 = E.x; r.y1 = E.y;
+    rays = rays.filter(r => !r.sd || (cannons.includes(r.c) && !(r.c.t >= r.c.dur) && r.c.dmP && T - r.c.dmT < .2));                                // dome rays end with the beam or the dome
+    for (const r of rays) { const c = r.c, g = c.g; if (!g || !(g.bnd || (r.sh && g.shl) || (r.sd && c.dmP))) { r.live = 0; continue; } r.live = 1; r.va += rnd(-60, 60) * dt; r.va = clamp(r.va, -7, 7); r.off += r.va * dt; if (Math.abs(r.off) > 2.7 || Math.abs(r.off) < .35) { r.va = -r.va; r.off = clamp(Math.abs(r.off), .36, 2.69) * Math.sign(r.off || 1); }
+      const a = c.ang + r.off, E0 = r.sd ? c.dmP : r.sh ? g.shlP : g.E, far = { x: E0.x + Math.cos(a) * 520, y: E0.y + Math.sin(a) * 520 * .8 }, E = typeof clipToField === 'function' ? clipToField(E0, far) : far; r.x0 = E0.x; r.y0 = E0.y; r.x1 = E.x; r.y1 = E.y;
       r.sc -= dt; if (r.sc <= 0) { r.sc = .16; try { beamTrails.push({ O: { x: E0.x, y: E0.y }, E: { x: E.x, y: E.y }, t: 0, w: .45 }); } catch (e) {} }
       if (Math.random() < .5) P({ x: E.x, y: E.y - 20 * HS, vx: rnd(-90, 90), vy: rnd(-120, 10), color: Math.random() < .5 ? '#ffffff' : '#4fe3ff', size: rnd(2, 3.6), life: .35 });
       // the wild rays still burn whatever they sweep across, the beam's own caster included, but lightly
-      if (r.sh) continue;   /* off a Titan Shell the wild rays are only light: the shell is taking the beam, nothing else is burned */
+      if (r.sh || r.sd) continue;   /* off a Titan Shell or a Sanctum the wild rays are only light: the shell is taking the beam, nothing else is burned */
       SRC = 'beam'; for (const e of [c.o].concat(ents.filter(q => q !== c.o && q !== g.bnd))) if (!e.dead && e.ghostT <= 0) { const q = closestOn(E0, E, e.x, e.y); if (Math.hypot(e.x - q.x, e.y - q.y) < 14 && Math.hypot(q.x - E0.x, q.y - E0.y) > 30) { e.hp = Math.max(1, e.hp - 9 * dt); e.flash = .05; } } }
     shake = rays.some(r => r.live) ? Math.max(shake, 3) : shake;
   }
@@ -124,6 +125,13 @@
       if (f && !f.dead && !ended && f.shell && !g.bnd) { const q = closestOn(g.O, g.E, f.x, f.y), d = Math.hypot(f.x - q.x, f.y - q.y), along = Math.hypot(q.x - g.O.x, q.y - g.O.y);
         if (d < 34 && along > 44) { const L = Math.max(10, along - 30), ux = (q.x - g.O.x) / along, uy = (q.y - g.O.y) / along; g.shl = f; g.shlP = { x: g.O.x + ux * L, y: g.O.y + uy * L };
           if (!rays.some(r => r.c === c && r.sh)) for (let i = 0; i < 4; i++) rays.push({ c, sh: 1, off: (i - 1.5) * 1.1 + rnd(-.2, .2) || .6, va: rnd(-4, 4), sc: rnd(0, .16), live: 1 }); } }
+      // (1.0.19) a beam burning into an enemy Sanctum refracts off the dome's skin while it wears it down (an Open Sanctum has no skin to strike)
+      if (f && !ended && !g.bnd) { try { const dm = (X.domes || []).find(d => d.o === f && d.t < d.dur && !d.open && d.hp > 0);
+          if (dm) { const ox = g.O.x - dm.x, oy = (g.O.y - dm.y) * 1.4, ex = g.E.x - dm.x, ey = (g.E.y - dm.y) * 1.4, dx = ex - ox, dy = ey - oy, A = dx * dx + dy * dy, B = 2 * (ox * dx + oy * dy), C = ox * ox + oy * oy - dm.r * dm.r, D = B * B - 4 * A * C;
+            if (C > 0 && A > 0 && D > 0) { const t = (-B - Math.sqrt(D)) / (2 * A); if (t > .02 && t <= 1) { const L0 = Math.hypot(g.E.x - g.O.x, g.E.y - g.O.y) || 1, ux = (g.E.x - g.O.x) / L0, uy = (g.E.y - g.O.y) / L0, hx = g.O.x + (g.E.x - g.O.x) * t, hy = g.O.y + (g.E.y - g.O.y) * t;
+                // fired from outside, the beam stops on the dome's skin (like every other shot) and wears it down; it ends just inside so the dome counts it as a hit
+                g.E = { x: hx + ux * 5, y: hy + uy * 5 }; g.blk = null; g.dmP = c.dmP = { x: hx, y: hy }; c.dmT = T;   /* kept on the cannon: this geometry object is rebuilt every frame */
+                if (!rays.some(r => r.c === c && r.sd)) for (let i = 0; i < 4; i++) rays.push({ c, sd: 1, off: (i - 1.5) * 1.2 + rnd(-.2, .2) || .6, va: rnd(-4, 4), sc: rnd(0, .16), live: 1 }); } } } } catch (e) {} }
       return g; }; }
 
   /* ---------------- hooks ---------------- */

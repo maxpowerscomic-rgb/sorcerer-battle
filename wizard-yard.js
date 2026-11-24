@@ -53,6 +53,7 @@
       if (mov && !walks) { if (Math.hypot(fo.x - px, fo.y - py) > .4 || fo.drag || fo.pull) Y.idle = 0; else Y.idle = (Y.idle || 0) + dt; if (Y.idle > 2.2) { const k = Math.min(1, dt * 2.2); fo.x += (AX - fo.x) * k; fo.y += (AY - fo.y) * k; } }
       render(); if (!fights) drawProps(); }
     finally { b.classList.remove('on'); PR.behavior = bh; }
+    try { Y.track(dt); } catch (e) {}
     if (ended || me.dead || T > 46) build();                                    // a fresh yard now and then, so it never fills up
   }
   // the turret, drawn on the battle canvas after the frame
@@ -112,7 +113,7 @@
   const apply = () => { try { save(); } catch (e) {} Y.dirty = 1; openDummy(); };
   window.dummyPick = function (k) { const C = cfg(), i = C.book.indexOf(k); if (i >= 0) C.book.splice(i, 1); else if (C.book.length >= 4) return toast('The dummy holds 4 abilities. Tap one to take it out.'); else C.book.push(k); try { sfx('ui_pick'); } catch (e) {} apply(); };
   window.dummySet = function (what, v) { if (what === 'walk') cfg().walk = !!v; else PR.yardMove = !!v; apply(); };
-  window.dummyReset = function () { Y.dirty = 1; try { if (typeof resetScars === 'function') resetScars(); sfx('ui_deal'); } catch (e) {} closeSheet(); toast('Scene reset'); };
+  window.dummyReset = function () { Y.dirty = 1; try { Y.trackReset(); } catch (e) {} try { if (typeof resetScars === 'function') resetScars(); sfx('ui_deal'); } catch (e) {} closeSheet(); toast('Scene reset'); };
   window.dummyClear = function () { cfg().book = []; cfg().walk = false; apply(); };
   function canvas() { let c = $('yardCv'); if (!c) { const st = document.querySelector('#home .stage'); if (!st) return null; c = document.createElement('canvas'); c.id = 'yardCv'; st.insertBefore(c, st.firstChild.nextSibling);
       c.addEventListener('pointerdown', e => { try { if (!Y.on || !Y.cam || !ents[1]) return; const r = c.getBoundingClientRect(), bx = Y.cam.sx + (e.clientX - r.left) / Y.cam.sc, by = Y.cam.sy + (e.clientY - r.top) / Y.cam.sc, d = ents[1];
@@ -128,6 +129,17 @@
     Y.on = true; Y.last = performance.now(); const st = document.querySelector('#home .stage'); if (st) st.classList.add('yard'); canvas(); cancelAnimationFrame(Y.raf); Y.raf = requestAnimationFrame(frame); }
   function stop() { if (!Y.on && !document.querySelector('#home .stage.yard')) return; Y.on = false; cancelAnimationFrame(Y.raf); const st = document.querySelector('#home .stage'); if (st) st.classList.remove('yard'); try { ended = true; running = false; } catch (e) {} }
   window.yardStart = start; window.yardStop = stop; window.YARD = Y;
+  /* ---- damage tracker: the last 30 seconds of the yard, by ability. Icon, damage, casts. Yours on top, the dummy's below. ---- */
+  const WIN = 30; let log = [], clk = 0, lastDraw = 0;
+  const rec = (s, k, d, c) => { if (!Y.on || !SP[k]) return; log.push({ t: clk, s, k, d: d || 0, c: c || 0 }); if (log.length > 900) log.splice(0, 200); };
+  { const _c = cast; window.cast = cast = function (w, k) { try { if (Y.on && w && M && M.practice && !(w.isDummy && !(PR.yardDummy && (PR.yardDummy.book || []).length))) rec(w.me ? 'me' : 'foe', k, 0, 1); } catch (e) {} return _c.apply(this, arguments); }; }
+  { const _d = damage; window.damage = damage = function (t, d) { const on = Y.on && t && M && M.practice, h0 = on ? t.hp : 0, src = SRC, r = _d.apply(this, arguments);
+      try { if (on && t.hp < h0 && src && SP[src]) { const a = t.foe, own = t.book && t.book.includes(src) && !(a && a.book && a.book.includes(src)); if (!own) rec(a && a.me ? 'me' : 'foe', src, h0 - t.hp, 0); } } catch (e) {} return r; }; }
+  function trackerDraw() { const st = document.querySelector('#home .stage'); if (!st) return; let el = $('yardDmg'); if (!el) { st.insertAdjacentHTML('beforeend', '<div id="yardDmg"></div>'); el = $('yardDmg'); }
+    log = log.filter(e => clk - e.t <= WIN); const sum = s => { const m = {}; for (const e of log) if (e.s === s) { const q = (m[e.k] = m[e.k] || { d: 0, c: 0 }); q.d += e.d; q.c += e.c; } return Object.keys(m).sort((a, b) => m[b].d - m[a].d || m[b].c - m[a].c).slice(0, 4).map(k => `<div class="ydr"><img src="${ICON[k]}"><b>${Math.round(m[k].d)}</b><i>×${m[k].c}</i></div>`).join(''); };
+    const me = sum('me'), fo = sum('foe'); el.innerHTML = me || fo ? `<div class="ydh">30s</div>${me}${fo ? `<div class="ydh foe">▼</div><div class="ydf">${fo}</div>` : ''}` : ''; el.style.display = me || fo ? '' : 'none'; }
+  Y.track = dt => { clk += dt; if (clk - lastDraw > .5) { lastDraw = clk; try { trackerDraw(); } catch (e) {} } };
+  Y.trackReset = () => { log = []; try { trackerDraw(); } catch (e) {} };
   const SPK = m => `<svg viewBox="0 0 24 24"><path d="M4 9.500h3.500L12 5.500v13l-4.500-4H4z" fill="currentColor" stroke="#000" stroke-width="1.300" stroke-linejoin="round"/>${m ? '<path d="M15.500 9.500l5 5m0-5l-5 5" fill="none" stroke="#ff8a96" stroke-width="2.400" stroke-linecap="round"/>' : '<path d="M15.200 9a4.200 4.200 0 0 1 0 6M17.600 6.600a7.600 7.600 0 0 1 0 10.800" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'}</svg>`;
   function muteBtn() { const st = document.querySelector('#home .stage'); if (!st) return; let b = $('ymBtn'); if (!b) { st.insertAdjacentHTML('beforeend', '<button id="ymBtn" aria-label="Training sound"></button>'); b = $('ymBtn'); b.onclick = () => { PR.yardMute = PR.yardMute !== true; try { save(); } catch (e) {} muteBtn(); if (!PR.yardMute) { try { sfx('ui_pick'); } catch (e) {} } }; }
     b.innerHTML = SPK(PR.yardMute === true); b.classList.toggle('off', PR.yardMute === true); }
@@ -144,6 +156,7 @@
 
   const css = document.createElement('style');
   css.textContent = `#yardCv{position:absolute;inset:0;width:100%;height:100%;display:none}.stage.yard #yardCv{display:block}.stage.yard #heroCv{visibility:hidden}.stage.yard{background-image:none!important;background:#1a1228}
+  #yardDmg{position:absolute;top:88px;right:10px;z-index:2;display:none;flex-direction:column;gap:2px;background:#0009;border:2px solid #000;border-radius:11px;padding:4px 6px;pointer-events:none}.stage.yard #yardDmg{display:flex}.ydh{font:10px 'Lilita One';color:#ffd45e;text-align:center;letter-spacing:.5px}.ydh.foe{color:#ff8a96;margin-top:2px}.ydr{display:flex;align-items:center;gap:4px}.ydr img{width:20px;height:20px}.ydr b{font:13px 'Lilita One';font-weight:400;color:#fff;min-width:24px;text-align:right}.ydr i{font:800 10px Nunito;font-style:normal;color:#b9a6ee}.ydf .ydr b{color:#ffb0b8}
   #ymBtn{position:absolute;top:46px;right:10px;z-index:2;width:34px;height:34px;padding:5px;border-radius:11px;border:2px solid #000;background:linear-gradient(#4a3a80,#2b2050);color:#fff;box-shadow:0 3px 0 #000;cursor:pointer;display:none}.stage.yard #ymBtn{display:block}#ymBtn.off{color:#8f80b8}#ymBtn svg{width:100%;height:100%;display:block}
   #yardTip{position:absolute;z-index:3;display:none;gap:8px;transform:translate(-50%,-100%)}#yardTip.on{display:flex;animation:pop .25s}
   #yardTip button{width:42px;height:42px;padding:7px;border-radius:50%;border:2px solid #000;background:linear-gradient(#4a3a80,#2b2050);color:#b9a6ee;box-shadow:0 3px 0 #000;cursor:pointer;-webkit-tap-highlight-color:transparent}#yardTip button.free{background:linear-gradient(#ffd45e,#d99a14);color:#fff}#yardTip svg{width:100%;height:100%;display:block}
