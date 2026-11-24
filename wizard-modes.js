@@ -129,6 +129,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.6.2', d: '24 Nov 2026', items: ['The dummy update: tap the training dummy, then the gear, to give it up to 4 abilities of its own. It casts them on a loop and can walk and keep its distance like a rival. Nobody has health, so the fight never ends.', 'Reset the scene from the same panel.'] },
     { v: '1.0.6.1', d: '24 Nov 2026', items: ['Tap the training dummy for a button that lets your hits move it: Repel shoves it, Draw hauls it in. It walks back to its mark when left alone.', 'A newly unlocked ability can go straight into your Battle Hand, swapping one out on the spot.'] },
     { v: '1.0.6', d: '24 Nov 2026', items: ['Battle report: after a match, see every round side by side. What each of you cast, how much landed, the damage, and moments like a shattered shell or a stopped attack.', 'Options has a Check for update button that fetches the newest version and restarts on it.', 'In the training yard, the ability icons fill their cast ring in real time, the same as in a match.', 'Ability icons for your profile are now earned: win 3 matches with an ability to wear its icon.', 'Fixed: the wardrobe tabs could get stuck after scrolling right to Attacks or Emblem.'] },
     { v: '1.0.5', d: '24 Nov 2026', items: ['The home screen is now a training yard: your fighter practises your Battle Hand on a straw dummy at battle size. A turret tests your walls and summons. Options can turn it off.',

@@ -1702,7 +1702,7 @@ function update(dt){SRC=null;shake*=Math.pow(.02,dt);updateDecals(dt);for(const 
    for(const q of swarms)if(q.o!==w&&!(q.frozen>0)){const qd=Math.hypot(w.x-q.x,w.y-q.y)||1;if(qd<130){const k3=(1-qd/130)*45;tx+=(w.x-q.x)/qd*k3;ty+=(w.y-q.y)/qd*k3;}}
   const cx=(F.x0+F.x1)/2,cy=(F.y0+F.y1)/2+20,mx=(w.x+o.x)/2,my=(w.y+o.y)/2;tx+=(cx-mx)*.9;ty+=(cy-my)*.9;
   if(w.x<F.x0+30)tx+=80;if(w.x>F.x1-30)tx-=80;if(w.y<F.y0+30)ty+=80;if(w.y>F.y1-30)ty-=80;
-  if(w.isDummy){tx=0;ty=0;}/* the training dummy never walks: only hits move it */
+  if(w.isDummy&&!w.walks){tx=0;ty=0;}/* the training dummy never walks: only hits move it */
   w.vx+=(tx-w.vx)*Math.min(1,dt*3);w.vy+=(ty-w.vy)*Math.min(1,dt*3);
   if(Math.abs(dx)>4)w.face=dx>0?1:-1;}
  for(const w of ents){w.petX+=(w.x-w.face*34-w.petX)*Math.min(1,dt*3);w.petY+=(w.y+8-w.petY)*Math.min(1,dt*3);if((w.rootT||0)>0){w.vx*=.5;w.vy*=.5;}else{w.x=clamp(w.x+w.vx*dt,F.x0,F.x1);w.y=clamp(w.y+w.vy*dt,F.y0,F.y1);}pushOut(w,16);if(Math.random()<Math.hypot(w.vx,w.vy)/400)P({x:w.x+rnd(-6,6),y:w.y,vx:rnd(-10,10),vy:-15,color:'#c9b98a',size:3,life:.4,glow:false})}
