@@ -92,6 +92,21 @@
     const ak = Object.keys(abs).filter(k => SP[k] && abs[k] >= 1).sort((a, b) => abs[b] - abs[a]);
     if (ak.length) out.push(`${your} ${ak.map(k => `${esc(SP[k].n)} absorbed ${Math.round(abs[k])}`).join(' and ')}.`);
     return out.join(' '); }
+  // the match as a few sentences: who won, how it swung, what did the work, the closest call
+  function story(tx) { try { const foe = esc(M.foeName || 'your rival'), w = tx.filter(r => r.win === 'me').length, l = tx.filter(r => r.win === 'foe').length, won = w > l, out = [];
+      const sum = s => { const ab = {}; for (const r of tx) for (const k in r[s].ab) ab[k] = (ab[k] || 0) + r[s].ab[k].d; const k = Object.keys(ab).filter(q => SP[q] && ab[q] >= 1).sort((a, b) => ab[b] - ab[a])[0]; return k ? { k, d: Math.round(ab[k]) } : null; };
+      const first = tx[0] && tx[0].win, seq = tx.map(r => r.win === 'me' ? 'W' : r.win === 'foe' ? 'L' : 'D').join('');
+      if (won) out.push(first === 'foe' ? `${foe} took the first round, but you turned it around and won ${w} rounds to ${l}.` : l === 0 ? `You swept ${foe} ${w} rounds to 0.` : /^W+L+W/.test(seq) || /LL/.test(seq) ? `You led, let ${foe} back in, then closed it out ${w} rounds to ${l}.` : `You beat ${foe} ${w} rounds to ${l}.`);
+      else if (l > w) out.push(first === 'me' ? `You took the first round, but ${foe} answered and won ${l} rounds to ${w}.` : w === 0 ? `${foe} swept you ${l} rounds to 0.` : `${foe} beat you ${l} rounds to ${w}.`);
+      else out.push(`You and ${foe} finished level at ${w} rounds each.`);
+      const mine = sum('me'), theirs = sum('foe');
+      if (won && mine) out.push(`${esc(SP[mine.k].n)} did most of your work, with ${mine.d} damage over the match${theirs ? `; their best was ${esc(SP[theirs.k].n)} with ${theirs.d}` : ''}.`);
+      else if (!won && theirs) out.push(`Their ${esc(SP[theirs.k].n)} did the most harm, ${theirs.d} damage over the match${mine ? `; your best was ${esc(SP[mine.k].n)} with ${mine.d}` : ''}.`);
+      let close = null; for (const r of tx) { if (!r.win) continue; const hp = r[r.win].hp, mx = r[r.win].max || 1; if (hp > 0 && (close === null || hp / mx < close.f)) close = { n: r.n, hp, f: hp / mx, who: r.win }; }
+      if (close && close.f < .35) out.push(`Round ${close.n} was the closest call: ${close.who === 'me' ? 'you' : 'they'} won it with ${close.hp} health left.`);
+      const abs = {}; for (const r of tx) for (const k in (r.me.abs || {})) abs[k] = (abs[k] || 0) + r.me.abs[k]; const ak = Object.keys(abs).filter(k => SP[k]).sort((a, b) => abs[b] - abs[a])[0];
+      if (ak && abs[ak] >= 30 && out.length < 4) out.push(`Your ${esc(SP[ak].n)} soaked up ${Math.round(abs[ak])} along the way.`);
+      return out.join(' '); } catch (e) { return ''; } }
   function timelineText() { const tx = (M && M.tx) || [], L = [`Wizards vs Sorcerers ${GAME_VERSION} · ${PR.name || 'You'} vs ${M.foeName || 'Rival'} · ${M.score.me}-${M.score.foe}`];
     for (const r of tx) { L.push('', `ROUND ${r.n} (${r.win === 'me' ? 'you won' : r.win === 'foe' ? 'rival won' : 'draw'}, ${Math.round(r.t || 0)}s)`);
       for (const e of (r.log || [])) L.push(`${e.t}  ${e.s === 'me' ? 'YOU  ' : 'RIVAL'}  ${e.k && SP[e.k] ? SP[e.k].n + (e.txt === 'cast' ? (e.d >= 1 ? ': ' + Math.round(e.d) + ' damage' : (typeof TYPE_OF !== 'undefined' && ['proj', 'melee'].includes(TYPE_OF[e.k]) ? ': no damage' : '')) : ' ' + e.txt) : e.txt}`); }
@@ -102,6 +117,7 @@
     if (!tx.length) return toast('No rounds were recorded for this match');
     const me = totals(tx, 'me', 'me'), fo = totals(tx, 'foe', 'foe');
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Battle report</div>
+      ${(st => st ? `<div class="txstory">${st}</div>` : '')(story(tx))}
       <div class="txsum"><p><b class="me">${esc(PR.name || 'You')}</b>${me}</p><p><b class="foe">${esc(M.foeName || 'Rival')}</b>${fo}</p></div>
       <div class="txbtns"><button class="hbtn out" onclick="reportTimeline()">⏱ Timeline</button><button class="hbtn out" onclick="reportCopy()">⧉ Copy match log</button></div><pre id="txTl" class="crlog" style="display:none"></pre>
       <div class="txlist">${tx.map(r => `<div class="txrd"><div class="txhd ${r.win || 'draw'}"><b>Round ${r.n}</b><span>${r.win === 'me' ? 'You won' : r.win === 'foe' ? 'Rival won' : 'Draw'} · ${Math.round(r.t || 0)}s</span></div><div class="txs">${colHTML(r.me, 'me')}${colHTML(r.foe, 'foe')}</div></div>`).join('')}</div>`;
@@ -140,7 +156,7 @@
   css.textContent = `.updv{text-align:center;font:800 11px Nunito;color:#8f80b8;margin-top:5px}
   .lo::before{content:"";position:absolute;inset:-5px;border-radius:50%;background:conic-gradient(#ffd45e calc(var(--p,0)*360deg),#ffffff22 0);-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 4.5px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,#0000 calc(100% - 4.5px),#000 calc(100% - 4px));opacity:0;transition:opacity .15s}
   .lo.now::before{opacity:1}.lo.now{transform:translateY(-3px) scale(1.08)}.lo.now img{filter:drop-shadow(0 0 6px #ffd45eaa)}
-  #rwRep{width:100%;margin:0 0 8px}
+  #rwRep{width:100%;margin:0 0 8px}.txstory{font:800 13px/1.45 Nunito;color:#f1eaff;background:linear-gradient(#3a2d66,#221848);border:2px solid #ffd45e;border-radius:13px;padding:9px 12px;margin-bottom:8px}
   #upHandBox{width:100%;margin-top:8px}#upHandBox:empty{display:none}.uphb{width:100%;background:linear-gradient(#8a6bff,#5b3bd1)!important;color:#fff!important}.uphl{font:13px 'Lilita One';color:#e6defc;margin-bottom:6px}.uphs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.uphs button{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 2px;border-radius:12px;background:#0007;border:2px solid #ffd45e}.uphs img{width:40px;height:40px}.uphs small{font:800 9.5px/1.1 Nunito;color:#e6defc;text-align:center}.uphx{all:unset;cursor:pointer;display:block;margin:8px auto 0;font:800 12px Nunito;color:#b9a6ee;text-decoration:underline}
   .txsum{background:#0007;border:2px solid #000;border-radius:13px;padding:8px 11px;margin-bottom:10px}.txsum p{margin:2px 0;font:800 12.5px/1.35 Nunito;color:#e6defc}.txsum p>b:first-child{font:13px 'Lilita One';font-weight:400;display:block}.txsum p b{color:#ffd45e}.txsum p+p{margin-top:7px}.txbtns{display:flex;gap:6px;margin-bottom:8px}.txbtns button{flex:1}.txr small b.ab{color:#9fd8ff}.txsum .me,.txc.me .txh b{color:#7ee0a0}.txsum .foe,.txc.foe .txh b{color:#ff8a96}
   .txlist{display:flex;flex-direction:column;gap:10px;max-height:56vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}

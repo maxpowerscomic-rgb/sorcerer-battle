@@ -588,7 +588,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
 @keyframes chShk{0%{transform:rotate(-4deg)}50%{transform:rotate(4deg) translateY(-3px)}100%{transform:rotate(-4deg)}}
 .chbox.open .chlid{animation:lidPop .55s cubic-bezier(.3,1.6,.5,1) forwards,lidHover 2.4s ease-in-out .55s infinite}@keyframes lidPop{to{transform:translateY(-46px) rotate(-12deg)}}@keyframes lidHover{0%,100%{transform:translateY(-46px) rotate(-12deg)}50%{transform:translateY(-53px) rotate(-9deg)}}
 .chbox.open .chbase{filter:drop-shadow(0 -10px 30px #ffd45e)}
-.chcards{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:340px;min-height:110px;position:relative}
+.chcards{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:340px;min-height:110px;position:relative;max-height:42vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 2px;touch-action:pan-y}
 .chc{width:86px;padding:8px 4px;border-radius:14px;background:linear-gradient(160deg,var(--c),#150f27 70%);border:2px solid #000;box-shadow:0 5px 0 #000,0 0 18px var(--c);display:flex;flex-direction:column;align-items:center;gap:2px;animation:chcIn .55s cubic-bezier(.3,1.6,.5,1) backwards}
 .chc .chq{animation:chqFlash .9s ease-out}@keyframes chqFlash{0%{transform:scale(2.2);color:#fff;text-shadow:0 0 18px #fff}40%{transform:scale(1.1)}100%{transform:scale(1)}}
 .chc .cpb{position:relative;width:74px;height:10px;border-radius:6px;background:#140c26;border:2px solid #000;overflow:hidden;margin-top:3px;opacity:0;animation:fadeIn .3s .55s forwards}.chc .cpb i{position:absolute;top:0;bottom:0}.chc .cpb .o{left:0;background:linear-gradient(#7ef08a,#2fa84a)}.chc .cpb .g{background:#fff;width:0;animation:cpbGrow .55s .8s cubic-bezier(.3,1,.5,1) forwards;box-shadow:0 0 8px #fff}.chc .cpb.full .o{background:linear-gradient(#ffe27a,#f0a830)}@keyframes cpbGrow{to{width:var(--gw)}}@keyframes fadeIn{to{opacity:1}}
@@ -1129,7 +1129,7 @@ function updateNew2(dt){updateSpells3(dt);updateSpells2(dt);updateChunks(dt);upd
  runes=runes.filter(r=>r.life>0);
  // spirit archers
  for(const a of archers){SRC='archer';a.t+=dt;a.life-=dt;a.flash=Math.max(0,a.flash-dt);a.cd-=dt;if(a.life<=0&&a.hp>0){a.hp=0;burst(a.x,a.y-40*HS,20,['#e0fffb','#5fe0d0'],140,4,.5);}
-  if(a.hp<=0||ended)continue;const cs=enemyCreatures(a.o);let tg=null,td=230;for(const c of cs){const d=dist(a,c.e);if(d<td){td=d;tg=c.e}}if(!tg)tg=a.o.foe;if(window.tgtPref&&a.o.me){const pf=tgtPref(a.o,'archer');if(pf==='caster'&&!a.o.foe.dead)tg=a.o.foe;else if(pf==='strong'||pf==='weak'){const mobs=cs.filter(c=>c.k==='z'||c.k==='g'||c.k==='a');if(mobs.length)tg=mobs.reduce((p,q)=>(pf==='strong'?q.e.hp>p.e.hp:q.e.hp<p.e.hp)?q:p).e;}}a.face=tg.x>a.x?1:-1;
+  if(a.hp<=0||ended)continue;const cs=enemyCreatures(a.o);let tg=null,td=230;for(const c of cs){const d=dist(a,c.e);if(d<td){td=d;tg=c.e}}if(!tg)tg=a.o.foe;if(window.tgtPref&&a.o.me){const pf=tgtPref(a.o,'archer');if(pf==='caster'&&!a.o.foe.dead)tg=pickTarget(a.o,a);else if(pf==='strong'||pf==='weak'){const mobs=cs.filter(c=>c.k==='z'||c.k==='g'||c.k==='a');if(mobs.length)tg=mobs.reduce((p,q)=>(pf==='strong'?q.e.hp>p.e.hp:q.e.hp<p.e.hp)?q:p).e;}}a.face=tg.x>a.x?1:-1;
   if(a.cd<=0&&!tg.dead){a.cd=1.3;const n=a.volley?3:1,base=Math.atan2((tg.y-40*HS)-(a.y-44*HS),tg.x-a.x);for(let j=0;j<n;j++){const an=base+(j-(n-1)/2)*.18;arrows.push({o:a.o,x:a.x+a.face*10,y:a.y-44*HS,vx:Math.cos(an)*400,vy:Math.sin(an)*400,dmg:a.dmg,fire:a.fire,life:1.4});}burst(a.x+a.face*12,a.y-44*HS,6,['#e0fffb'],90,3,.25);}}
  archers=archers.filter(a=>a.hp>0);
  for(const ar of arrows){SRC='archer';if(ar.life>0){for(const q of projs)if(q.o!==ar.o&&q.life>0&&Math.hypot(q.x-ar.x,q.y-ar.y)<20){clash(q,ar);break;}if(ar.life>0)for(const q of arrows)if(q!==ar&&q.o!==ar.o&&q.life>0&&Math.hypot(q.x-ar.x,q.y-ar.y)<16){clash(q,ar);break;}}ar.life-=dt;{const ts=tsAt(ar.x,ar.y+40*HS,ar.o);ar.x+=ar.vx*dt*ts;ar.y+=ar.vy*dt*ts;}const gx=ar.x,gy=ar.y+40*HS;if(ended)continue;
@@ -1737,7 +1737,7 @@ function update(dt){SRC=null;shake*=Math.pow(.02,dt);updateDecals(dt);for(const 
   if(ended)continue;if(z.stunImm>0)z.stunImm-=dt;if(z.frozen>0){z.frozen-=dt;continue;}if(z.stun>0){z.stun-=dt;continue;}
   let tgt=z.o.foe,td=1e9,kind='wiz';for(const d of decoys)if(d.o!==z.o&&!d.gone){const dd=dist(z,d);if(dd<td){tgt=d;td=dd;kind='dec'}}for(const a of archers)if(a.o!==z.o&&a.hp>0){const dd=dist(z,a);if(dd<td){tgt=a;td=dd;kind='arc'}}for(const g of golems)if(g.o!==z.o&&g.hp>0){const dd=dist(z,g);if(dd<td){tgt=g;td=dd;kind='gol'}}for(const q of totems)if(q.o!==z.o&&q.hp>0&&q.lure){tgt=q;td=dist(z,q);kind='tot';break;}
   for(const e of zombies)if(e.o!==z.o&&e.hp>0&&e.rise>=1){const d=dist(z,e);if(d<td){tgt=e;td=d;kind='z'}}
-  /* the player's targeting setting for this summon: Caster first, or the strongest / weakest enemy summon */if(window.tgtPref&&z.o.me){const pf=tgtPref(z.o,z.beast?'zodiac':'zombies');if(pf==='caster'&&!z.o.foe.dead){tgt=z.o.foe;kind='wiz';}else if(pf==='strong'||pf==='weak'){let best=null,bv=pf==='strong'?-1:1e9;for(const [L,kd] of [[zombies,'z'],[golems,'gol'],[archers,'arc']])for(const e of L)if(e.o!==z.o&&e.hp>0&&(kd!=='z'||e.rise>=1)){if(pf==='strong'?e.hp>bv:e.hp<bv){bv=e.hp;best=[e,kd];}}if(best){tgt=best[0];kind=best[1];}}td=dist(z,tgt);}
+  /* the player's targeting setting for this summon: Caster first, or the strongest / weakest enemy summon */if(window.tgtPref&&z.o.me){const pf=tgtPref(z.o,z.beast?'zodiac':'zombies');if(pf==='caster'&&!z.o.foe.dead){tgt=pickTarget(z.o,z);kind=tgt===z.o.foe?'wiz':'dec';}else if(pf==='strong'||pf==='weak'){let best=null,bv=pf==='strong'?-1:1e9;for(const [L,kd] of [[zombies,'z'],[golems,'gol'],[archers,'arc']])for(const e of L)if(e.o!==z.o&&e.hp>0&&(kd!=='z'||e.rise>=1)){if(pf==='strong'?e.hp>bv:e.hp<bv){bv=e.hp;best=[e,kd];}}if(best){tgt=best[0];kind=best[1];}}td=dist(z,tgt);}
   if(kind==='wiz')td=dist(z,tgt);
   let wallHit=null;for(const wl of walls)if(wl.o!==z.o&&wallD(wl,z.x,z.y)<19)wallHit=wl;
   if(wallHit&&U(wallHit.o,'icewall','frostbite'))z.slowT=1;if(wallHit){z.cd-=dt;if(z.cd<0){z.cd=.6;z.lunge=.2;wallHit.hp-=U(z.o,'zombies','clawed')?20:8;burst(z.x,z.y-20*HS,5,['#d8f6ff','#fff'],100,3,.4);if(wallHit.spikes){hurtZ(z,4);}}}
@@ -2109,5 +2109,6 @@ nav('home');
 <script src="wizard-v110.js"></script>
 <script src="wizard-v111.js"></script>
 <script src="wizard-v112.js"></script>
+<script src="wizard-v121.js"></script>
 <script src="wizard-release.js"></script>
 </body></html>

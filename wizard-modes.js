@@ -129,6 +129,13 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.21', d: '25 Nov 2026', items: ['Fight Club is now a wager: stake 15 gems on a bounty and win 25. Bonuses for beating all wizards, all sorcerers, and 250 gems for all six. Re-roll the board for 100 gems. Star a beaten bounty to keep it for rematches.',
+      'The Rank Road now runs to 5,000 trophies, with five new ranks.', 'Ladder rungs open every 75 trophies.', 'Gem packs give three times as many gems. An Echo Rune costs 50 gems.',
+      'Collapse stops on a Sanctum and grinds it down from outside; from inside it shatters the dome on contact. Its wake is violet with afterimages; a rainbow version is a new Attacks cosmetic.',
+      'An Open Sanctum now clashes with a regular one, and breaking it costs its caster 7 health.', 'Copy Cast is 35% slower and cannot copy Chosen One.', 'Targeting the caster no longer sees through decoys.', 'Every rival brings at least one attack.',
+      'Bloodcraft: the disc forms at your hand before it flies. From level 5 some casts come out as a lance or a bursting blob.', 'Draft: Hoot tags a recommended pick, the hold hint is one line under the cards, and a ? shows your book size and when it grows.',
+      'Battle report and match history open with a short story of the match.', 'Notifications come in pages of 14 with Clear all.', 'Training yard: a whistle at each reset (Options can turn it off), portraits in the tracker, and a note when your hand is not full.',
+      'Chests chime when they open, and long chest results scroll.', 'Options: slow motion on critical hits can be switched off.', 'Hold a cosmetic you own to see how you got it.', 'Fixed: fighters no longer slide before the round starts. Sanctum lines reach the floor. Up to 10 saved hands.'] },
     { v: '1.0.20.1', d: '25 Nov 2026', items: ['Tap the training yard damage tracker to fold it down to just the countdown, and tap again to open it.'] },
     { v: '1.0.20', d: '25 Nov 2026', items: ['The top curtain is red on every transition.', 'Hoot no longer drifts out of his portrait on the Abilities page.', 'A stability and smoothness pass: less interface work every frame during fights.'] },
     { v: '1.0.19.2', d: '25 Nov 2026', items: ['The training yard tracker now counts down from 30 seconds. At zero the yard resets and the count starts again.'] },

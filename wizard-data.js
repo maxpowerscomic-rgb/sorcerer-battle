@@ -1,6 +1,6 @@
 /* The version shown at the bottom of Options. Bump the last number with every update pushed live (1.0 -> 1.0.1 -> 1.0.2);
    bump the middle number for a big content drop. */
-const GAME_VERSION = '1.0.20.1';
+const GAME_VERSION = '1.0.21';
 /* =====================================================================
    SPELLBINDER: GAME DATA
    Pure data, no rendering. Port these tables straight into the real build.
@@ -162,6 +162,12 @@ const RANKS = [
   { n: 'Warlock',     t: 900,  c: ['#ffb98a', '#c9361a'], unlock: 'ghost',     r: { gems: 40 } },
   { n: 'Archmage',    t: 1300, c: ['#e0c2ff', '#7a3fd6'], unlock: 'mirror',    r: { coins: 600 } },
   { n: 'Grand Magus', t: 1800, c: ['#fff0a8', '#d99a14'], unlock: 'gravity',   r: { gems: 100 } },
+  /* (1.0.21) the road runs on to 5,000 trophies */
+  { n: 'Spellbreaker', t: 2300, c: ['#ffd0e0', '#d6386a'], unlock: null, r: { gems: 120 } },
+  { n: 'Runelord',     t: 2900, c: ['#c8f0ff', '#1f8fd6'], unlock: null, r: { coins: 1200 } },
+  { n: 'Stormcrown',   t: 3500, c: ['#e8ffb0', '#6fb81f'], unlock: null, r: { gems: 180 } },
+  { n: 'Voidwalker',   t: 4200, c: ['#d8c8ff', '#4a1fb8'], unlock: null, r: { coins: 2000 } },
+  { n: 'Mythic',       t: 5000, c: ['#ffffff', '#ff8a1f'], unlock: null, r: { gems: 400 } },
 ];
 const MS_STEP = 50;
 /* Extra spells unlock on Rank Road milestones (trophies) */

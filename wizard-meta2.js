@@ -322,10 +322,10 @@
   };
   const _gx = gainXp;
   window.gainXp = gainXp = function () { const from = PR.lvl, r = _gx.apply(this, arguments); if (PR.lvl > from) { PR.mTok = (PR.mTok || 0) + (PR.lvl - from); PR.tokPick = (PR.tokPick || 0) + (PR.lvl - from); } return r; };
-  window.buyMastery = function () { if (PR.gems < 20) return toast('Not enough gems'); PR.gems -= 20; PR.mTok = (PR.mTok || 0) + 3; try { save(); } catch (e) {} refreshMeta(); renderShop(); toast('+3 Echo Runes'); };
+  window.buyMastery = function () { if (PR.gems < 50) return toast('Not enough gems'); PR.gems -= 50; PR.mTok = (PR.mTok || 0) + 1; try { save(); } catch (e) {} refreshMeta(); renderShop(); toast('+1 Echo Rune'); };
   const _rs = renderShop;
   window.renderShop = renderShop = function () { const r = _rs.apply(this, arguments); const host = document.getElementById('packs'); if (host && !document.getElementById('mtkShop')) host.insertAdjacentHTML('afterend', `<div id="mtkShop"></div>`);
-    const m = document.getElementById('mtkShop'); if (m) m.innerHTML = `<div class="mtkbuy">${TOK_SVG}<div><b>Echo Runes ×3</b><small>After a match, double one ability's skill points. You have ${PR.mTok}.</small></div><button onclick="buyMastery()" ${PR.gems < 20 ? 'disabled' : ''}>${SVG.gem}20</button></div>`; return r; };
+    const m = document.getElementById('mtkShop'); if (m) m.innerHTML = `<div class="mtkbuy">${TOK_SVG}<div><b>Echo Rune</b><small>After a match, double one ability's skill points. You have ${PR.mTok}.</small></div><button onclick="buyMastery()" ${PR.gems < 50 ? 'disabled' : ''}>${SVG.gem}50</button></div>`; return r; };
 
   /* ---------------- path-aware wording ---------------- */
   const _rm2 = refreshMeta;
@@ -1353,7 +1353,7 @@ function bloodLayer(x) {
 /* ---------------- Gem packs are the only real-money purchase (F-551) ----------------
    The Unlock Packs (Wizard Tome, Sorcerer Scroll, Grand Bundle) are gone. Money buys gems; gems buy chests, coins and
    Echo Runes. In the iOS app the packs go through StoreKit; on the web they explain that packs are in the app. */
-const GEM_PACKS = [{ id: 'gems80', q: 80, price: '$0.99', n: 1 }, { id: 'gems500', q: 500, price: '$4.99', n: 3, tag: 'POPULAR' }, { id: 'gems1200', q: 1200, price: '$9.99', n: 5, tag: '+20%' }];
+const GEM_PACKS = [{ id: 'gems80', q: 240, price: '$0.99', n: 1 }, { id: 'gems500', q: 1500, price: '$4.99', n: 3, tag: 'POPULAR' }, { id: 'gems1200', q: 3600, price: '$9.99', n: 5, tag: '+20%' }];
 window.GEM_PACKS = GEM_PACKS;
 window.grantGems = function (id) { const p = GEM_PACKS.find(q => q.id === id); if (!p) return false; PR.gems = (PR.gems || 0) + p.q; try { save(); sfx('ui_coin'); } catch (e) {} try { refreshMeta(); renderShop(); } catch (e) {} toast(`+${p.q.toLocaleString()} gems. Thank you!`); return true; };
 window.buyGems = function (id) { const iap = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iap; if (iap) iap.postMessage({ action: 'buy', id }); else toast('Gem packs can be bought in the iOS app.'); };

@@ -267,7 +267,7 @@
   for (let i = L.length - 1; i >= 0; i--) { const r = L[i]; if (!r.hand.every(k => SP[k])) { L.splice(i, 1); continue; } r.ups = r.ups.filter(u => { const [k, id] = u.split('.'); return SP[k] && (UPG[k] || []).some(q => q.id === id); }); }
   for (const k in VARIANTS) { const i = L.findIndex(r => r.boss === k); if (i >= 0) VARIANTS[k].boss = i; }
   window.LADDER = L;
-  const GATE = 50;
+  const GATE = 75;
   const gemsFor = r => r.adv ? 100 : 10;
   const st = () => { PR.ladder = PR.ladder || { won: {} }; PR.ladder.won = PR.ladder.won || {}; return PR.ladder; };
   const beaten = i => !!st().won[L[i].id];

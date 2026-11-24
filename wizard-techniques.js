@@ -290,7 +290,7 @@
       else if (!w.foe.dead && live.some(d => d.open || Math.hypot(w.foe.x - d.x, (w.foe.y - d.y) * 1.4) < d.r)) { const sn = w.sanctNext; w.sanctNext = null; domainBlast(w, k, sn); } }
     // Copy Cast: the armed side casts the same thing back at once
     const c = w.foe;
-    if (!copying && c && c.copyArmed > 0 && !c.dead && !ended && k !== 'copycast') {
+    if (!copying && c && c.copyArmed > 0 && !c.dead && !ended && k !== 'copycast' && k !== 'chosen') {   /* Chosen One cannot be copied */
       c.copyArmed--; copying = true;
       const keep = c.lv[k], bonus = U(c, 'copycast', 'perfect') ? 2 : 0; c.lv[k] = clamp((w.lv[k] || 1) + bonus, 1, MAXL);
       eyeFlash(c, k); dazeW(w, S(c, 'copycast', 'stun'));
@@ -377,7 +377,7 @@
       for (const c of enemyCreatures(w)) if (c.e.x !== undefined && inD0(c.e)) dome.trap.push(c.e);
       for (const wl of walls) { let n = 0; for (const c of wl.cr) if (!c.gone && inD0(c)) { c.gone = 1; n++; burst(c.x, c.y - 20 * HS, 12, wl.mud ? ['#d8c09a', '#8a6a48'] : ['#d8f6ff', '#fff'], 180, 4, .4); } if (n) { const live = wl.cr.filter(c => !c.gone).length; wl.hp = live ? Math.min(wl.hp, wl.max * live / wl.cr.length) : 0; } }
       w.sanctNext = { sure: U(w, k, 'surehit'), vast }; inkRing(w.x, w.y, COL.ward[1], 2, 20, r, .5); text(w.x, w.y - 90 * HS, 'SANCTUM', '#bcd2ff', true);
-      const rival = domes.find(d => d !== dome && d.o !== w && d.t < d.dur && !d.open && Math.hypot(d.x - dome.x, (d.y - dome.y) * 1.4) < d.r + dome.r);
+      const rival = domes.find(d => d !== dome && d.o !== w && d.t < d.dur && Math.hypot(d.x - dome.x, (d.y - dome.y) * 1.4) < d.r + dome.r);
       if (rival) sanctumClash(dome, rival);
     }
     if (k === 'doubletake') doSwap(w, false);
@@ -537,7 +537,7 @@
   const tAlive = t => t.k === 'wiz' ? !t.e.dead : t.k === 'wall' ? (t.e.hp > 0 && !t.e.dead && walls.includes(t.e)) : t.k === 'd' ? !t.e.gone : t.e.hp > 0;
   const tPos = t => t.k === 'wall' ? t : t.e;
   function rushPick(w) {           // nearest enemy unit by default; the player's targeting setting can pick the caster or the strongest / weakest summon
-    const o = w.foe, pref = tgtPref(w, 'rush'); if (pref === 'caster') return { k: 'wiz', e: o };
+    const o = w.foe, pref = tgtPref(w, 'rush'); if (pref === 'caster') { const t = typeof pickTarget === 'function' ? pickTarget(w, w) : o; return t && t !== o ? { k: 'd', e: t } : { k: 'wiz', e: o }; }   /* "the caster" is whoever looks like the caster: a decoy can still fool it */
     const all = [{ k: 'wiz', e: o }].concat(enemyCreatures(w).map(c => ({ k: c.k, e: c.e }))), hp = t => t.k === 'd' ? 1 : (t.e.hp || 0);
     if (pref === 'strong' || pref === 'weak') { const mobs = all.filter(t => SUMMON_K.has(t.k)); if (mobs.length) return mobs.reduce((a, b) => (pref === 'strong' ? hp(b) > hp(a) : hp(b) < hp(a)) ? b : a); return { k: 'wiz', e: o }; }
     return all.reduce((a, b) => dist(w, b.e) < dist(w, a.e) ? b : a);
@@ -628,7 +628,7 @@
     addFx({ k: 'jab', x: w.x, y: w.y - 40 * HS, x2: px, y2: py, life: .12, side: r.side, hot: r.inf });
     if (jab) { addFx({ k: 'after', x: w.x - vy2 * r.side * 10 - vx2 * 7, y: w.y + vx2 * r.side * 10 - vy2 * 7, life: .24, w }); addFx({ k: 'jab', x: w.x - vy2 * r.side * 10, y: w.y - 40 * HS + vx2 * r.side * 10, x2: px - vy2 * r.side * 6, y2: py + vx2 * r.side * 6, life: .2, side: -r.side, hot: r.inf }); }
     if (r.inf) for (let q = 0; q < 4; q++) fireFx.push({ x: px + rnd(-4, 4), y: py + rnd(-4, 4), vx: vx2 * 90 + rnd(-50, 50), vy: vy2 * 90 - rnd(10, 60), t: 0, life: rnd(.2, .36), s: rnd(5, 9), seed: rnd(0, 99), smoke: 0 });
-    if (crit || fin) { shake = Math.max(shake, fin ? 10 : 6); text(px, py - 28, fin ? 'FINISHER!' : 'CRIT!', '#ffe08a', true); slow = Math.min(slow, .5); setTimeout(() => { if (!ended) slow = 1; }, fin ? 140 : 80); if (fin) { inkRing(px, py, '#ffe08a', 3, 8, 50); burst(px, py, 24, ['#fff6c8', '#ffb020', '#fff'], 260, 5, .5); } }
+    if (crit || fin) { shake = Math.max(shake, fin ? 10 : 6); text(px, py - 28, fin ? 'FINISHER!' : 'CRIT!', '#ffe08a', true); if (!(typeof SET === 'function' && SET().critSlow === false)) slow = Math.min(slow, .5); setTimeout(() => { if (!ended) slow = 1; }, fin ? 140 : 80); if (fin) { inkRing(px, py, '#ffe08a', 3, 8, 50); burst(px, py, 24, ['#fff6c8', '#ffb020', '#fff'], 260, 5, .5); } }
     else shake = Math.max(shake, jab ? 1.4 : 2.2);
     if (last) { r.ph = 'back'; r.bt = 0; r.bx = -vx2; r.by = -vy2; }
   }
@@ -1009,10 +1009,12 @@
         try { const keep = SRC; SRC = 'sanctum'; for (const [L, k] of [[typeof totems !== 'undefined' ? totems : [], 'tm'], [typeof archers !== 'undefined' ? archers : [], 'a']]) for (const e of L) if (e.o !== w && e.hp > 0 && inD(e.x, e.y)) { e._mx = e._mx || e.maxHp || e.max || e.hp; hurtCreature(e, k, e._mx * .15 * dt / (window.inOwnDome && inOwnDome(w) ? 1.5 : 1), 'arcane'); }   /* the dome's own damage bonus must not stack on this: it is a flat 15% a second */ SRC = keep; } catch (e) {} }
       // enemies caught inside when it went up cannot leave until it falls
       for (const e of dm.trap) { if (e.dead || e.hp <= 0) continue; const dx = e.x - dm.x, dy = (e.y - dm.y) * 1.4, d = Math.hypot(dx, dy), lim = dm.r - 8; if (d > lim) { e.x = dm.x + dx / d * lim; e.y = dm.y + dy / d * lim / 1.4; if (e.vx !== undefined) { e.vx *= .3; e.vy *= .3; } } }
-      if (dm.hp <= 0 && dm.t < dm.dur && !dm.clash) { dm.t = dm.dur; text(dm.x, dm.y - 110 * HS, 'SANCTUM BROKEN', '#bcd2ff', true); shake = Math.max(shake, 10); shatterDome(dm); try { sfx('shatter', { x: dm.x }); } catch (e) {} }
+      if (dm.hp <= 0 && dm.t < dm.dur && !dm.clash) { dm.t = dm.dur; shake = Math.max(shake, 10);
+        if (dm.open) { dm.shat = 1; const o2 = dm.o; text(o2.x, o2.y - 104 * HS, 'SANCTUM BROKEN', '#bcd2ff', true); if (!o2.dead) { const sv = SRC; SRC = 'sanctum'; try { damage(o2, 7, 0, 0, '#bcd2ff'); } finally { SRC = sv; } } }   /* an Open Sanctum has no shell to shatter: breaking it costs its caster 7 */
+        else { text(dm.x, dm.y - 110 * HS, 'SANCTUM BROKEN', '#bcd2ff', true); shatterDome(dm); try { sfx('shatter', { x: dm.x }); } catch (e) {} } }
     }
     // a Sanctum that simply runs out breaks into shards too: it never just fades
-    for (const d of domes) if (d.t >= d.dur && !d.shat) { shatterDome(d, ['#e6f0ff', '#9fb8ff']); try { sfx('shatter', { x: d.x, vol: .55 }); } catch (e) {} }
+    for (const d of domes) if (d.t >= d.dur && !d.shat && !d.open) { shatterDome(d, ['#e6f0ff', '#9fb8ff']); try { sfx('shatter', { x: d.x, vol: .55 }); } catch (e) {} }
     domes = domes.filter(d => d.t < d.dur);
     // Collapse orbs
     // a Draw orb meeting a Repel orb, whoever cast them: the two forces fuse and go off as a Collapse blast where they touch
@@ -1233,7 +1235,7 @@
       x.fillStyle = sg; x.beginPath(); x.ellipse(0, 0, R, H, 0, Math.PI, 0); x.closePath(); x.fill();
       x.strokeStyle = hot ? '#fff' : 'rgba(215,230,255,.85)'; x.lineWidth = 2.2; x.beginPath(); x.ellipse(0, 0, R, H, 0, Math.PI, 0); x.stroke();
       x.lineWidth = 1; for (const lv of [.35, .62, .84]) { const rr = Math.sqrt(1 - lv * lv); x.strokeStyle = `rgba(190,210,255,${.4 - lv * .25})`; x.beginPath(); x.ellipse(0, -H * lv, R * rr, RY * rr, 0, 0, 7); x.stroke(); }
-      for (let i = 0; i < 6; i++) { const ph = (i / 6 + dm.t * .1) % 1, rx = Math.cos(ph * Math.PI) * R; x.beginPath(); x.ellipse(0, 0, Math.abs(rx), H, 0, Math.PI, 0); x.strokeStyle = `rgba(190,210,255,${.12 + .22 * Math.abs(Math.sin(ph * Math.PI))})`; x.stroke(); }
+      for (let i = 0; i < 6; i++) { const ph = (i / 6 + dm.t * .1) % 1, az = ph * Math.PI, ca = Math.cos(az), sa = Math.sin(az); x.beginPath(); for (let j = 0; j <= 18; j++) { const th = j / 18 * Math.PI, px = R * Math.cos(th) * ca, py = RY * Math.cos(th) * sa - H * Math.sin(th); j ? x.lineTo(px, py) : x.moveTo(px, py); } x.strokeStyle = `rgba(190,210,255,${.12 + .22 * Math.abs(sa)})`; x.stroke(); }   /* each meridian runs from the floor rim, over the top, to the floor rim on the far side */
       // drifting motes of light on the surface, a sheen streak, and cracks as it takes damage
       x.save(); x.globalCompositeOperation = 'lighter'; for (let i = 0; i < 9; i++) { const ph = (dm.t * .25 + i * .37) % 1, an = i * 2.4 + dm.t * .3, hh = ph * H, rr = Math.sqrt(Math.max(0, 1 - ph * ph)); x.fillStyle = `rgba(230,240,255,${.8 * Math.sin(ph * Math.PI)})`; x.beginPath(); x.arc(Math.cos(an) * R * rr, -hh + Math.sin(an) * RY * rr * .3, 1.6, 0, 7); x.fill(); }
       x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 5; x.lineCap = 'round'; x.beginPath(); x.ellipse(-R * .12, -H * .1, R * .72, H * .78, 0, Math.PI * 1.12, Math.PI * 1.4); x.stroke(); x.restore();
@@ -1344,8 +1346,10 @@
       // rainbow wake from the launch point to the singularity, cycling like Desperate Output
       { const L0 = Math.hypot(c.x - c.sx, c.y - c.sy); if (L0 > 4) { const N = 24, yo = -36 * HS, age = c.t - (c.t0 || 0), fadeIn = Math.min(1, age * 4); x.save(); x.lineCap = 'round';
           x.globalAlpha = .5 * fadeIn; x.strokeStyle = '#07020d'; x.lineWidth = 26; x.beginPath(); x.moveTo(c.sx + (c.x - c.sx) * .15, c.sy + (c.y - c.sy) * .15 + yo); x.lineTo(c.x, c.y + yo); x.stroke();   // ink underlay so the colours read on light floors
-          for (let i = 0; i < N; i++) { const u0 = i / N, u1 = (i + 1) / N; x.globalAlpha = (.25 + .7 * u1) * fadeIn; x.strokeStyle = `hsl(${(u0 * 360 - T * 420) % 360 + 360 | 0},100%,58%)`; x.lineWidth = 8 + 14 * u1; x.beginPath(); x.moveTo(c.sx + (c.x - c.sx) * u0, c.sy + (c.y - c.sy) * u0 + yo); x.lineTo(c.sx + (c.x - c.sx) * u1, c.sy + (c.y - c.sy) * u1 + yo); x.stroke(); }
-          x.globalAlpha = .7 * fadeIn; x.strokeStyle = '#ffffff'; x.lineWidth = 3; x.beginPath(); x.moveTo(c.sx + (c.x - c.sx) * .3, c.sy + (c.y - c.sy) * .3 + yo); x.lineTo(c.x, c.y + yo); x.stroke(); x.restore(); } }
+          for (let i = 0; i < N; i++) { const u0 = i / N, u1 = (i + 1) / N; x.globalAlpha = (.25 + .7 * u1) * fadeIn; x.strokeStyle = c.o.atkSkin === 'rainbow' ? `hsl(${(u0 * 360 - T * 420) % 360 + 360 | 0},100%,58%)` : `hsl(${268 + Math.sin(u0 * 9 - T * 9) * 16 | 0},92%,${52 + u1 * 14 | 0}%)`; x.lineWidth = 8 + 14 * u1; x.beginPath(); x.moveTo(c.sx + (c.x - c.sx) * u0, c.sy + (c.y - c.sy) * u0 + yo); x.lineTo(c.sx + (c.x - c.sx) * u1, c.sy + (c.y - c.sy) * u1 + yo); x.stroke(); }
+          x.globalAlpha = .7 * fadeIn; x.strokeStyle = '#ffffff'; x.lineWidth = 3; x.beginPath(); x.moveTo(c.sx + (c.x - c.sx) * .3, c.sy + (c.y - c.sy) * .3 + yo); x.lineTo(c.x, c.y + yo); x.stroke();
+          if (c.o.atkSkin !== 'rainbow') { x.globalCompositeOperation = 'lighter'; for (let i = 1; i <= 4; i++) { const u = 1 - i * .13; if (u * L0 < 8) break; x.globalAlpha = (.42 - i * .08) * fadeIn; x.fillStyle = '#b06bff'; x.beginPath(); x.arc(c.sx + (c.x - c.sx) * u, c.sy + (c.y - c.sy) * u + yo, 22 - i * 3, 0, 7); x.fill(); x.strokeStyle = '#e6d0ff'; x.lineWidth = 1.5; x.stroke(); } }   /* afterimages of the singularity strung out behind it */
+          x.restore(); } }
       x.save(); x.translate(c.x, c.y - 36 * HS); const R = 26 + Math.sin(c.t * 18) * 2.6, grow = Math.min(1, c.t * 4);
       x.scale(grow, grow); x.globalCompositeOperation = 'lighter';
       const g = x.createRadialGradient(0, 0, 0, 0, 0, R * 3.2); g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(.25, 'rgba(196,140,255,.85)'); g.addColorStop(.6, 'rgba(110,40,220,.35)'); g.addColorStop(1, 'rgba(90,20,180,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, R * 3.2, 0, 7); x.fill();

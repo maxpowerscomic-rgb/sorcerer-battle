@@ -44,7 +44,8 @@
     if (syn) { const a = syn['el:' + ELEM_OF[k]], b = syn['ty:' + TYPE_OF[k]], c = typeof SCHOOL_OF === 'function' ? syn['sc:' + SCHOOL_OF(k)] : null; pct = (a ? a.pct : 0) + (b ? b.pct : 0) + (c ? c.pct : 0); }
     const bonus = cur * pct, parts = [`<i class="b0" title="Base">${f(base)}</i>`]; if (cur - base > .04) parts.push(`<i class="b1" title="Level bonus">+${f(cur - base)}</i>`); if (bonus > .04) parts.push(`<i class="b2" title="Hand bonuses">+${f(bonus)}</i>`);
     // colour says what each part is: white base, green level bonus, gold hand bonuses
-    return { total: f(cur + bonus), txt: parts.length > 1 ? '(' + parts.join(' ') + ')' : '', base, level: cur - base, bonus }; };
+    const names = ['<i class="b0">base</i>']; if (cur - base > .04) names.push('<i class="b1">level</i>'); if (bonus > .04) names.push('<i class="b2">hand bonus</i>');
+    return { total: f(cur + bonus), txt: parts.length > 1 ? '(' + parts.join(' ') + ')<span class="dbl">' + names.join(' + ') + '</span>' : '', base, level: cur - base, bonus }; };
   // spell book: the damage rows get the same breakdown (hand bonuses count only while the ability is in your hand)
   if (typeof openSpell === 'function') { const _os = openSpell;
     window.openSpell = openSpell = function (k) { const r = _os.apply(this, arguments);
@@ -54,7 +55,7 @@
           const val = row.lastElementChild, nx = val.querySelector('.nx'); val.firstChild && val.firstChild.nodeType === 3 ? (val.firstChild.textContent = bk.total) : null; row.insertAdjacentHTML('beforeend', `<em class="dbk">${bk.txt}</em>`); } } catch (e) {}
       return r; }; }
   const css = document.createElement('style');
-  css.textContent = `.dbk{font:800 11.500px Nunito;font-style:normal;color:#8f80b8;margin-left:5px;white-space:nowrap}.dbk i{font-style:normal}.dbk .b0{color:#fff}.dbk .b1{color:#6ee58a}.dbk .b2{color:#ffd45e}.srow{flex-wrap:wrap}.srow .dbk{flex-basis:100%;text-align:right;margin:1px 0 0}`;
+  css.textContent = `.dbk{font:800 11.500px Nunito;font-style:normal;color:#8f80b8;margin-left:5px;white-space:nowrap}.dbk i{font-style:normal}.dbk .b0{color:#fff}.dbk .b1{color:#6ee58a}.dbk .b2{color:#ffd45e}.dbl{display:block;font-size:10px;margin-top:1px;color:#8f80b8}.ostats .dbk{white-space:normal;display:inline-block;vertical-align:middle}.srow{flex-wrap:wrap}.srow .dbk{flex-basis:100%;text-align:right;margin:1px 0 0}`;
   document.head.appendChild(css);
 })();
 

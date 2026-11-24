@@ -112,12 +112,14 @@
   function bloodCast(w) {
     const o = w.foe, a = Math.atan2(o.y - w.y, o.x - w.x), x0 = w.x + Math.cos(a) * 20, y0 = w.y + Math.sin(a) * 20, dmg = S(w, 'bloodcraft', 'dmg') * scale(), venom = U(w, 'bloodcraft', 'venom');
     w.bcN = (w.bcN || 0) + 1;
+    // (1.0.21) from level 5 the blood has a mind of its own: some casts come out as a lance or a bursting blob, upgrade or not
+    const blv = (w.lv && w.lv.bloodcraft) || 1, roll = blv >= 5 ? Math.random() : 1, rBlob = roll < .15, rLance = roll >= .15 && roll < .4;
     const startIn = new Set(X.domes.filter(d => d.o !== w && d.t < d.dur && Math.hypot(x0 - d.x, (y0 - d.y) * 1.4) < d.r));
-    if (U(w, 'bloodcraft', 'burst') && w.bcN % 3 === 0) { const d = Math.hypot(o.x - w.x, o.y - w.y);
+    if ((U(w, 'bloodcraft', 'burst') && w.bcN % 3 === 0) || rBlob) { const d = Math.hypot(o.x - w.x, o.y - w.y);
       bloods.push({ k: 'blob', o: w, x: x0, y: y0, sx: x0, sy: y0, tx: o.x, ty: o.y, t: 0, T: Math.max(.5, Math.min(.95, d / 420)), dmg: dmg * 1.8, venom, z: 0 }); text(w.x, w.y - 86 * HS, 'BLOODBURST', '#ff5a6e', true); }
-    else if (U(w, 'bloodcraft', 'lance') && w.bcN % 2 === 0) { bloods.push({ k: 'lance', o: w, x: x0, y: y0, vx: Math.cos(a) * 900, vy: Math.sin(a) * 900, a, life: 1.2, dmg, venom, hit: new Set(), hitW: new Set(), startIn, trail: 0, sx: x0, sy: y0, bend: U(w, 'bloodcraft', 'bend'), pts: [{ x: x0, y: y0 }], seg: 0 });
+    else if ((U(w, 'bloodcraft', 'lance') && w.bcN % 2 === 0) || rLance) { bloods.push({ k: 'lance', o: w, x: x0, y: y0, vx: Math.cos(a) * 900, vy: Math.sin(a) * 900, a, life: 1.2, dmg, venom, hit: new Set(), hitW: new Set(), startIn, trail: 0, sx: x0, sy: y0, bend: U(w, 'bloodcraft', 'bend'), pts: [{ x: x0, y: y0 }], seg: 0 });
       text(w.x, w.y - 86 * HS, 'BLOOD LANCE', '#ff5a6e'); shake = Math.max(shake, 5); }
-    else { const two = U(w, 'bloodcraft', 'twin'); for (const off of two ? [-.2, .2] : [0]) bloods.push({ k: 'disc', o: w, x: x0, y: y0, vx: Math.cos(a + off) * 360, vy: Math.sin(a + off) * 360, a: a + off, life: 3, dmg: dmg * (two ? .65 : 1), venom, startIn, trail: 0, spin: rnd(0, 6) });
+    else { const two = U(w, 'bloodcraft', 'twin'); for (const off of two ? [-.2, .2] : [0]) bloods.push({ k: 'disc', wind: .34, wt: 0, o: w, x: x0, y: y0, vx: Math.cos(a + off) * 360, vy: Math.sin(a + off) * 360, a: a + off, life: 3, dmg: dmg * (two ? .65 : 1), venom, startIn, trail: 0, spin: rnd(0, 6) });
       text(w.x, w.y - 86 * HS, 'BLOODCRAFT', '#ff5a6e'); }
     if (U(w, 'bloodcraft', 'surge')) { w.surgeT = SURGE_T; text(w.x, w.y - 128 * HS, 'RED SURGE', '#ff3b4a', true); inkRing(w.x, w.y, '#ff3b4a', 2, 10, 50, .5); }
     for (let i = 0; i < 10; i++) { const an = a + rnd(-.9, .9), v = rnd(80, 220); P({ x: x0, y: y0 - 36 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .7, color: CR[i % 3], size: rnd(2, 3.6), life: rnd(.2, .45), grav: 300, glow: false }); }
@@ -137,6 +139,8 @@
   function bloodUpdate(dt) {
     for (const b of bloods) {
       SRC = 'bloodcraft'; const w = b.o, f = w.foe;
+      // the disc forms at the hand first, swelling as it spins up, then is thrown
+      if (b.k === 'disc' && b.wind && b.wt < b.wind) { b.wt += dt; b.x = w.x + Math.cos(b.a) * 22; b.y = w.y + Math.sin(b.a) * 22; b.life = 3; if (Math.random() < .6) P({ x: b.x + rnd(-16, 16), y: b.y - 36 * HS + rnd(-14, 14), vx: 0, vy: 0, color: Math.random() < .5 ? '#ff5a6e' : '#c8102e', size: rnd(1.6, 3), life: .2 }); if (b.wt >= b.wind) { shake = Math.max(shake, 3); try { inkRing(b.x, b.y, '#ff5a6e', 1, 8, 26, .3); } catch (e) {} } continue; }
       if (b.k === 'blob') { b.t += dt; const k = Math.min(1, b.t / b.T); b.x = b.sx + (b.tx - b.sx) * k; b.y = b.sy + (b.ty - b.sy) * k; b.z = Math.sin(k * Math.PI) * 90 * HS + 36 * HS * (1 - k);
         if (Math.random() < .5) pool(w, b.x, b.y, rnd(2, 4));
         if (k >= 1) { b.dead = 1; burstBlob(b); } continue; }
@@ -296,7 +300,7 @@
       x.fillStyle = '#07020d'; crescent(x, 17 * SC, 1.15); x.fill(); x.fillStyle = '#ff3b4a'; crescent(x, 15 * SC, 1.1); x.fill(); x.globalCompositeOperation = 'lighter'; x.fillStyle = '#fff'; x.translate(2, 0); crescent(x, 10 * SC, .9); x.fill(); x.restore(); }
     // blood in flight
     for (const b of bloods) {
-      if (b.k === 'disc') { b.spin += .5; x.save(); x.translate(b.x, b.y - 36 * HS); x.scale(1, .78); x.rotate(b.spin); const R = 13 * SC;
+      if (b.k === 'disc') { b.spin += .5; x.save(); x.translate(b.x, b.y - 36 * HS); x.scale(1, .78); x.rotate(b.spin); const wk = b.wind && b.wt < b.wind ? b.wt / b.wind : 1, R = 13 * SC * (wk < 1 ? .25 + 1.3 * wk : 1); if (wk < 1) { x.save(); x.globalCompositeOperation = 'lighter'; const gg = x.createRadialGradient(0, 0, 0, 0, 0, R * 2.4); gg.addColorStop(0, 'rgba(255,120,140,.75)'); gg.addColorStop(1, 'rgba(200,16,46,0)'); x.fillStyle = gg; x.beginPath(); x.arc(0, 0, R * 2.4, 0, 7); x.fill(); x.restore(); }
         x.beginPath(); for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283; x.lineTo(Math.cos(a) * R, Math.sin(a) * R); x.quadraticCurveTo(Math.cos(a + .5) * R * 1.2, Math.sin(a + .5) * R * 1.2, Math.cos(a + .55) * R * .62, Math.sin(a + .55) * R * .62); } x.closePath();
         x.fillStyle = '#c8102e'; x.strokeStyle = '#07020d'; x.lineWidth = 2.6; x.lineJoin = 'round'; x.fill(); x.stroke();
         x.fillStyle = b.venom ? '#b6f06a' : '#ff8a96'; x.beginPath(); x.arc(0, 0, R * .42, 0, 7); x.fill(); x.stroke(); x.fillStyle = 'rgba(255,255,255,.8)'; x.beginPath(); x.ellipse(-R * .3, -R * .35, R * .22, R * .1, -.6, 0, 7); x.fill(); x.restore();

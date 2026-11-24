@@ -53,7 +53,7 @@
     window.update = update = function (dt) { const on = typeof M !== 'undefined' && M && !M.practice && M.steer !== 'steer' && M.zone !== undefined && !(window.YARD && YARD.on); if (!on) return _u.apply(this, arguments);
       const keep = PR.behavior; PR.behavior = Z[M.zone]; try { return _u.apply(this, arguments); } finally { PR.behavior = keep; if (M.zoneCd > 0) M.zoneCd -= dt;
         // hold the range: an extra push toward the zone's distance, so a rival that backs off or presses in does not decide it for you
-        try { const me = ents[0], fo = me && me.foe; if (me && fo && !ended && !me.dead && !fo.dead && !(me.stunT > 0) && !(me.rootT > 0) && !(me.pitT > 0) && !(me.grabT > 0) && !me.shell && !me.rush && !me.bo && !me.drag && !me.pull && !(me.beamT > 0)) {
+        try { const me = ents[0], fo = me && me.foe; if (me && fo && !ended && !(typeof introT !== 'undefined' && introT > 0) && !me.dead && !fo.dead && !(me.stunT > 0) && !(me.rootT > 0) && !(me.pitT > 0) && !(me.grabT > 0) && !me.shell && !me.rush && !me.bo && !me.drag && !me.pull && !(me.beamT > 0)) {
             const dx = fo.x - me.x, dy = fo.y - me.y, d = Math.hypot(dx, dy) || 1, err = d - window.STANCE.D[M.zone]; if (Math.abs(err) > 10) { const st = Math.sign(err) * Math.min(Math.abs(err), 60 * dt), q = window.TECHX && TECHX.inArena ? TECHX.inArena(me.x + dx / d * st, me.y + dy / d * st) : { x: me.x + dx / d * st, y: me.y + dy / d * st };
               const blocked = typeof walls !== 'undefined' && typeof wallD === 'function' && walls.some(wl => wl.hp > 0 && wallD(wl, q.x, q.y) < 14); if (!blocked) { me.x = q.x; me.y = q.y; } } } } catch (e) {}
         paint(); } }; }

@@ -59,7 +59,7 @@
   if (typeof refreshMeta === 'function') { const _rm = refreshMeta; window.refreshMeta = refreshMeta = function () { const r = _rm.apply(this, arguments); try { badge(); } catch (e) {} return r; }; }
 
   /* ---------------- 2. saved hands ---------------- */
-  const MAXD = 8, GLYPHS = ['🔥', '❄️', '⚡', '☠️', '🛡️', '⚔️', '🌿', '🌀', '⭐', '👑', '🩸', '🐉'];
+  const MAXD = 10, GLYPHS = ['🔥', '❄️', '⚡', '☠️', '🛡️', '⚔️', '🌿', '🌀', '⭐', '👑', '🩸', '🐉'];
   const decks = () => (PR.decks = Array.isArray(PR.decks) ? PR.decks : []);
   const same = (a, b) => a.length === b.length && a.every(k => b.includes(k));
   const icHTML = ic => ic && ic.slice(0, 2) === 'k:' && typeof ICON !== 'undefined' && ICON[ic.slice(2)] ? `<img src="${ICON[ic.slice(2)]}">` : `<i>${esc(ic || '⭐')}</i>`;

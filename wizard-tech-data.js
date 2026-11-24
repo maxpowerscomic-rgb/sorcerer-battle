@@ -23,7 +23,7 @@ const TECH = {
   secondwind: { n: 'Spirit Tuning', el: 'ki',    t: 1.8, range: 160, d: 'Tune your spirit and mend your own wounds for a few seconds. Pauses for a moment each time you are hit.', tag: 'Heals' },
   earthm:     { n: 'Earth Manipulation', el: 'mud', t: 2.0, range: 140, d: 'Turn the ground around you to deep mud. Enemies in it move 45% slower, and an enemy caster in it charges 25% slower.', tag: 'Terrain' },
   chosen:     { n: 'Chosen One',    el: 'chosen', t: .25, range: 0, d: 'Passive: all your abilities cast 25% faster. Its own turn passes in a blink. Upgrades only show up after you lose 2 rounds in a row.', tag: 'Passive' },
-  copycast:   { n: 'Copy Cast',     el: 'ki',    t: 1.3, range: 150, d: 'Your eyes lock on. The next spell or technique the enemy casts, you instantly cast right back.', tag: 'Copies' },
+  copycast:   { n: 'Copy Cast',     el: 'ki',    t: 1.75, range: 150, d: 'Your eyes lock on. The next spell or technique the enemy casts, you instantly cast right back.', tag: 'Copies' },
   bloodoath:  { n: 'Blood Oath',    el: 'ki',    t: 2.0, range: 70,  d: 'A pact while it is in your book: 35% less health, but you take 20% less damage, cast 12% faster and regenerate. Cast: dash in for 2 bleeding sword cuts.', tag: 'Pact' },
   bloodcraft: { n: 'Bloodcraft',    el: 'blood', t: 1.5, range: 170, d: 'Throw a spinning disc of blood that cuts the first enemy or wall it reaches. Spilled blood flows back to you every loop.', tag: 'Blood' },
 };
