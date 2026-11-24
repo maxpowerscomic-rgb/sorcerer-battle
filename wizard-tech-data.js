@@ -9,13 +9,14 @@ COL.ward = ['#e6f0ff', '#7aa6ff', '#1a2a6a'];   // barrier blue
 COL.beast = ['#e8dcff', '#8a6cff', '#140a30'];  // shadow ink
 COL.mud = ['#f0d6a6', '#a8703a', '#3a220c'];    // earth and mud
 COL.chosen = ['#effcff', '#7fd8ff', '#0b3a5c']; // Chosen One light
+COL.blood = ['#ffc2c2', '#c8102e', '#3a0008'];  // spilled blood
 
 const TECH = {
   dissect:    { n: 'Dissection',    el: 'ki',    t: 1.3, range: 170, d: 'Throw a razor-thin cutting slash. It stops at the first creature or caster it hits.', tag: 'Cuts' },
   sanctum:    { n: 'Sanctum',       el: 'ward',  t: 3, range: 150, d: 'A 100 HP dome. Inside it you deal 20% more damage, and enemies are trapped, slowed and hit by your casts. Leave it and it crumbles.', tag: 'Dome' },
   doubletake: { n: 'Double Take',   el: 'ki',    t: 1.5, range: 150, d: 'Clap, and swap places with the enemy. Their aim is thrown off for a moment. Only one Double Take per loop.', tag: 'Swaps' },
   rush:       { n: 'Rushdown',      el: 'ki',    t: 2.2, range: 70,  d: 'Dash at the nearest enemy unit, land a 4-punch combo it cannot walk out of, then spring back. Ice in the way gets punched first.', tag: 'Brawls' },
-  polarity:   { n: 'Polarity',      el: 'ward',  t: 1.8, range: 160, d: 'Alternates each cast: Draw yanks the enemy toward you; Repel fires an orb that shoves back whatever it passes through.', tag: 'Push/Pull' },
+  polarity:   { n: 'Polarity',      el: 'ward',  t: 1.8, range: 160, d: 'Alternates each cast: Draw fires an orb that hauls the first enemy it touches back to you; Repel fires one that shoves back all it passes through.', tag: 'Push/Pull' },
   zodiac:     { n: 'Zodiac Beasts', el: 'beast', t: 2.4, range: 180, d: 'Summon one of the twelve zodiac shadow-beasts at random. Each one fights differently.', tag: 'Summons' },
   titan:      { n: 'Titan Shell',   el: 'ward',  t: 1.6, range: 120, d: 'A spectral guardian soaks direct hits until it breaks and deals 5 back to whatever hits it. You are rooted inside. Once per loop.', tag: 'Armor' },
   counter:    { n: 'Counter Stance', el: 'ki',   t: 1.2, range: 120, d: 'Brace for a moment. The first melee hit is cancelled and the attacker is thrown back, hurt and stunned. Once per loop.', tag: 'Counters' },
@@ -23,6 +24,8 @@ const TECH = {
   earthm:     { n: 'Earth Manipulation', el: 'mud', t: 2.0, range: 140, d: 'Turn the ground around you to deep mud. Enemies in it move 45% slower, and an enemy caster in it charges 25% slower.', tag: 'Terrain' },
   chosen:     { n: 'Chosen One',    el: 'chosen', t: .25, range: 0, d: 'Passive: all your abilities cast 25% faster. Its own turn passes in a blink. Upgrades only show up after you lose 2 rounds in a row.', tag: 'Passive' },
   copycast:   { n: 'Copy Cast',     el: 'ki',    t: 1.3, range: 150, d: 'Your eyes lock on. The next spell or technique the enemy casts, you instantly cast right back.', tag: 'Copies' },
+  bloodoath:  { n: 'Blood Oath',    el: 'ki',    t: 2.0, range: 70,  d: 'A pact while it is in your book: 35% less health, but you take 20% less damage, cast 12% faster and regenerate. Cast: dash in for 2 bleeding sword cuts.', tag: 'Pact' },
+  bloodcraft: { n: 'Bloodcraft',    el: 'blood', t: 1.5, range: 170, d: 'Throw a spinning disc of blood that cuts the first enemy or wall it reaches. Spilled blood flows back to you every loop.', tag: 'Blood' },
 };
 const SORC = new Set(Object.keys(TECH));
 function SCHOOL_OF(k) { return SORC.has(k) ? 'sorc' : 'wiz'; }
@@ -50,6 +53,8 @@ const TECH_STATS = {
   counter:    { dmg: [10, 11, 12, 14, 16], dur: [2.2, 2.3, 2.4, 2.6, 2.8] },
   secondwind: { heal: [3, 3.4, 3.8, 4.4, 5], dur: [3, 3, 3.2, 3.4, 3.6] },
   copycast:   { stun: [0.2, 0.25, 0.3, 0.35, 0.4] },
+  bloodoath:  { dmg: [6, 6.6, 7.3, 8.1, 9], regen: [1, 1.1, 1.2, 1.3, 1.4] },
+  bloodcraft: { dmg: [10, 11, 12, 14, 16] },
   chosen:     { haste: [25, 26, 27, 28, 30] },
   earthm:     { dur: [6, 6, 6.5, 6.5, 7], radius: [95, 98, 102, 106, 112], wall: [75, 82, 90, 100, 112] },
 };
@@ -62,11 +67,12 @@ Object.assign(STAT_LBL_SPELL, {
   dissect: { dmg: 'Slash damage' }, sanctum: { dur: 'Dome time (seconds)', radius: 'Dome radius' }, doubletake: { stun: 'Daze (seconds)' },
   rush: { dmg: 'Damage per punch' }, polarity: { dmg: 'Repel damage', pull: 'Draw strength' }, zodiac: { hp: 'Beast health', dmg: 'Beast damage' },
   titan: { hp: 'Shell durability' }, chosen: { haste: 'Cast speed bonus (%)' }, earthm: { dur: 'Mud time (seconds)', radius: 'Mud radius', wall: 'Mud Wall health' }, counter: { dmg: 'Counter damage', dur: 'Stance time (seconds)' }, secondwind: { heal: 'Healing per second', dur: 'Lasts (seconds)' }, healspring: { heal: 'Healing per second', dur: 'Spring time (seconds)', radius: 'Spring radius' }, copycast: { stun: 'Daze on copy (seconds)' },
+  bloodoath: { dmg: 'Damage per slash', regen: 'Health regained per second' }, bloodcraft: { dmg: 'Disc damage' },
 });
 
 Object.assign(UPG, {
   dissect:    [{ id: 'triple', n: 'Triple Cut', d: 'Throw 3 slashes in a fan, each at 65% damage.' }, { id: 'ceaseless', n: 'Ceaseless Cut', d: 'Keep slashing for 1.6 seconds: a storm of cuts at 35% each.', req: 'triple' }, { id: 'vivisect', n: 'Vivisection', d: 'Every other loop, 4 cuts rebound around you for 1.6s, slicing all nearby.', req: 'ceaseless' }, { id: 'vivi2', n: 'Flaying Spiral', d: 'Vivisection throws 8 rebounding cuts instead of 4.', req: 'vivisect' }, { id: 'keen', n: 'Keen Edge', d: 'Slashes do 3 times damage to ice walls, pillars and mud walls.' },
-               { id: 'cutter', n: 'Spell Cutter', d: 'Slashes have a 50% chance to cut an enemy spell in two mid-flight.' }, { id: 'sting', n: 'Stinging Wounds', d: 'Hits make the enemy bleed 0.5 a second for 3s. Stacks up to 3 times.' }, { id: 'cleave', n: 'Grand Bisection', d: 'Every fifth cast counts down 3, 2, 1 into one huge chop for 3.5x damage.' }, { id: 'swift', n: 'Swift Bisection', d: 'Grand Bisection comes every third cast instead of every fifth.', req: 'cleave' }, { id: 'fated', n: 'Inevitable Cut', d: 'Grand Bisection cannot be dodged or phased through. It always lands.', req: 'cleave', rare: 1 }, { id: 'narrow', n: 'Honed Edge', d: 'Grand Bisection becomes a thin cut: 50% more damage, but it can miss.', req: 'cleave' }, { id: 'rend', n: 'Rending Cut', d: 'Cuts pass through 2 targets instead of stopping, losing half damage each.' }, { id: 'broad', n: 'Broad Slash', d: 'Slashes are 30% wider and hit everything across that width.' }],
+               { id: 'cutter', n: 'Spell Cutter', d: 'Slashes have a 50% chance to cut an enemy spell in two mid-flight.' }, { id: 'sting', n: 'Stinging Wounds', d: 'Hits make the enemy bleed 0.5 a second for 3s. Stacks up to 3 times.' }, { id: 'cleave', n: 'Grand Bisection', d: 'Every fifth cast counts down 3, 2, 1 into one huge chop for 3.5x damage.', sig: 1 }, { id: 'swift', n: 'Swift Bisection', d: 'Grand Bisection comes every third cast instead of every fifth.', req: 'cleave' }, { id: 'fated', n: 'Inevitable Cut', d: 'Grand Bisection cannot be dodged or phased through. It always lands.', req: 'cleave', rare: 1 }, { id: 'narrow', n: 'Honed Edge', d: 'Grand Bisection becomes a thin cut: 50% more damage, but it can miss.', req: 'cleave' }, { id: 'rend', n: 'Rending Cut', d: 'Cuts pass through 2 targets instead of stopping, losing half damage each.' }, { id: 'broad', n: 'Broad Slash', d: 'Slashes are 30% wider and hit everything across that width.' }],
   sanctum:    [{ id: 'surehit', n: 'Sure Hit', d: 'The boosted cast cannot be dodged or blocked if the enemy is inside the dome.' }, { id: 'rite', n: 'Unbroken Rite', d: 'Sanctum no longer has to rest every other loop.' }, { id: 'vast', n: 'Vast Sanctum', d: 'The dome is 44% bigger and the boosted blast 50% bigger.' }, { id: 'linger', n: 'Lingering Sanctum', d: 'The dome lasts twice as long.' }],
   doubletake: [{ id: 'behind', n: 'Behind You', d: 'Instead of swapping, appear right behind the enemy.', grp: 'swap' }, { id: 'quickdraw', n: 'Quick Draw', d: 'Fires early to dodge a hit. The next Double Take cast only refills it.' }, { id: 'clap', n: 'Shock to the Senses', d: 'The clap hurts the enemy for 3 damage.' }, { id: 'dizzy', n: 'Disoriented', d: 'After a swap the enemy aims in random directions for 3 seconds.' }, { id: 'abrupt', n: 'Abrupt Swap', d: 'The enemy you swap with is stunned for 1 second.' }],
   rush:       [{ id: 'flow', n: 'Flow State', d: 'Critical hits are more likely: 27% instead of 15%.' }, { id: 'cornered', n: 'Cornered', d: 'Below 30% health, your Rushdown punches do double damage.' }, { id: 'relentless', n: 'Relentless', d: 'Each punch in a combo lands 30% sooner than the last.' },
@@ -74,9 +80,9 @@ Object.assign(UPG, {
                { id: 'chain', n: 'Chain Rush', d: 'If the target dies mid-combo, the rest of the punches go to the next enemy.' }, { id: 'flurry', n: 'Flurry of Blows', d: 'After the combo, keep jabbing for 1 second at 30% damage.' },
                { id: 'infused', n: 'Infused Strikes', d: 'Every other combo hits 50% harder and burns for 2 a second for 5s.' },
                { id: 'endless', n: 'Endless String', d: '+2 punches in every combo.', rare: 1 },
-               { id: 'pain', n: 'Ignore the Pain', d: 'While rushing, stuns, knockback and slows cannot stop you.' }, { id: 'momentum', n: 'Momentum', d: 'Every punch that lands adds 2% punch damage. Resets each round.' }, { id: 'oath', n: 'Blood Oath', d: 'Start at half HP. Rushdown 45% faster, +20% crit, +30% speed, +50% defence.' }],
-  polarity:   [{ id: 'collapse', n: 'Collapse', d: 'Every fifth cast fuses both forces into a singularity that pierces everything.' }, { id: 'rapid', n: 'Rapid Collapse', d: 'Collapse comes every third cast instead of every fifth.', req: 'collapse' }, { id: 'unbound', n: 'Unrestrained Collapse', d: 'Halfway across, Collapse bursts into a huge blast that hurts everyone, you too.', req: 'collapse', rare: 1 }, { id: 'field', n: 'Strong Field', d: 'Draw and Repel are 40% stronger and reach farther.' },
-               { id: 'late', n: 'Late Detonation', d: 'The Repel orb bounces off the arena edge, then explodes on contact.' }, { id: 'drag', n: 'Crescent Drag', d: 'Draw swings the enemy caster behind you, smashing whatever is in the way.' },
+               { id: 'pain', n: 'Ignore the Pain', d: 'While rushing, stuns, knockback and slows cannot stop you.' }, { id: 'momentum', n: 'Momentum', d: 'Every punch that lands adds 2% punch damage. Resets each round.' }],
+  polarity:   [{ id: 'collapse', n: 'Collapse', d: 'Every fifth cast fuses both forces into a singularity that pierces everything.', sig: 1 }, { id: 'rapid', n: 'Rapid Collapse', d: 'Collapse comes every third cast instead of every fifth.', req: 'collapse' }, { id: 'unbound', n: 'Unrestrained Collapse', d: 'Halfway across, Collapse bursts into a huge blast that hurts everyone, you too.', req: 'collapse', rare: 1 }, { id: 'field', n: 'Strong Field', d: 'Draw and Repel are 40% stronger and reach farther.' },
+               { id: 'late', n: 'Late Detonation', d: 'The Repel orb bounces off the arena edge, then explodes on contact.' }, { id: 'drag', n: 'Crescent Drag', d: 'Draw swings a caught enemy caster behind you, smashing what is in the way. Rests 2 loops.' }, { id: 'dragfast', n: 'Waxing Crescent', d: 'Crescent Drag rests 1 loop instead of 2.', req: 'drag' },
                { id: 'boundary', n: 'Boundary', d: 'Stops one shot just before it hits you. The next Polarity turn refills it.' }],
   zodiac:     [{ id: 'cycle', n: 'Full Cycle', d: 'No repeats until all twelve beasts have been summoned.' }, { id: 'tempo', n: 'Rising Tempo', d: 'First summon is 40% slower, then each is 12% faster (down to half).' }, { id: 'pack', n: 'Pack Call', d: 'Smaller beasts (rat, rabbit, rooster) come in pairs.' },
                { id: 'mend', n: 'Mend the Pack', d: 'Each Zodiac cast heals your living beasts by 50%.' }, { id: 'mend2', n: 'Full Mend', d: 'Each Zodiac cast heals your living beasts fully.', req: 'mend' }],
@@ -91,17 +97,23 @@ Object.assign(UPG, {
                { id: 'fortify', n: 'Fortified Mud Wall', d: 'The mud wall is one solid structure with 60% more health.', req: 'mudwall' }],
   chosen:     [{ id: 'awaken', n: 'Awakening', d: 'The cast speed bonus doubles.' }, { id: 'fate', n: 'Not Yet', d: "Survive one killing blow a round. You can't fall until your next hit: a crit." }],
   copycast:   [{ id: 'perfect', n: 'Perfect Copy', d: 'Your copies are cast 2 levels higher than the original.' }, { id: 'twice', n: 'Second Sight', d: 'Stays armed for 2 copies.' }],
+  bloodoath:  [{ id: 'fleet', n: 'Fleet Foot', d: 'You move 30% faster.' }, { id: 'more', n: 'Four Cuts', d: '+2 slashes in every string.' }, { id: 'linger', n: 'Unbroken Edge', d: 'After the string, keep slashing for 1 second at 35% damage.' },
+               { id: 'flying', n: 'Flying Cuts', d: 'Every slash also throws a cut that flies on to the next enemy for 60% damage.' }, { id: 'free', n: 'Unbound', d: 'Enemy Sanctums cannot trap or slow you, and their sure hits miss you.' },
+               { id: 'blitz', n: 'Blitz', d: 'Ricochet around the arena in a blur, then strike from a random side.', sig: 1 }, { id: 'backstab', n: 'Backstab', d: 'A Blitz strike that lands behind the target is a critical: triple damage.', req: 'blitz' }],
+  bloodcraft: [{ id: 'twin', n: 'Twin Discs', d: 'Throw 2 discs in a V, each at 65% damage.' }, { id: 'lance', n: 'Blood Lance', d: 'Every other cast is a lance that pierces every enemy and wall in its line.' },
+               { id: 'surge', n: 'Red Surge', d: 'For 4s after casting, your hits do double damage. Each has a 33% chance to lash back at you.' }, { id: 'venom', n: 'Tainted Blood', d: 'Blood hits poison the enemy caster: 2 damage a second for 3 seconds.' },
+               { id: 'burst', n: 'Bloodburst', d: 'Every third cast lobs a blob that bursts, hurting everyone near it but you. Allies and walls too.', sig: 1 }],
 });
 
 // Spell Cannon: Desperate Output (beam grows with missing health, charges 2s longer)
 UPG.beam.push({ id: 'desperate', n: 'Desperate Output', d: '+0.5% beam damage per missing HP. Charges 2s longer, fires 50% longer.' });
-Object.assign(TYPE_OF, { dissect: 'proj', sanctum: 'support', doubletake: 'support', rush: 'melee', earthm: 'area', chosen: 'support', polarity: 'area', zodiac: 'summon', titan: 'support', copycast: 'support', counter: 'support', secondwind: 'support', healspring: 'support' });
-Object.assign(THREAT, { rush: 2, zodiac: 2, dissect: 1.5 });
+Object.assign(TYPE_OF, { dissect: 'proj', sanctum: 'support', doubletake: 'support', rush: 'melee', earthm: 'area', chosen: 'support', polarity: 'area', zodiac: 'summon', titan: 'support', copycast: 'support', counter: 'support', secondwind: 'support', healspring: 'support', bloodoath: 'melee', bloodcraft: 'proj' });
+Object.assign(THREAT, { rush: 2, zodiac: 2, dissect: 1.5, bloodoath: 1.8, bloodcraft: 1.5 });
 
 /* Starting deck: 2 wizard spells + 2 sorcerer techniques. Raise Dead becomes an unlock. */
 STARTERS.length = 0; STARTERS.push('fireball', 'icewall', 'dissect', 'doubletake');
 // unlock path for rivals and the Rank Road list: alternate spell, technique
-EXTRA_UNLOCKS.push({ k: 'earthm', t: 350 }, { k: 'chosen', t: 450 }, { k: 'zombies', t: 50 }, { k: 'rush', t: 100 }, { k: 'sanctum', t: 300 }, { k: 'polarity', t: 500 }, { k: 'zodiac', t: 650 }, { k: 'titan', t: 800 }, { k: 'copycast', t: 1000 }, { k: 'healspring', t: 200 }, { k: 'counter', t: 150 }, { k: 'secondwind', t: 400 });
+EXTRA_UNLOCKS.push({ k: 'earthm', t: 350 }, { k: 'chosen', t: 450 }, { k: 'zombies', t: 50 }, { k: 'rush', t: 100 }, { k: 'sanctum', t: 300 }, { k: 'polarity', t: 500 }, { k: 'zodiac', t: 650 }, { k: 'titan', t: 800 }, { k: 'copycast', t: 1000 }, { k: 'healspring', t: 200 }, { k: 'counter', t: 150 }, { k: 'secondwind', t: 400 }, { k: 'bloodoath', t: 1050 }, { k: 'bloodcraft', t: 1250 });
 
 /* Zodiac beasts: hp/dmg are multipliers on the technique stats; spd x zombie speed. */
 const ZODIAC = [
@@ -129,6 +141,8 @@ const PACKS = [
 /* Chosen One's upgrades are only offered to a side that trails by 2 or more rounds. */
 function upGate(p, k, u) {
   if (typeof M === 'undefined' || !M) return true;
+  // signature upgrades (Grand Bisection, Collapse, Blitz, Bloodburst) need the ability at tier 2: one other upgrade first
+  if (u && u.sig && ![...p.up].some(x => x.startsWith(k + '.'))) return false;
   // Rushdown: only one targeting upgrade at a time
   if (k === 'rush' && u && u.tgt && UPG.rush.some(o => o.tgt && o.id !== u.id && p.up.has('rush.' + o.id))) return false;
   // Chosen One: upgrades open up once this side has lost 2 rounds in a row this match

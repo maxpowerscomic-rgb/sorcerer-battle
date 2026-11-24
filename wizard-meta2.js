@@ -20,6 +20,8 @@
     healspring: ['meteor', 'polarity', 'gravity', 'gale', 'storm'],
     copycast: ['zombies', 'shield', 'icewall', 'titan'],
     earthm: ['blink', 'gale', 'lightning', 'meteor', 'storm', 'dissect'],
+    bloodoath: ['counter', 'titan', 'icewall', 'ghost', 'polarity', 'gale'],
+    bloodcraft: ['icewall', 'shield', 'sanctum', 'ghost', 'titan'],
   });
   const addTo = (k, list) => { COUNTERS[k] = [...new Set((COUNTERS[k] || []).concat(list))]; };
   addTo('beam', ['polarity', 'titan']); addTo('fireball', ['dissect']); addTo('meteor', ['doubletake']); addTo('zombies', ['dissect', 'polarity']);
@@ -267,7 +269,7 @@
   /* ---------------- recommended battle distance ----------------
      Short-range and melee cards pull toward Close In; long-range shots, beams and summons toward Keep Away.
      A rival that brings melee pushes a little toward Keep Away. */
-  const SHORT = new Set(['rush', 'burnbody', 'orbs', 'counter', 'earthm', 'ringfire']), LONG = new Set(['beam', 'meteor', 'lightning', 'archer', 'storm', 'zombies', 'zodiac', 'golem', 'flies', 'dissect']);
+  const SHORT = new Set(['rush', 'bloodoath', 'burnbody', 'orbs', 'counter', 'earthm', 'ringfire']), LONG = new Set(['beam', 'meteor', 'lightning', 'archer', 'storm', 'zombies', 'zodiac', 'golem', 'flies', 'dissect', 'bloodcraft']);
   function recDistance() {
     const b = M.me.book; if (!b.length) return null; let sc = 0;
     b.forEach(k => { sc += SHORT.has(k) ? -1.2 : LONG.has(k) ? .7 : (((SP[k].range || 140) - 140) / 60); });
@@ -580,8 +582,15 @@
    random starting upgrades for their levels, so it stays fair. */
 (function () {
   const slotsOf = lvl => Math.floor((lvl || 1) / 5);
-  const eligible = k => (UPG[k] || []).filter(u => !u.req && k !== 'chosen');
-  const startOf = k => { const s = PR.spells && PR.spells[k]; if (!s) return []; s.start = (s.start || []).filter(id => eligible(k).some(u => u.id === id)); return s.start; };
+  // tier 1 = no prerequisite and not a signature move. A tier 2 upgrade can only be slotted once every tier 1 of that
+  // ability is slotted (one per either-or group) and its own prerequisite is slotted too.
+  const tier1 = k => k === 'chosen' ? [] : (UPG[k] || []).filter(u => !u.req && !u.sig);
+  const allT1 = (k, list) => { const seen = new Set(); return tier1(k).every(u => { if (u.grp) { if (seen.has(u.grp)) return true; seen.add(u.grp); return tier1(k).some(o => o.grp === u.grp && list.includes(o.id)); } return list.includes(u.id); }); };
+  const canSlot = (k, list, u) => k !== 'chosen' && (!u.req && !u.sig ? true : allT1(k, list) && (!u.req || list.includes(u.req)));
+  const eligible = (k, list) => (UPG[k] || []).filter(u => canSlot(k, list || [], u));
+  const startOf = k => { const s = PR.spells && PR.spells[k]; if (!s) return []; let cur = s.start || [], prev;
+    do { prev = cur.length; cur = cur.filter(id => { const u = (UPG[k] || []).find(q => q.id === id); return u && canSlot(k, cur.filter(q => q !== id), u); }); } while (cur.length !== prev);
+    s.start = cur; return s.start; };
   const blocked = (k, list, u) => u.grp && list.some(id => { const o = UPG[k].find(q => q.id === id); return o && o.grp === u.grp; });
   window.startUps = startOf;
   const _nm = newMatch;
@@ -589,21 +598,21 @@
     const r = _nm.apply(this, arguments);
     try { if (M && !window.ONB_ACTIVE) {
       for (const k of (PR.hand || [])) for (const id of startOf(k)) M.me.up.add(k + '.' + id);
-      const fl = M.foeLv || {}; for (const k of (M.foe.pool || [])) { const n = slotsOf(fl[k]), pool = eligible(k).sort(() => Math.random() - .5), got = [];
+      const fl = M.foeLv || {}; for (const k of (M.foe.pool || [])) { const n = slotsOf(fl[k]), pool = tier1(k).sort(() => Math.random() - .5), got = [];
         for (const u of pool) { if (got.length >= n) break; if (blocked(k, got, u)) continue; got.push(u.id); M.foe.up.add(k + '.' + u.id); } }
     } } catch (e) {}
     return r;
   };
   window.pickStart = function (k, id) { const s = PR.spells[k], list = startOf(k);
     if (list.includes(id)) s.start = list.filter(q => q !== id);
-    else if (list.length < slotsOf(s.lvl)) { const u = UPG[k].find(q => q.id === id); if (!u || blocked(k, list, u)) return; s.start = list.concat(id); }
+    else if (list.length < slotsOf(s.lvl)) { const u = UPG[k].find(q => q.id === id); if (!u || blocked(k, list, u) || !canSlot(k, list, u)) return; s.start = list.concat(id); }
     try { save(); } catch (e) {} openSpell(k); };
-  function startHTML(k) { const s = PR.spells[k], n = slotsOf(s.lvl), list = startOf(k), el = eligible(k);
+  function startHTML(k) { const s = PR.spells[k], n = slotsOf(s.lvl), list = startOf(k), el = eligible(k, list);
     if (!el.length) return '';
     const next = n < 4 ? `Next slot at level ${(n + 1) * 5}.` : '';
     const chips = el.map(u => { const on = list.includes(u.id), can = on || (list.length < n && !blocked(k, list, u));
       return `<button class="stc ${on ? 'on' : ''}" ${can ? `onclick="event.stopPropagation();pickStart('${k}','${u.id}')"` : 'disabled'}>${on ? '✓ ' : ''}${u.n}</button>`; }).join('');
-    return `<div class="starts"><div class="trh">Starting upgrades <small>${list.length} / ${n}</small></div><div class="ssub2">Every 5 levels, pick an upgrade this ability always starts a match with while it's in your battle hand. ${next}</div><div class="stl">${chips}</div></div>`; }
+    return `<div class="starts"><div class="trh">Starting upgrades <small>${list.length} / ${n}</small></div><div class="ssub2">Every 5 levels, pick a basic upgrade this ability always starts a match with while it's in your battle hand. Signature upgrades and ones that need another first can't be slotted until every basic one is. ${next}</div><div class="stl">${chips}</div></div>`; }
   const _os = window.openSpell;
   window.openSpell = openSpell = function (k) { const r = _os.apply(this, arguments); try { const P = document.getElementById('sheetP'); if (P && !P.querySelector('.starts') && (typeof isUnl !== 'function' || isUnl(k))) { const at = P.querySelector('.trials') || P.querySelector('.ctrs'); if (at) at.insertAdjacentHTML('afterend', startHTML(k)); } } catch (e) {} return r; };
   const css = document.createElement('style');
