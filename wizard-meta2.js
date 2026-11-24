@@ -181,7 +181,7 @@
     hat: { pointy: 'Headband', witch: 'Half Mask', hood: 'Cowl', feathered: 'Topknot', mushroom: 'Straw Hat', crown: 'Circlet' },
     beard: { white: 'White Hair', brown: 'Brown Hair', ginger: 'Ginger Hair', pink: 'Pink Hair', none: 'Black Hair', long: 'Silver Hair', blue: 'Blue Hair', green: 'Moss Hair', teal: 'Teal Hair', violet: 'Violet Hair', red: 'Scarlet Hair', goldlong: 'Golden Hair' },
   };
-  const SORC_CATS = { robe: 'Gi', hat: 'Headgear', beard: 'Hair' };
+  const SORC_CATS = { robe: 'Gi', hat: 'Headgear', beard: 'Hair Colour' };
   const isSorc = () => PR.look && PR.look.cls === 'sorc';
   window.cosN = (c, it) => (isSorc() && SORC_NAMES[c] && SORC_NAMES[c][it.id]) || it.n;
   window.catN = (c, n) => (isSorc() && SORC_CATS[c]) || n;
@@ -378,7 +378,7 @@
     try { save(); } catch (e) {} if (got.length) setTimeout(() => toast('Challenge done: ' + got[0] + (got.length > 1 ? ' (+' + (got.length - 1) + ' more)' : '') + '. Collect it in Challenges.'), 4200); chDot(); }
   function chDot() { const st = chState(), el = document.getElementById('chDot'), ready = st.list.filter(c => c.done && c.claimed === 0).length; if (el) { el.textContent = st.list.filter(c => c.done).length + '/5'; el.classList.toggle('ready', ready > 0); } }
   window.collectChallenge = function (i) { const st = chState(), c = st.list[i]; if (!c || !c.done || c.claimed !== 0) return; c.claimed = 1; const g = c.gold || CH_GOLD; PR.coins = (PR.coins || 0) + g; try { save(); sfx('ui_coin'); } catch (e) {} refreshMeta(); toast(`+${g} gold`); openChallenges(); };
-  window.swapChallenge = function (i) { const st = chState(), c = st.list[i]; if (!c || !c.done || PR.coins < CH_COST) return; const free = CH_POOL.filter(q => !st.list.some(l => l.id === q.id)); if (!free.length) return; PR.coins -= CH_COST; st.list[i] = { id: free[Math.random() * free.length | 0].id, p: 0, done: 0 }; try { save(); } catch (e) {} refreshMeta(); openChallenges(); };
+  window.swapChallenge = function (i) { const st = chState(), c = st.list[i]; if (!c || !c.done || PR.coins < CH_COST) return; const free = CH_POOL.filter(q => !st.list.some(l => l.id === q.id)); if (!free.length) return; PR.coins -= CH_COST; try { sfx('ui_deal'); setTimeout(() => { try { sfx('ui_pick'); } catch (e) {} }, 140); } catch (e) {} st.list[i] = { id: free[Math.random() * free.length | 0].id, p: 0, done: 0 }; try { save(); } catch (e) {} refreshMeta(); openChallenges(); };
   window.openChallenges = function () { const st = chState();
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Daily Challenges</div><div class="ssub" style="margin:0">New set every day. Each one pays ${CH_GOLD} gold.</div><div class="chl">${st.list.map((c, i) => { const def = CH_POOL.find(q => q.id === c.id) || { n: c.id, need: 1 };
       return `<div class="chrow ${c.done ? 'done' : ''}"><div class="cg"><b>${def.n}</b><div class="chbar"><i style="width:${Math.min(100, c.p / def.need * 100)}%"></i><span>${c.done ? 'Done' : Math.floor(Math.min(c.p, def.need)) + ' / ' + def.need}</span></div>${c.done && c.claimed !== 0 ? `<small>+${c.gold || CH_GOLD} gold collected</small>` : ''}</div>${c.done && c.claimed === 0 ? `<button class="chcol" onclick="collectChallenge(${i})">Collect<small><span class="ci coin-i"></span>${c.gold || CH_GOLD}</small></button>` : c.done ? `<button onclick="swapChallenge(${i})" ${PR.coins < CH_COST ? 'disabled' : ''}>New<small><span class="ci coin-i"></span>${CH_COST}</small></button>` : ''}</div>`; }).join('')}</div>`;
@@ -541,10 +541,11 @@
    Every ability has three trial tracks: damage dealt with it, matches played with it in your book, and wins with it.
    Each track has three tiers; clearing a tier pays skill points to that ability. Shown on the ability's page. */
 (function () {
+  // (1.0.5) Tracks run much further and pay about half as much per early step, with big chunks at the end.
   const TR = [
-    { id: 'dmg', n: 'Deal damage with it', goals: [300, 1500, 5000], pay: [15, 30, 60] },
-    { id: 'games', n: 'Play matches with it', goals: [5, 20, 50], pay: [10, 25, 50] },
-    { id: 'wins', n: 'Win matches with it', goals: [3, 12, 30], pay: [15, 35, 70] },
+    { id: 'dmg', n: 'Deal damage with it', goals: [300, 1500, 5000, 9000, 14000, 20000, 28000, 40000], pay: [5, 10, 20, 20, 25, 30, 40, 60] },
+    { id: 'games', n: 'Play matches with it', goals: [5, 20, 50, 75, 100, 130, 165, 200], pay: [5, 10, 20, 20, 25, 30, 40, 60] },
+    { id: 'wins', n: 'Win matches with it', goals: [3, 12, 30, 40, 50, 60, 70, 80, 90, 100], pay: [5, 10, 20, 20, 25, 25, 30, 30, 40, 70] },
   ];
   const st = k => { PR.trial = PR.trial || {}; return PR.trial[k] = PR.trial[k] || { dmg: 0, games: 0, wins: 0, got: { dmg: 0, games: 0, wins: 0 } }; };
   // damage is counted per round, so add it up before the next round wipes it
@@ -560,19 +561,19 @@
       const won = M.score.me > M.score.foe, msgs = [];
       for (const k of new Set(M.me.book.concat(Object.keys(dm)))) { if (!SP[k] || !PR.spells || !PR.spells[k]) continue; const s = st(k);
         if (dm[k]) s.dmg += Math.round(dm[k]); if (M.me.book.includes(k)) { s.games++; if (won) s.wins++; }
-        for (const t of TR) while (s.got[t.id] < 3 && s[t.id] >= t.goals[s.got[t.id]]) { const q = t.pay[s.got[t.id]]; s.got[t.id]++; PR.spells[k].cards += q; msgs.push(`${SP[k].n} trial cleared: +${q} skill points`); } }
+        for (const t of TR) while (s.got[t.id] < t.goals.length && s[t.id] >= t.goals[s.got[t.id]]) { const q = t.pay[s.got[t.id]]; s.got[t.id]++; PR.spells[k].cards += q; msgs.push(`${SP[k].n} trial cleared: +${q} skill points`); } }
       acc = {}; try { save(); } catch (e) {}
       msgs.slice(0, 3).forEach((m, i) => setTimeout(() => { try { toast(m); } catch (e) {} }, 1400 + i * 1600)); } } catch (e) {}
     return _sr.apply(this, arguments);
   };
   function trialHTML(k) { const s = st(k);
-    return `<div class="trials"><div class="trh">Trials</div>${TR.map(t => { const g = s.got[t.id], done = g >= 3, goal = t.goals[Math.min(2, g)], p = Math.min(1, s[t.id] / goal);
-      return `<div class="trw ${done ? 'done' : ''}"><div class="trt"><span>${t.n}</span><b>${done ? 'Complete' : `${Math.min(s[t.id], goal).toLocaleString()} / ${goal.toLocaleString()}`}</b></div><div class="trb"><i style="width:${(done ? 1 : p) * 100}%"></i></div><div class="trp">${[0, 1, 2].map(i => `<em class="${i < g ? 'on' : ''}">${i < g ? '✓' : '+' + t.pay[i]}</em>`).join('')}</div></div>`; }).join('')}</div>`; }
+    return `<div class="trials"><div class="trh">Trials</div>${TR.map(t => { const N = t.goals.length, g = s.got[t.id], done = g >= N, goal = t.goals[Math.min(N - 1, g)], p = Math.min(1, s[t.id] / goal);
+      return `<div class="trw ${done ? 'done' : ''}"><div class="trt"><span>${t.n}</span><b>${done ? 'Complete' : `${Math.min(s[t.id], goal).toLocaleString()} / ${goal.toLocaleString()}`}</b></div><div class="trb"><i style="width:${(done ? 1 : p) * 100}%"></i></div><div class="trp">${t.goals.map((q, i) => `<em class="${i < g ? 'on' : ''}">${i < g ? '✓' : '+' + t.pay[i]}</em>`).join('')}</div></div>`; }).join('')}</div>`; }
   window.trialHTML = trialHTML;
   const _os = window.openSpell;
   window.openSpell = openSpell = function (k) { const r = _os.apply(this, arguments); try { const P = document.getElementById('sheetP'); if (P && !P.querySelector('.trials') && (typeof isUnl !== 'function' || isUnl(k))) { const at = P.querySelector('.ctrs') || P.querySelector('.ups')?.parentElement || P.querySelector('.shd'); if (at) at.insertAdjacentHTML('afterend', trialHTML(k)); } } catch (e) {} return r; };
   const css = document.createElement('style');
-  css.textContent = `.trials{margin:10px 0 4px;background:#0006;border:2px solid #000;border-radius:12px;padding:8px 10px}.trh{font:13px 'Lilita One';letter-spacing:1px;color:#ffd75e;margin-bottom:4px}.trw{margin:6px 0}.trt{display:flex;justify-content:space-between;font:12px Nunito;font-weight:800;color:#e8e0ff}.trt b{color:#b9a6ee;font-weight:800}.trw.done .trt b{color:#7dffa8}.trb{height:7px;background:#000;border-radius:5px;overflow:hidden;margin:3px 0}.trb i{display:block;height:100%;background:linear-gradient(90deg,#7a5cff,#c48cff)}.trw.done .trb i{background:linear-gradient(90deg,#2fd08a,#7dffa8)}.trp{display:flex;gap:6px}.trp em{font:10px 'Lilita One';font-style:normal;color:#8d7fbf;background:#1a1236;border:1.5px solid #000;border-radius:6px;padding:1px 6px}.trp em.on{color:#0b2a14;background:#7dffa8}`;
+  css.textContent = `.trials{margin:10px 0 4px;background:#0006;border:2px solid #000;border-radius:12px;padding:8px 10px}.trh{font:13px 'Lilita One';letter-spacing:1px;color:#ffd75e;margin-bottom:4px}.trw{margin:6px 0}.trt{display:flex;justify-content:space-between;font:12px Nunito;font-weight:800;color:#e8e0ff}.trt b{color:#b9a6ee;font-weight:800}.trw.done .trt b{color:#7dffa8}.trb{height:7px;background:#000;border-radius:5px;overflow:hidden;margin:3px 0}.trb i{display:block;height:100%;background:linear-gradient(90deg,#7a5cff,#c48cff)}.trw.done .trb i{background:linear-gradient(90deg,#2fd08a,#7dffa8)}.trp{display:flex;gap:4px;flex-wrap:wrap}.trp em{font:10px 'Lilita One';font-style:normal;color:#8d7fbf;background:#1a1236;border:1.5px solid #000;border-radius:6px;padding:1px 6px}.trp em.on{color:#0b2a14;background:#7dffa8}`;
   document.head.appendChild(css);
 })();
 
@@ -634,7 +635,7 @@
   // Menus always play Candlelit Grimoire. Battles follow the fight by default: one track per phase, a harder one each time.
   const TRACKS = [['bgm_menu', 'Candlelit Grimoire', 'menu'],
     ['bgm_phase1', 'Opening Gambit', 'p1'], ['bgm_phase2', 'Rising Hex', 'p2'], ['bgm_phase3', 'Midnight Reckoning', 'p3'], ['bgm_battle_final', 'The Turning Tide', 'p3'],
-    ['bgm_final2', 'Last Candle', 'final'], ['bgm_battle_finale', 'Last Spell Standing', 'final'],
+    ['bgm_phase3b', 'Witching Hour', 'p3'], ['bgm_final2', 'Last Candle', 'final'], ['bgm_battle_finale', 'Last Spell Standing', 'final'], ['bgm_final3', 'Ember and Ash', 'final'],
     ['bgm_battle', "Duelist's Pulse", 'battle'], ['bgm_battle_take2', "Duelist's Pulse (Reprise)", 'battle'], ['bgm_battle_dark', 'Hexed Ostinato', 'battle'], ['bgm_battle_calm', 'Still Waters', 'battle']];
   const CAT_LBL = { menu: 'Menus', battle: 'Battles', p1: 'Rounds 1 and 2', p2: 'Rounds 3 and 4', p3: 'Rounds 5 and 6', final: 'Round 7' };
   window.MUSIC_TRACKS = TRACKS;
@@ -979,7 +980,7 @@
   // alternatives for the last two phases chosen once per match. Any other choice keeps the old rule: harder music from round 5.
   const ready = id => { const e = AU.man && AU.man[id]; return !!(e && e.files && AU.buf[e.files[0]] !== null); };
   window.music = music = function (id) { try { if (id === 'bgm_battle' && typeof M !== 'undefined' && M && AU.man) { const r = M.round || 1, mode = typeof bgmChoice === 'function' ? bgmChoice('battle') : 'shuffle';
-      M.musPick = M.musPick || [Math.random() < .5 ? 'bgm_phase3' : 'bgm_battle_final', Math.random() < .5 ? 'bgm_final2' : 'bgm_battle_finale'];
+      const one = a => { const ok = a.filter(ready); return (ok.length ? ok : a)[Math.random() * (ok.length || a.length) | 0]; }; M.musPick = M.musPick || [one(['bgm_phase3', 'bgm_battle_final', 'bgm_phase3b']), one(['bgm_final2', 'bgm_battle_finale', 'bgm_final3'])];
       if (mode === 'phase') { const want = r >= 7 ? M.musPick[1] : r >= 5 ? M.musPick[0] : r >= 3 ? 'bgm_phase2' : 'bgm_phase1'; if (ready(want)) return _mu(want); }
       if (r >= FINAL) { if (r >= 7 && ready(M.musPick[1])) return _mu(M.musPick[1]); if (ready(M.musPick[0])) return _mu(M.musPick[0]); } } } catch (e) {} return _mu.apply(this, arguments); };
   const _sd = startDuel;

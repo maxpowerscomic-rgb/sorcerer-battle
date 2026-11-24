@@ -14,7 +14,7 @@
   const X = window.TECHX;
 
   /* ---------------- boss variants ---------------- */
-  COL.bluefire = ['#e6f6ff', '#3aa0ff', '#061a4a']; COL.violet = ['#f1dcff', '#a24dff', '#1c0640']; COL.openward = ['#ffffff', '#9fd0ff', '#102a5a']; COL.crimson = ['#ffd6d2', '#ff2a3a', '#3a0008'];
+  COL.bluefire = ['#e6f6ff', '#3aa0ff', '#061a4a']; COL.violet = ['#f1dcff', '#a24dff', '#1c0640']; COL.openward = ['#ffffff', '#9fd0ff', '#102a5a']; COL.crimson = ['#ffd6d2', '#ff2a3a', '#3a0008']; COL.shade = ['#d9ccff', '#5a3fb8', '#0c0620']; COL.glass = ['#ffffff', '#9fe6ff', '#0a3a5c']; COL.star = ['#fff6c8', '#ffb020', '#3a2200'];
   const VARIANTS = {
     bluefire:     { base: 'fireball', n: 'Blue Flame', el: 'bluefire', t: 1, boss: 4, d: 'A fireball that burns hotter: 35% more damage. It burns itself out at half the distance.', tag: 'Variant',
                     ups: [{ id: 'wall', n: 'Blue Wall', d: 'Where a Blue Flame burns out, it leaves a wall of fire for 3 seconds.' }] },
@@ -24,6 +24,16 @@
                     ups: [{ id: 'burst', n: 'Bursting Swipe', d: 'The swipe ends in an explosion.' }] },
     violetbolt:   { base: 'lightning', n: 'Violet Bolt', el: 'violet', t: 1.2, boss: 19, d: 'Lightning that strikes twice: an echo bolt follows at 60% damage. It takes 20% longer to cast.', tag: 'Variant',
                     ups: [{ id: 'afterclap', n: 'Afterclap', d: 'The echo bolt stuns for half a second.' }] },
+    shadowrush:   { base: 'rush', n: 'Shadow Rush', el: 'shade', t: 1, boss: 25, d: 'The dash carries past the target and the string starts from behind: a back hit for 50% more that cannot be countered.', tag: 'Variant',
+                    ups: [{ id: 'ambush', n: 'Ambush', d: 'The back hit stuns for half a second.' }] },
+    mirrorcounter:{ base: 'counter', n: 'Mirror Counter', el: 'glass', t: 1, boss: 31, d: 'A brief stance that answers any hit, spell or fist: it is cancelled and a copy of that ability is cast straight back.', tag: 'Variant',
+                    drop: ['deflect', 'redirect'], ups: [{ id: 'sharp', n: 'Polished', d: 'The copy is cast 2 levels higher.' }] },
+    starfallarcher:{ base: 'archer', n: 'Starfall Archer', el: 'star', t: 1, boss: 37, d: 'An archer whose arrows arc over walls instead of stopping at them.', tag: 'Variant',
+                    ups: [{ id: 'meteorite', n: 'Falling Star', d: 'An arrow that clears a wall hits 50% harder.' }] },
+    glassgolem:   { base: 'golem', n: 'Glass Golem', el: 'glass', t: 1, boss: 43, d: 'A golem of glass: half the health, but the first spell that hits it is thrown back at the caster.', tag: 'Variant',
+                    drop: ['iron'], ups: [{ id: 'shards', n: 'Shatterglass', d: 'When it breaks, it sprays shards over enemies nearby.' }] },
+    blackfrost:   { base: 'icewall', n: 'Black Frost', el: 'shade', t: 1, boss: 49, d: 'A wall of black ice that blocks nothing. Whatever touches it is frozen solid for a second, and that crystal breaks.', tag: 'Variant',
+                    drop: ['mirror', 'spikes', 'shrapnel', 'frostbite'], ups: [{ id: 'deep', n: 'Deep Freeze', d: 'The freeze lasts 1.6 seconds.' }] },
   };
   window.VARIANTS = VARIANTS;
   for (const k in VARIANTS) { const v = VARIANTS[k], b = SP[v.base];
@@ -46,11 +56,14 @@
   function mirror(w) { if (!w || !w.book) return; for (const k of new Set(w.book)) { const v = VARIANTS[k]; if (!v) continue; const b = v.base;
       if (!w.book.includes(b)) w.lv[b] = w.lv[k] || 1; for (const u of [...w.up]) if (u.startsWith(k + '.')) { const id = u.slice(k.length + 1); if ((UPG[b] || []).some(q => q.id === id)) w.up.add(b + '.' + id); } } }
   let swipes = [], vbolts = [];
-  const listsNow = () => ({ projs: typeof projs !== 'undefined' ? new Set(projs) : new Set(), bolts: typeof bolts !== 'undefined' ? new Set(bolts) : new Set(), domes: X ? new Set(X.domes) : new Set() });
+  let bwalls = [], seenArrows = new WeakSet();
+  const listsNow = () => ({ archers: typeof archers !== 'undefined' ? new Set(archers) : new Set(), golems: typeof golems !== 'undefined' ? new Set(golems) : new Set(), walls: typeof walls !== 'undefined' ? new Set(walls) : new Set(), projs: typeof projs !== 'undefined' ? new Set(projs) : new Set(), bolts: typeof bolts !== 'undefined' ? new Set(bolts) : new Set(), domes: X ? new Set(X.domes) : new Set() });
   const _cast = cast;
   window.cast = cast = function (w, k) {
     const v = VARIANTS[k]; if (!v) return _cast.apply(this, arguments);
-    mirror(w); const before = listsNow(), b = v.base, shell0 = w.shell, r = _cast.call(this, w, b);
+    mirror(w); const before = listsNow(), b = v.base, shell0 = w.shell; let r;
+    { const own = typeof AU !== 'undefined' && AU.man && AU.man['c_' + k], _s = window.sfx; if (own) { window.sfx = sfx = function (id, o) { return id === 'c_' + b ? undefined : _s.apply(this, arguments); }; try { _s('c_' + k, { x: w.x }); } catch (e) {} }
+      try { r = _cast.call(this, w, b); } finally { if (own) window.sfx = sfx = _s; } }
     try {
       if (w.me && typeof M !== 'undefined' && M) { for (const o of [M.casts, M.rc]) if (o && o[b]) { o[b]--; if (!o[b]) delete o[b]; o[k] = (o[k] || 0) + 1; } }
       if (k === 'bluefire') for (const p of projs) if (!before.projs.has(p) && p.o === w) { p.blue = 1; p.dmgMul = (p.dmgMul || 1) * 1.35; p.x0 = p.x; p.y0 = p.y; p.reach = 255; p.wallUp = U(w, k, 'wall'); }
@@ -58,6 +71,11 @@
         setTimeout(() => { try { if (ended || w.dead || w.foe.dead) return; const b0 = new Set(bolts), keepLv = w.lv.lightning; zap(w, 'lightning', 1, .6); for (const q of bolts) if (!b0.has(q)) q.violet = 1; if (stun && !w.foe.dead && !(w.foe.ghostT > 0)) { w.foe.stunT = Math.max(w.foe.stunT || 0, .5); } text(w.x, w.y - 100 * HS, 'ECHO', '#d9b3ff'); } catch (e) {} }, 430); }
       if (k === 'opensanctum' && X) for (const d of X.domes) if (!before.domes.has(d) && d.o === w) { d.open = 1; d.r = 0; d.trap = []; d.hp = d.max = 9999; if (U(w, k, 'endless')) d.dur += 2;
         for (let i = texts.length - 1; i >= 0; i--) if ((texts[i].s === 'SANCTUM' || texts[i].s === 'TRAPPED') && texts[i].life > .8) texts.splice(i, 1); text(w.x, w.y - 90 * HS, 'OPEN SANCTUM', '#cfe6ff', true); }
+      if (k === 'shadowrush' && w.rush) { w.rush.shadow = 1; w.rush.sdone = 0; }
+      if (k === 'mirrorcounter' && w.counter) { w.counter.mirror = 1; w.counter.deflect = true; w.counter.t = Math.min(w.counter.t, 1.3); w.counter.dmg *= .5;   /* a short window, and the copy is the punishment: the stance itself hits for half */ w.counter.sharp = U(w, k, 'sharp'); text(w.x, w.y - 104 * HS, 'MIRROR STANCE', '#cfeeff'); }
+      if (k === 'starfallarcher') for (const a of archers) if (!before.archers.has(a) && a.o === w) { a.star = 1; a.starUp = U(w, k, 'meteorite'); }
+      if (k === 'glassgolem') for (const g of golems) if (!before.golems.has(g) && g.o === w) { g.glass = 1; g.reflect = 1; g.max = g.hp = g.max * .5; g.shardUp = U(w, k, 'shards'); }
+      if (k === 'blackfrost') for (let i = walls.length - 1; i >= 0; i--) { const wl = walls[i]; if (before.walls.has(wl) || wl.o !== w) continue; walls.splice(i, 1); bwalls.push({ wl, o: w, t: 0, life: wl.life || 6, hold: U(w, k, 'deep') ? 1.6 : 1 }); text(wl.cr[Math.floor(wl.cr.length / 2)].x, wl.cr[0].y - 60 * HS, 'BLACK FROST', '#b9a6ff'); }
       if (k === 'crimsontitan' && w.shell) { w.shell.crimson = 1; if (w.shell !== shell0 || w.shell.swT === undefined) w.shell.swT = 1.2; text(w.x, w.y - 112 * HS, 'CRIMSON TITAN', '#ff5a6e', true); }
     } catch (e) {}
     return r;
@@ -72,10 +90,18 @@
     if (U(w, 'crimsontitan', 'burst')) setTimeout(() => { try { if (ended) return; SRC = 'titan'; if (typeof boom === 'function') boom(x1, y1 - 20 * HS, .8); if (!f.dead && !(f.ghostT > 0) && Math.hypot(f.x - x1, f.y - y1) < 56) damage(f, dmg, 0, 0, '#ff8a96'); for (const c of enemyCreatures(w)) if (c.e.x !== undefined && Math.hypot(c.e.x - x1, c.e.y - y1) < 56) hurtCreature(c.e, c.k, dmg, 'fire'); } catch (e) {} }, 260);
   }
   const _su = startDuel;
-  window.startDuel = startDuel = function () { swipes = []; const r = _su.apply(this, arguments);
+  window.startDuel = startDuel = function () { swipes = []; bwalls = []; const r = _su.apply(this, arguments);
     try { ents.forEach(mirror);  } catch (e) {} return r; };
   const _up = update;
   window.update = update = function (dt) {
+    // Shadow Rush: just before the dash arrives, slip through to the far side and open with a back hit that no stance can answer
+    try { if (typeof ents !== 'undefined' && ents && ents.length && !ended) for (const w of ents) { const r0 = w.rush; if (!r0 || !r0.shadow || r0.sdone || r0.ph !== 'dash' || !r0.tg || r0.tg.k === 'wall' || w.dead || w.stunT > 0) continue;
+        const p = X.tPos(r0.tg), d = Math.hypot(p.x - w.x, p.y - w.y) || 1, stop = r0.tg.k === 'wiz' ? 30 : 24; if (d > stop + 30) continue; r0.sdone = 1;
+        const ux = (p.x - w.x) / d, uy = (p.y - w.y) / d, q = X.inArena(p.x + ux * stop, p.y + uy * stop), dmg = S(w, 'rush', 'dmg') * 1.5;
+        X.addFx({ k: 'after', x: w.x, y: w.y, life: .45, w }); X.addFx({ k: 'after', x: p.x, y: p.y, life: .3, w }); swipes.push({ x0: w.x, y0: w.y, a: Math.atan2(uy, ux), L: Math.hypot(q.x - w.x, q.y - w.y), t: 0, life: .22, shade: 1 });
+        w.x = q.x; w.y = q.y; w.face = Math.sign(p.x - w.x) || w.face; r0.ph = 'hit'; r0.cd = .14; SRC = 'rush'; shake = Math.max(shake, 7);
+        if (r0.tg.k === 'wiz') { const o = w.foe; if (!X.ghosted(o)) { const c = o.counter; o.counter = null; try { damage(o, dmg, 0, 0, '#ffe08a'); } finally { o.counter = c; } if (U(w, 'shadowrush', 'ambush') && !o.dead) { o.stunT = Math.max(o.stunT || 0, .5); X.addFx({ k: 'stars', w: o, life: .5 }); } text(o.x, o.y - 100 * HS, 'BACK HIT!', '#d9ccff', true); } }
+        else hurtCreature(r0.tg.e, r0.tg.k, dmg, 'crush'); } } catch (e) {}
     const r = _up.apply(this, arguments);
     try { if (typeof ents !== 'undefined' && ents && ents.length && !ended) {
       for (const p of projs) if (p.blue && p.life > 0) { if (Math.hypot(p.x - p.x0, p.y - p.y0) > p.reach) { p.life = 0; burst(p.x, p.y, 16, ['#e6f6ff', '#3aa0ff', '#fff'], 170, 4, .45); if (typeof steamFx === 'function') steamFx(p.x, p.y, 6);
@@ -84,6 +110,16 @@
       // the fresh orange puffs a blue flame just shed are turned blue
       const blues = projs.filter(p => p.blue && p.life > 0); if (blues.length) for (let i = fireFx.length - 1; i >= 0 && i > fireFx.length - 40; i--) { const f = fireFx[i]; if (f.el || f.smoke || f.steam || f.t > .09) continue; if (blues.some(p => Math.hypot(p.x - f.x, p.y - f.y) < 22)) f.el = 'frost'; }
       if (blues.length && typeof parts !== 'undefined') for (let i = parts.length - 1; i >= 0 && i > parts.length - 40; i--) { const q = parts[i]; if ((q.color === COL.fire[0] || q.color === COL.fire[1] || q.color === '#ffb347') && blues.some(p => Math.hypot(p.x - q.x, p.y - q.y) < 20)) q.color = Math.random() < .5 ? '#3aa0ff' : '#cfeaff'; }
+      // Starfall Archer: its arrows lift over any wall in the way
+      if (typeof arrows !== 'undefined') for (const a of arrows) { if (!seenArrows.has(a)) { seenArrows.add(a); const src = archers.find(q => q.star && q.o === a.o && Math.hypot(q.x - a.x, (q.y - 44 * HS) - a.y) < 26); if (src) { a.arc = 1; a.starUp = src.starUp; } }
+        if (!a.arc || !(a.life > 0)) continue; if (Math.random() < .7) P({ x: a.x, y: a.y, vx: rnd(-20, 20), vy: rnd(-10, 30), color: Math.random() < .5 ? '#fff6c8' : '#ffb020', size: rnd(1.6, 2.8), life: .3 });
+        const sp = Math.hypot(a.vx, a.vy) || 1; for (const wl of walls) { if (wl.o === a.o) continue; let hops = 0; while (hops < 6 && wallD(wl, a.x + a.vx / sp * 16, a.y + 40 * HS + a.vy / sp * 16) < 20) { a.x += a.vx / sp * 14; a.y += a.vy / sp * 14; hops++; }
+          if (hops) { if (a.starUp && !a.boosted) { a.boosted = 1; a.dmg *= 1.5; } for (let i = 0; i < 6; i++) P({ x: a.x, y: a.y, vx: rnd(-60, 60), vy: rnd(-90, -20), color: '#fff6c8', size: rnd(2, 3.4), life: .4, grav: 200 }); } } }
+      // Black Frost: blocks nothing; freezes what touches a crystal, and that crystal breaks
+      for (const b of bwalls) { b.t += dt; const hit = (e, isWiz) => { for (const c of b.wl.cr) { if (c.gone || Math.hypot(e.x - c.x, e.y - c.y) > 16) continue; c.gone = 1; burst(c.x, c.y - 20 * HS, 14, ['#b9a6ff', '#2a1a5a', '#ffffff'], 190, 4, .5); try { sfx('shatter', { x: c.x, vol: .5 }); } catch (e2) {}
+              if (isWiz) { if (!(e.stunImm > 0)) { e.stunT = Math.max(e.stunT || 0, b.hold); e.stunImm = b.hold + 1.4; X.addFx({ k: 'stars', w: e, life: b.hold }); text(e.x, e.y - 100 * HS, 'FROZEN', '#b9a6ff', true); } } else if (e.stun !== undefined || zombies.includes(e)) e.stun = Math.max(e.stun || 0, b.hold); else e.bndT = Math.max(e.bndT || 0, b.hold); return; } };
+        const f = b.o.foe; if (!f.dead && !(f.ghostT > 0)) hit(f, true); for (const c of enemyCreatures(b.o)) if (c.e.x !== undefined && c.k !== 's') hit(c.e, false); }
+      bwalls = bwalls.filter(b => b.t < b.life && b.wl.cr.some(c => !c.gone));
       for (const w of ents) if (!w.dead && w.shell && w.shell.crimson && !w.foe.dead) { w.shell.swT -= dt; if (w.shell.swT <= 0) { w.shell.swT = 3; swipe(w); } }
     } for (const s of swipes) s.t += dt; swipes = swipes.filter(s => s.t < s.life); } catch (e) {}
     return r;
@@ -109,12 +145,37 @@
         x.strokeStyle = `rgba(230,240,255,${.9 * a})`; x.lineWidth = 2.6; x.beginPath(); x.arc(0, 0, 42, 0, 7); x.stroke(); x.lineWidth = 1.4; x.beginPath(); x.arc(0, 0, 34, 0, 7); x.stroke();
         for (let i = 0; i < 12; i++) { const an = i / 12 * 6.283 + T * .8; x.beginPath(); x.moveTo(Math.cos(an) * 34, Math.sin(an) * 34); x.lineTo(Math.cos(an) * 42, Math.sin(an) * 42); x.stroke(); }
         x.rotate(-T * .5); x.beginPath(); for (let i = 0; i < 4; i++) { const an = i / 4 * 6.283; x.lineTo(Math.cos(an) * 30, Math.sin(an) * 30); } x.closePath(); x.stroke(); x.restore(); }
+      if (typeof golems !== 'undefined') for (const g of golems) if (g.glass && g.hp > 0) { x.save(); x.translate(g.x, g.y); x.globalCompositeOperation = 'lighter'; const R = (g.mini ? 16 : 26) * SC;
+          x.fillStyle = 'rgba(160,230,255,.22)'; x.beginPath(); x.ellipse(0, -30 * HS, R, R * 1.25, 0, 0, 7); x.fill(); x.strokeStyle = 'rgba(255,255,255,.75)'; x.lineWidth = 2.4; x.lineCap = 'round';
+          for (let i = 0; i < 3; i++) { x.beginPath(); x.moveTo(-R * .6 + i * R * .34, -30 * HS - R * .9); x.lineTo(-R * .9 + i * R * .34, -30 * HS - R * .1); x.stroke(); }
+          if (g.reflect) { x.setLineDash([5, 6]); x.lineDashOffset = -T * 30; x.strokeStyle = 'rgba(159,230,255,.9)'; x.lineWidth = 2; x.beginPath(); x.ellipse(0, -30 * HS, R * 1.15, R * 1.4, 0, 0, 7); x.stroke(); } x.restore(); }
       for (const s of swipes) { const k = s.t / s.life, d = s.L * Math.min(1, k * 1.5), px = s.x0 + Math.cos(s.a) * d, py = s.y0 + Math.sin(s.a) * d - 36 * HS; x.save(); x.globalCompositeOperation = 'lighter'; x.lineCap = 'round';
+        if (s.shade) { x.strokeStyle = `rgba(120,90,255,${(1 - k) * .7})`; x.lineWidth = 14 * (1 - k) + 2; x.beginPath(); x.moveTo(s.x0, s.y0 - 36 * HS); x.lineTo(s.x0 + Math.cos(s.a) * s.L, s.y0 + Math.sin(s.a) * s.L - 36 * HS); x.stroke(); x.strokeStyle = `rgba(255,255,255,${(1 - k) * .8})`; x.lineWidth = 2; x.stroke(); x.restore(); continue; }
         x.strokeStyle = `rgba(255,60,80,${(1 - k) * .6})`; x.lineWidth = 16 * (1 - k) + 2; x.beginPath(); x.moveTo(s.x0, s.y0 - 36 * HS); x.lineTo(px, py); x.stroke(); x.strokeStyle = `rgba(255,255,255,${(1 - k) * .9})`; x.lineWidth = 3; x.stroke();
         x.translate(px, py); x.rotate(s.a); x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1 - k * .7; x.fillStyle = '#07020d'; x.beginPath(); x.arc(0, 0, 30, -1.15, 1.15); x.arc(-13, 0, 28, 1, -1, true); x.closePath(); x.fill(); x.fillStyle = '#ff2a3a'; x.beginPath(); x.arc(0, 0, 27, -1.1, 1.1); x.arc(-12, 0, 25, .95, -.95, true); x.closePath(); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(0, 0, 21, -.9, .9); x.arc(-9, 0, 20, .8, -.8, true); x.closePath(); x.fill(); x.restore(); }
     } catch (e) {}
     x.restore(); return r;
   };
+
+  if (typeof drawDecals === 'function') { const _dd = drawDecals; window.drawDecals = drawDecals = function (x) { _dd.apply(this, arguments); if (x !== ctx || !bwalls.length) return;
+      for (const b of bwalls) { const fade = Math.min(1, (b.life - b.t) * 2); for (const c of b.wl.cr) { if (c.gone) continue; const h = (c.h || 30) * SC * .62, wd = 8 * SC; x.save(); x.translate(c.x, c.y); x.globalAlpha = fade;
+            x.fillStyle = 'rgba(10,4,30,.45)'; x.beginPath(); x.ellipse(0, 1, wd * 1.5, wd * .5, 0, 0, 7); x.fill();
+            x.beginPath(); x.moveTo(-wd, 0); x.lineTo(-wd * .6, -h * .8); x.lineTo(wd * .1, -h); x.lineTo(wd * .8, -h * .72); x.lineTo(wd, 0); x.closePath(); const g = x.createLinearGradient(0, -h, 0, 0); g.addColorStop(0, '#6a4fd0'); g.addColorStop(.5, '#1c1040'); g.addColorStop(1, '#07030f'); x.fillStyle = g; x.fill(); x.strokeStyle = '#000'; x.lineWidth = 2; x.stroke();
+            x.strokeStyle = 'rgba(200,180,255,.8)'; x.lineWidth = 1.2; x.beginPath(); x.moveTo(-wd * .2, -h * .85); x.lineTo(-wd * .4, -h * .2); x.stroke(); x.restore(); } } }; }
+  // Mirror Counter: when the stance is spent on a hit, the ability that hit is cast straight back
+  const NO_MIRROR = new Set(['zombies', 'zodiac', 'golem', 'archer', 'flies', 'counter', 'sanctum', 'titan', 'totem']);
+  { const _dmg = damage; window.damage = damage = function (t, d) { const mc = t && t.counter && t.counter.mirror ? t.counter : null, src = SRC, r = _dmg.apply(this, arguments);
+      try { if (mc && t.counter !== mc && !t.dead && !ended && t.foe && !t.foe.dead && SP[src] && !NO_MIRROR.has(src) && !VARIANTS[src]) { const keepLv = t.lv[src], keepN = t.castN, keepI = t.i;
+          t.lv[src] = clamp(((t.foe.lv && t.foe.lv[src]) || 1) + (mc.sharp ? 2 : 0), 1, MAXL); try { cast(t, src); } finally { t.lv[src] = keepLv; t.castN = keepN; t.i = keepI; } text(t.x, t.y - 118 * HS, 'MIRRORED ' + SP[src].n.toUpperCase(), '#cfeeff', true); } } catch (e) {}
+      return r; }; }
+  // Glass Golem: the first spell to hit it goes back to whoever threw it
+  const REFLECTS = new Set(['fireball', 'lightning', 'ricochet', 'meteor', 'dissect', 'bloodcraft', 'polarity', 'archer', 'storm', 'orbs', 'bubbles']);
+  if (typeof hurtGolem === 'function') { const _hg = hurtGolem; window.hurtGolem = hurtGolem = function (g, d) {
+      if (g && g.glass && g.reflect && d > 0 && g.hp > 0 && REFLECTS.has(SRC) && !ended) { g.reflect = 0; const f = g.o.foe, src = SRC; X.addFx({ k: 'redir', x: g.x, y: g.y - 30 * HS, x2: f.x, y2: f.y - 40 * HS, life: .35 }); text(g.x, g.y - 70 * HS, 'REFLECTED', '#cfeeff', true); burst(g.x, g.y - 30 * HS, 16, ['#ffffff', '#9fe6ff'], 190, 4, .45);
+        if (!f.dead && !(f.ghostT > 0)) { SRC = 'golem'; damage(f, Math.max(8, Math.min(d, 40)), 0, 0, '#cfeeff'); SRC = src; } return; }
+      const was = g && g.hp > 0, r = _hg.apply(this, arguments);
+      try { if (g && g.glass && was && g.hp <= 0 && g.shardUp && !g.shat) { g.shat = 1; const keep = SRC; SRC = 'golem'; burst(g.x, g.y - 24 * HS, 30, ['#ffffff', '#9fe6ff', '#0a3a5c'], 260, 5, .6, 300); const f = g.o.foe; if (!f.dead && !(f.ghostT > 0) && Math.hypot(f.x - g.x, f.y - g.y) < 70) damage(f, 8, 0, 0, '#cfeeff'); for (const c of enemyCreatures(g.o)) if (c.e.x !== undefined && Math.hypot(c.e.x - g.x, c.e.y - g.y) < 70) hurtCreature(c.e, c.k, 8, 'slash'); SRC = keep; } } catch (e) {}
+      return r; }; }
 
   /* ---------------- the rivals ---------------- */
   const L = [
@@ -138,58 +199,108 @@
     { id: 'thessaly', n: 'Thessaly Frost', title: 'The Long Winter', cls: 'wiz', feat: 'hourglass', hand: ['hourglass', 'icewall', 'archer', 'storm'], ups: ['hourglass.stasis', 'icewall.permafrost', 'archer.twin', 'hourglass.wide'], look: { robe: 'frost', hat: 'crown', staff: 'crystal', beard: 'white', skin: 'spirit', pet: 'owl' }, aura: 'frost', line: 'I can wait all day.', mood: 'calm', tip: 'Nothing reaches her quickly. Bring something that goes over or through, and patience.' },
     { id: 'ilyra', n: 'Ilyra Dusk', title: 'The Push and the Pull', cls: 'sorc', feat: 'polarity', hand: ['polarity', 'rush', 'sanctum', 'titan'], ups: ['polarity.collapse', 'polarity.drag', 'polarity.jolt', 'polarity.boundary'], look: { robe: 'midnight', hat: 'feathered', staff: 'moon', beard: 'none', skin: 'moonlit', pet: 'wisp' }, aura: 'azure', line: 'Away. No: here.', mood: 'wild', tip: 'Her Boundary sends your best shot straight back. Bait it with something small first.' },
     { id: 'gilda', n: 'Gilda Goldmantle', title: 'The Champion', cls: 'wiz', feat: 'lightning', boss: 'violetbolt', hand: ['violetbolt', 'beam', 'archer', 'sinkhole'], ups: ['violetbolt.fork', 'beam.wide', 'violetbolt.afterclap', 'archer.fire', 'violetbolt.overcharge'], look: { robe: 'royal', hat: 'crown', staff: 'moon', beard: 'goldlong', skin: 'gilded', pet: 'dragon' }, aura: 'gold', line: 'Bow. Then begin.', mood: 'cocky', cos: { type: 'aurastyle', id: 'halo', n: 'Halo aura style' }, tip: 'Every bolt lands twice. A totem, a shell or a Boundary turns her best weapon off.' },
-  ].filter(r => r.hand.every(k => SP[k]));
+  ];
+  /* The Advanced Ladder: thirty harder rivals. Each is built on TWO abilities that feed each other, with two supports behind them.
+     They open after the first twenty are beaten, fight with 5-slot books, start with more upgrades and pay 100 gems on the first win. */
+  const adv = (id, n, title, cls, mains, sup, ups, look, aura, line, tip, extra) => Object.assign({ id, n, title, cls, adv: 1, mains, feat: mains[0], hand: mains.concat(sup), ups, look, aura, line, mood: 'cocky', tip }, extra || {});
+  const lk = (robe, hat, staff, beard, skin, pet) => ({ robe, hat, staff, beard, skin, pet });
+  const A = [
+    adv('maren', 'Maren Coldbrook', 'The Glacier', 'wiz', ['icewall', 'beam'], ['hourglass', 'shield'], ['icewall.thick', 'beam.wide', 'beam.overload', 'hourglass.stasis', 'icewall.permafrost', 'shield.capacity'], lk('frost', 'crown', 'crystal', 'white', 'spirit', 'owl'), 'frost', 'You will not reach me.', 'The wall buys the three seconds the cannon needs. Break the wall or be gone from the line before it fires.'),
+    adv('kade', 'Kade Ironroot', 'Stone and Thorn', 'wiz', ['golem', 'thorns'], ['healspring', 'icewall'], ['golem.iron', 'thorns.creep', 'golem.quake', 'thorns.strangle', 'healspring.shared', 'golem.toss'], lk('moss', 'mushroom', 'oak', 'green', 'umber', 'frog'), 'jade', 'Mind where you step.', 'Roots hold you while the golem walks over. Kill the golem at range and stay off the green.'),
+    adv('vessa', 'Vessa Nightbloom', 'The Hive Queen', 'wiz', ['zombies', 'flies'], ['thorns', 'ghost'], ['zombies.horde', 'flies.bigswarm', 'zombies.legion', 'flies.plague', 'zombies.undying', 'thorns.spread'], lk('amethyst', 'witch', 'skull', 'violet', 'ashen', 'cat'), 'venom', 'So many mouths to feed.', 'Two kinds of swarm at once. One wide blast answers both; single shots answer neither.'),
+    adv('torvald', 'Torvald Brakk', 'The Avalanche', 'sorc', ['rush', 'earthm'], ['titan', 'counter'], ['rush.relentless', 'earthm.quag', 'rush.finisher', 'rush.pain', 'titan.fortified', 'rush.endless'], lk('ember', 'pointy', 'oak', 'red', 'umber', 'none'), 'emberaura', 'Run. It will not help.', 'Mud slows you, then he arrives. Clear the mud or make him come through a wall.'),
+    adv('lysa', 'Lysa Emberwake', 'Scorched Sky', 'wiz', ['gravity', 'meteor'], ['ringfire', 'blink'], ['gravity.horizon', 'meteor.shower', 'gravity.crush', 'meteor.colossal', 'meteor.scorch', 'ringfire.wall'], lk('sunfire', 'witch', 'moon', 'ginger', 'emberskin', 'dragon'), 'sunset', 'Look up.', 'The well holds you under the meteor. Anything that moves you out of the well saves the round.'),
+    adv('nyra', 'Nyra Shadestep', 'The Unseen Fist', 'sorc', ['shadowrush', 'doubletake'], ['secondwind', 'chosen'], ['shadowrush.flow', 'shadowrush.ambush', 'doubletake.abrupt', 'shadowrush.relentless', 'shadowrush.finisher', 'secondwind.surge'], lk('obsidian', 'hood', 'oak', 'none', 'moonlit', 'none'), 'shadow', 'Behind you.', 'She arrives behind you and no stance stops the first blow. Walls and a shell still do.', { boss: 'shadowrush' }),
+    adv('orrin', 'Orrin Vale', 'The Long Shot', 'wiz', ['archer', 'gale'], ['totem', 'icewall'], ['archer.twin', 'gale.tail', 'archer.volley', 'archer.fire', 'gale.sustain', 'icewall.wide'], lk('emerald', 'feathered', 'oak', 'brown', 'tan', 'owl'), 'jade', 'Wind is with me.', 'His wind speeds his arrows and shoves yours aside. Kill the archers or fight from inside his gust.'),
+    adv('sable', 'Sable Reyes', 'Red Geometry', 'sorc', ['bloodcraft', 'sanctum'], ['earthm', 'counter'], ['bloodcraft.lance', 'sanctum.surehit', 'bloodcraft.bend', 'bloodcraft.venom', 'sanctum.oneway', 'bloodcraft.surge'], lk('rosewood', 'hood', 'skull', 'none', 'ashen', 'cat'), 'bloodmoon', 'Stand still. It hurts less.', 'Inside her dome every lance also lands as a blast. Stay out of the dome, or end it.'),
+    adv('quill', 'Quill Marrow', 'The Puppeteer', 'wiz', ['mirror', 'ricochet'], ['rift', 'blink'], ['mirror.twin', 'mirror.mcast', 'ricochet.split', 'ricochet.build', 'mirror.sturdy', 'rift.burn'], lk('amethyst', 'mushroom', 'wand', 'violet', 'goblin', 'frog'), 'violet', 'We outnumber you.', 'Every decoy repeats his rune. Pop the decoys first: area damage does it in one cast.'),
+    adv('hana', 'Hana Stillwater', 'The Unmoving', 'sorc', ['titan', 'secondwind'], ['counter', 'sanctum'], ['titan.fortified', 'secondwind.surge', 'titan.arrow', 'secondwind.steel', 'titan.mend', 'secondwind.torrent'], lk('ivory', 'hood', 'moon', 'long', 'moonlit', 'wisp'), 'frost', 'I have all day.', 'She heals behind a shell that shoots. Fists and Grand Bisection break shells; poison and burns ignore them.'),
+    adv('dax', 'Dax Thunderhand', 'Storm Front', 'wiz', ['storm', 'lightning'], ['gale', 'hourglass'], ['storm.twin', 'lightning.fork', 'storm.thunder', 'lightning.overcharge', 'storm.static', 'lightning.twinbolt'], lk('stormcl', 'pointy', 'moon', 'blue', 'spirit', 'owl'), 'azure', 'Count the seconds.', 'Stuns stack: cloud, bolt, cloud. A totem eats the bolts, and moving beats the clouds.'),
+    adv('aldric', 'Ser Aldric Voss', 'The Looking Glass', 'sorc', ['mirrorcounter', 'polarity'], ['titan', 'secondwind'], ['mirrorcounter.patient', 'polarity.boundary', 'mirrorcounter.sharp', 'polarity.jolt', 'mirrorcounter.riposte', 'titan.fortified'], lk('royal', 'crown', 'crystal', 'goldlong', 'gilded', 'none'), 'gold', 'Strike. I insist.', 'Whatever you throw at his stance comes back. Feed it something cheap, then hit while it is down.', { boss: 'mirrorcounter' }),
+    adv('ione', 'Ione Pallwick', 'The Slow Death', 'wiz', ['bubbles', 'thorns'], ['healspring', 'shield'], ['bubbles.sticky', 'thorns.strangle', 'bubbles.more', 'bubbles.linger', 'thorns.lifesap', 'healspring.deep'], lk('tide', 'hood', 'crystal', 'teal', 'moonlit', 'wisp'), 'deepsea', 'No rush.', 'Acid slows you into the roots and the roots heal her. Burst her down; a long fight is hers.'),
+    adv('ragna', 'Ragna Ulfsdottir', 'The Pack', 'sorc', ['zodiac', 'sanctum'], ['healspring', 'earthm'], ['zodiac.pack', 'zodiac.mend', 'sanctum.linger', 'zodiac.tempo', 'zodiac.mend2', 'sanctum.vast'], lk('emerald', 'feathered', 'skull', 'green', 'tan', 'wolf'), 'jade', 'They are hungry.', 'Her beasts hit harder inside her dome and heal every cast. Break the dome or thin the pack before it grows.'),
+    adv('cassius', 'Cassius Brand', 'The Furnace', 'wiz', ['burnbody', 'ringfire'], ['ghost', 'blink'], ['burnbody.heat', 'ringfire.wall', 'burnbody.ward', 'ringfire.inner', 'burnbody.flare', 'blink.ambush'], lk('crimson', 'witch', 'oak', 'ginger', 'emberskin', 'dragon'), 'sunset', 'Come and get warm.', 'He blinks onto you while burning. Knock him away, or stand where his ring already burned out.'),
+    adv('odalys', 'Odalys Finch', 'The Vanishing Act', 'wiz', ['ghost', 'orbs'], ['blink', 'mirror'], ['orbs.five', 'ghost.linger', 'orbs.nova', 'ghost.haunt', 'orbs.wide', 'blink.double'], lk('midnight', 'feathered', 'wand', 'pink', 'spirit', 'cat'), 'violet', 'Now you see me.', 'She cannot be hit while her orbs grind you down. Stay away from her and spend your casts when the ghost ends.'),
+    adv('ptolemy', 'Ptolemy Drake', "Heaven's Artillery", 'wiz', ['beam', 'meteor'], ['shield', 'icewall'], ['beam.wide', 'meteor.colossal', 'beam.overload', 'meteor.shower', 'shield.amplify', 'icewall.thick'], lk('royal', 'crown', 'moon', 'white', 'gilded', 'owl'), 'gold', 'Hold that pose.', 'Two enormous hits a loop. Both can be seen coming: move, block, or interrupt the charge.'),
+    adv('elowen', 'Elowen Starfall', 'The Night Archer', 'wiz', ['starfallarcher', 'icewall'], ['totem', 'gale'], ['starfallarcher.twin', 'icewall.thick', 'starfallarcher.meteorite', 'starfallarcher.volley', 'icewall.wide', 'starfallarcher.fire'], lk('midnight', 'hood', 'moon', 'none', 'moonlit', 'owl'), 'azure', 'Walls are for you, not for me.', 'Her arrows clear her own wall and yours. Hiding does nothing: kill the archers.', { boss: 'starfallarcher' }),
+    adv('juno', 'Juno Blackwater', 'Blood and Oath', 'sorc', ['bloodoath', 'bloodcraft'], ['secondwind', 'doubletake'], ['bloodoath.more', 'bloodcraft.surge', 'bloodoath.blitz', 'bloodcraft.venom', 'bloodoath.backstab', 'bloodoath.linger'], lk('obsidian', 'hood', 'oak', 'red', 'umber', 'none'), 'bloodmoon', 'Mine or yours. I am not fussy.', 'While her Surge is up every cut is doubled. It lasts four seconds: block or leave, then answer.'),
+    adv('hollis', 'Hollis Crane', 'The Sinking Feeling', 'wiz', ['sinkhole', 'gravity'], ['bubbles', 'thorns'], ['sinkhole.quick', 'gravity.horizon', 'sinkhole.twin', 'gravity.crush', 'sinkhole.cavein', 'bubbles.sticky'], lk('voidweave', 'mushroom', 'skull', 'none', 'ashen', 'frog'), 'voidaura', 'Down you go.', 'The well drags you into the pit. Kill the pit with a Sanctum, or never stand between the two.'),
+    adv('tavi', 'Tavi Ro', 'The Scalpel', 'sorc', ['dissect', 'polarity'], ['sanctum', 'counter'], ['dissect.triple', 'polarity.drag', 'dissect.cleave', 'dissect.swift', 'polarity.fastorb', 'dissect.fated'], lk('azure', 'feathered', 'oak', 'none', 'peach', 'none'), 'azure', 'Hold still for the cut.', 'Draw hauls you into the blade. Stay behind something: the orb passes walls, the cuts do not.'),
+    adv('greta', 'Greta Hallowmere', 'The Graveyard Shift', 'wiz', ['zombies', 'golem'], ['healspring', 'flies'], ['zombies.vessel', 'golem.iron', 'zombies.horde', 'golem.bloom', 'healspring.shared', 'zombies.grip'], lk('moss', 'hood', 'skull', 'none', 'ashen', 'cat'), 'venom', 'I do not stay dead.', 'Kill her and she stands up inside a zombie. Clear the zombies first, then finish her.'),
+    adv('isolde', 'Isolde Wintermere', 'Time and Tide', 'wiz', ['hourglass', 'storm'], ['icewall', 'archer'], ['hourglass.stasis', 'storm.twin', 'hourglass.wide', 'storm.hail', 'hourglass.hasten', 'archer.volley'], lk('frost', 'witch', 'crystal', 'blue', 'spirit', 'wisp'), 'frost', 'Wait there.', 'Your shots stop dead in her glass while her clouds work. Summons and things on the floor ignore it.'),
+    adv('cobble', 'Old Man Cobble', 'The Glassblower', 'wiz', ['glassgolem', 'mirror'], ['shield', 'ricochet'], ['glassgolem.quake', 'mirror.twin', 'glassgolem.shards', 'mirror.shatter', 'glassgolem.toss', 'shield.amplify'], lk('ivory', 'mushroom', 'crystal', 'long', 'goblin', 'frog'), 'frost', 'Careful. It is fragile.', 'Its first spell hit comes straight back at you. Open with something weak, or let a summon break it.', { boss: 'glassgolem' }),
+    adv('kiran', 'Kiran Vashti', 'The Riptide', 'sorc', ['polarity', 'rush'], ['titan', 'earthm'], ['polarity.drag', 'rush.finisher', 'polarity.jolt', 'rush.relentless', 'polarity.collapse', 'rush.flow'], lk('tide', 'feathered', 'oak', 'teal', 'tan', 'none'), 'deepsea', 'In. Out. In.', 'Draw brings you to his fists, the Finisher throws you away, and it starts again. Break the loop with a stance or a wall.'),
+    adv('seraphine', 'Seraphine Dusk', 'The Eclipse', 'wiz', ['gravity', 'beam'], ['hourglass', 'shield'], ['gravity.horizon', 'beam.wide', 'gravity.crush', 'beam.overload', 'beam.desperate', 'hourglass.hasten'], lk('voidweave', 'crown', 'moon', 'none', 'spirit', 'cat'), 'voidaura', 'Stay in the light.', 'The well pins you in the beam. Leave the well sideways, not backwards.'),
+    adv('bram', 'Bram Oakenshield', 'The Bulwark', 'sorc', ['titan', 'zodiac'], ['secondwind', 'healspring'], ['titan.walking', 'zodiac.pack', 'titan.fortified', 'zodiac.mend', 'titan.arrow', 'zodiac.cycle'], lk('moss', 'crown', 'oak', 'brown', 'umber', 'wolf'), 'gold', 'After you.', 'He walks toward you inside a shell while the beasts do the work. Ignore him and kill the beasts, or crack the shell with fists.'),
+    adv('zephyrine', 'Zephyrine Quill', 'The Whirlwind', 'wiz', ['gale', 'ricochet'], ['orbs', 'blink'], ['gale.current', 'ricochet.split', 'gale.return', 'ricochet.seeker', 'ricochet.build', 'orbs.five'], lk('tide', 'feathered', 'wand', 'teal', 'peach', 'wisp'), 'azure', 'Catch.', 'Her current throws your spells back and her runes multiply on every bounce. Fists and summons do not care about wind.'),
+    adv('asha', 'Asha Kindlemark', 'Twice Burned', 'wiz', ['fireball', 'ringfire'], ['rift', 'ghost'], ['fireball.triple', 'ringfire.wall', 'fireball.twin', 'rift.burn', 'fireball.blast', 'ringfire.blast'], lk('crimson', 'pointy', 'crystal', 'red', 'emberskin', 'dragon'), 'sunset', 'One spark is all it takes.', 'Three fireballs through a rift hit half again as hard. Close her portals or make her shoot through ice.'),
+    adv('yuki', 'Empress Yuki Noir', 'The Black Winter', 'wiz', ['blackfrost', 'meteor'], ['hourglass', 'gravity'], ['blackfrost.thick', 'meteor.colossal', 'blackfrost.deep', 'gravity.horizon', 'meteor.shower', 'blackfrost.wide'], lk('voidweave', 'crown', 'crystal', 'white', 'spirit', 'owl'), 'voidaura', 'Kneel in the snow.', 'Touch her black ice and you are frozen under a falling meteor. Shoot through it: it blocks nothing. Never walk through it.', { boss: 'blackfrost' }),
+  ];
+  const BASE_N = L.length;
+  for (const r of A) L.push(r);
+  for (let i = L.length - 1; i >= 0; i--) { const r = L[i]; if (!r.hand.every(k => SP[k])) { L.splice(i, 1); continue; } r.ups = r.ups.filter(u => { const [k, id] = u.split('.'); return SP[k] && (UPG[k] || []).some(q => q.id === id); }); }
+  for (const k in VARIANTS) { const i = L.findIndex(r => r.boss === k); if (i >= 0) VARIANTS[k].boss = i; }
   window.LADDER = L;
-  const GATE = 50, GEMS = 10;
+  const GATE = 50;
+  const gemsFor = r => r.adv ? 100 : 10;
   const st = () => { PR.ladder = PR.ladder || { won: {} }; PR.ladder.won = PR.ladder.won || {}; return PR.ladder; };
   const beaten = i => !!st().won[L[i].id];
-  const gateOf = i => i * GATE;
+  const gateOf = i => L[i].adv ? 0 : i * GATE;
   const openAt = i => (i === 0 || beaten(i - 1)) && (PR.trophies || 0) >= gateOf(i);
   const owned = k => typeof isUnl === 'function' ? isUnl(k) : unlockedSpells().includes(k);
-  const rewardOf = r => r.boss || r.feat;
+  const rewardOf = r => r.boss || (r.adv ? null : r.feat);
+  const upsShown = (r, i) => r.ups.slice(0, r.adv ? 4 + Math.floor((i - BASE_N) / 6) : 2 + Math.floor(i / 4));
 
   const _nm = newMatch;
   window.newMatch = newMatch = function (o) {
     o = o || {}; const i = o.ladder; if (i === undefined || !L[i]) return _nm.apply(this, arguments);
-    const r = L[i], lvs = (PR.hand || []).map(k => PR.spells[k].lvl), base = Math.round(lvs.reduce((a, b) => a + b, 0) / Math.max(1, lvs.length)), lv = clamp(base + Math.floor(i / 5), 1, MAXL);
+    const r = L[i], lvs = (PR.hand || []).map(k => PR.spells[k].lvl), base = Math.round(lvs.reduce((a, b) => a + b, 0) / Math.max(1, lvs.length)), bonus = r.adv ? 3 + Math.floor((i - BASE_N) / 10) : Math.floor(i / 5), lv = clamp(base + bonus, 1, MAXL);
     const o2 = Object.assign({}, o, { name: r.n, look: Object.assign({}, r.look, { cls: r.cls, aura: r.aura }), mode: 'ladder', lv: Object.fromEntries(Object.keys(SP).map(k => [k, lv])) });
     const res = _nm.call(this, o2);
-    try { M.ladder = r; M.ladderI = i; M.rival = r; M.foe.pool = r.hand.slice(); M.foe.up = new Set(r.ups.slice(0, 2 + Math.floor(i / 4)).filter(u => SP[u.split('.')[0]])); M.foeRank = rankOf(PR.trophies); M.foeAcct = Math.max(1, PR.lvl + Math.floor(i / 5));
-      M.profile = Object.assign({}, M.profile, { n: r.title, fav: Object.fromEntries(r.hand.map((k, j) => [k, 9 - j])) }); if (typeof synergyOf === 'function') M.foeSyn = synergyOf(M.foe.pool); } catch (e) {}
+    try { M.ladder = r; M.ladderI = i; M.rival = r; M.foe.pool = r.hand.slice(); M.foe.up = new Set(upsShown(r, i)); M.foeRank = clamp(rankOf(PR.trophies) + (r.adv ? 1 : 0), 0, RANKS.length - 1); M.foeAcct = Math.max(1, PR.lvl + bonus);
+      M.profile = Object.assign({}, M.profile, { n: r.title, fav: Object.fromEntries(r.hand.map((k, j) => [k, (r.mains || []).includes(k) ? 12 : 9 - j])) }); if (typeof synergyOf === 'function') M.foeSyn = synergyOf(M.foe.pool); } catch (e) {}
     return res;
   };
   if (typeof showRewards === 'function') { const _sr = showRewards;
     window.showRewards = showRewards = function () {
       const msgs = [];
-      try { if (M && M.ladder && M.score.me > M.score.foe) { const r = M.ladder, s = st();
-          if (!s.won[r.id]) { s.won[r.id] = Date.now(); PR.gems = (PR.gems || 0) + GEMS; msgs.push(`Ladder: ${r.n} beaten. +${GEMS} gems`);
-            const k = rewardOf(r); if (!owned(k)) { PR.chosen = PR.chosen || []; PR.chosen.push(k); msgs.push(`${SP[k].n} unlocked${r.boss ? ' (boss variant)' : ''}`); if (typeof addNote === 'function') { try { addNote('unlock', 'Won ' + SP[k].n + ' on the Ladder'); } catch (e) {} } }
+      try { if (M && M.ladder && M.score.me > M.score.foe) { const r = M.ladder, s = st(), G = gemsFor(r);
+          if (!s.won[r.id]) { s.won[r.id] = Date.now(); PR.gems = (PR.gems || 0) + G; msgs.push(`Ladder: ${r.n} beaten. +${G} gems`);
+            const k = rewardOf(r); if (k && !owned(k)) { PR.chosen = PR.chosen || []; PR.chosen.push(k); msgs.push(`${SP[k].n} unlocked${r.boss ? ' (boss variant)' : ''}`); if (typeof addNote === 'function') { try { addNote('unlock', 'Won ' + SP[k].n + ' on the Ladder'); } catch (e) {} } }
             if (r.cos) { try { if (typeof grantCosmetic === 'function') { grantCosmetic(r.cos.type, r.cos.id); msgs.push('New in your wardrobe: ' + r.cos.n); } } catch (e) {} }
             try { save(); } catch (e) {} } } } catch (e) {}
       const res = _sr.apply(this, arguments);
-      try { if (M && M.ladder) { const md = $('rwMode'); if (md) md.textContent = 'The Ladder · rung ' + (M.ladderI + 1) + ' · vs ' + M.ladder.n; let box = $('rwLadder'); if (box) box.remove();
+      try { if (M && M.ladder) { const md = $('rwMode'); if (md) md.textContent = (M.ladder.adv ? 'Advanced Ladder · rival ' + (M.ladderI - BASE_N + 1) : 'The Ladder · rung ' + (M.ladderI + 1)) + ' · vs ' + M.ladder.n; let box = $('rwLadder'); if (box) box.remove();
           if (msgs.length) { const at = document.querySelector('#rewards #rwCards') || $('rwBtn'); if (at) at.insertAdjacentHTML('beforebegin', `<div id="rwLadder"><b>Ladder rewards</b>${msgs.map(m => `<span>${m.replace(/^Ladder: /, '')}</span>`).join('')}</div>`); } } else { const box = $('rwLadder'); if (box) box.remove(); } } catch (e) {}
       msgs.forEach((m, j) => setTimeout(() => { try { toast(m); } catch (e) {} }, 900 + j * 1700)); return res; }; }
 
   /* ---------------- screens ---------------- */
   const icons = hand => hand.map(k => `<img src="${ICON[k]}" title="${SP[k].n}">`).join('');
+  const mystery = n => '<i class="lq2">?</i>'.repeat(n);
   const upName = u => { const [k, id] = u.split('.'), o = (UPG[k] || []).find(q => q.id === id); return o ? o.n : id; };
+  let ladTab = 'base';
+  window.ladderTab = function (t) { ladTab = t; openLadder(); };
   window.openLadder = function (detail) {
-    const s = st(), n = L.filter((r, i) => beaten(i)).length, first = !PR.ladderSeen;
-    if (detail !== undefined && L[detail]) { const i = detail, r = L[i], open = openAt(i) || beaten(i), k = rewardOf(r), shown = r.ups.slice(0, 2 + Math.floor(i / 4));
-      $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">${r.n}</div><div class="ssub" style="margin:0">${r.title} · ${r.cls === 'sorc' ? 'Sorcerer' : 'Wizard'}${r.boss ? ' · <b style="color:#ffd75e">Boss</b>' : ''}</div>
-        <div class="lq">“${r.line}”</div>
-        <div class="lbox"><div class="trh">Their hand</div>${r.hand.map(a => `<div class="lab"><img src="${ICON[a]}"><span><b>${SP[a].n}</b><small>${shown.filter(u => u.startsWith(a + '.')).map(upName).join(', ') || SP[a].tag || ''}</small></span></div>`).join('')}</div>
-        <div class="lbox ltip"><div class="trh">How to think about it</div><p>${r.tip}</p></div>
-        <div class="lbox"><div class="trh">First win pays</div><div class="lrws"><span><i class="ci" style="display:inline-grid;width:16px;height:16px;vertical-align:-3px">${SVG.gem}</i> ${GEMS} gems</span><span><img src="${ICON[k]}"> ${SP[k].n}${owned(k) && !beaten(i) ? ' (you own it)' : ''}</span>${r.cos ? `<span>✦ ${r.cos.n}</span>` : ''}</div></div>
+    const s = st(), nBase = L.filter((r, i) => !r.adv && beaten(i)).length, nAdv = L.filter((r, i) => r.adv && beaten(i)).length, nA = L.length - BASE_N, first = !PR.ladderSeen, advOpen = nBase >= BASE_N;
+    if (detail !== undefined && L[detail]) { const i = detail, r = L[i], open = openAt(i) || beaten(i), k = rewardOf(r), shown = upsShown(r, i), G = gemsFor(r); ladTab = r.adv ? 'adv' : 'base';
+      const why = i > 0 && !beaten(i - 1) ? 'Beat ' + L[i - 1].n + ' first' : 'Needs ' + gateOf(i) + ' trophies';
+      $('sheetP').innerHTML = `<button class="xbtn" onclick="openLadder()">✕</button><div class="sh">${r.n}</div><div class="ssub" style="margin:0">${r.title} · ${r.cls === 'sorc' ? 'Sorcerer' : 'Wizard'}${r.boss ? ' · <b style="color:#ffd75e">Boss</b>' : ''}${r.adv ? ' · Advanced' : ''}</div>
+        ${open ? `<div class="lq">“${r.line}”</div>
+        <div class="lbox"><div class="trh">Their hand${r.adv ? ' · 5-slot book' : ''}</div>${r.hand.map(a => `<div class="lab"><img src="${ICON[a]}"><span><b>${SP[a].n}${(r.mains || []).includes(a) ? ' <em class="mn">main</em>' : ''}</b><small>${shown.filter(u => u.startsWith(a + '.')).map(upName).join(', ') || SP[a].tag || ''}</small></span></div>`).join('')}</div>
+        <div class="lbox ltip"><div class="trh">How to think about it</div><p>${r.tip}</p></div>`
+        : `<div class="lbox"><div class="trh">Their hand</div><div class="lmys">${mystery(r.hand.length)}</div><p>${r.hand.length} abilities${r.adv ? ', in a 5-slot book' : ''}. Their hand is revealed when this rival opens.</p></div>`}
+        <div class="lbox"><div class="trh">First win pays</div><div class="lrws"><span><i class="ci" style="display:inline-grid;width:16px;height:16px;vertical-align:-3px">${SVG.gem}</i> ${G} gems</span>${k ? `<span><img src="${ICON[k]}"> ${open || r.boss ? SP[k].n : 'An ability'}${owned(k) && !beaten(i) ? ' (you own it)' : ''}</span>` : ''}${r.cos ? `<span>✦ ${r.cos.n}</span>` : ''}</div></div>
         ${beaten(i) ? '<div class="ssub" style="margin:6px 0 0;color:#7dffa8">Beaten. You can fight again for practice.</div>' : ''}
-        <button class="upbtn" ${open ? '' : 'disabled'} onclick="closeSheet();startMatch({ladder:${i}})">${open ? (beaten(i) ? 'Fight again' : 'Fight') : (i > 0 && !beaten(i - 1) ? 'Beat ' + L[i - 1].n + ' first' : 'Needs ' + gateOf(i) + ' trophies')}</button>
+        <button class="upbtn" ${open ? '' : 'disabled'} onclick="closeSheet();startMatch({ladder:${i}})">${open ? (beaten(i) ? 'Fight again' : 'Fight') : why}</button>
         <button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050);margin-top:6px" onclick="openLadder()">Back to the Ladder</button>`;
       $('sheet').classList.add('on'); return; }
     PR.ladderSeen = 1; try { save(); } catch (e) {}
-    const rows = L.map((r, i) => { const done = beaten(i), open = openAt(i), k = rewardOf(r);
-      return `<button class="lrow ${done ? 'done' : open ? 'open' : 'lock'} ${r.boss ? 'boss' : ''}" onclick="openLadder(${i})"><span class="lno">${done ? '✓' : i + 1}</span><span class="lmid"><b>${r.n}</b><small>${r.title}</small><span class="lhand">${icons(r.hand)}</span></span><span class="lrt">${done ? '<em class="ok">Beaten</em>' : open ? '<em class="go">Fight</em>' : `<em>${i > 0 && !beaten(i - 1) ? 'Locked' : gateOf(i) + ' 🏆'}</em>`}<small><img src="${ICON[k]}">+${GEMS} 💎</small></span></button>`; }).join('');
-    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">The Ladder</div><div class="ssub" style="margin:0">${n} of ${L.length} beaten. Each first win pays ${GEMS} gems and the rival's ability.</div>
+    if (ladTab === 'adv' && !advOpen && nAdv === 0) { /* still viewable: every row is a mystery until the first twenty are beaten */ }
+    const rows = L.map((r, i) => { if ((ladTab === 'adv') !== !!r.adv) return ''; const done = beaten(i), open = openAt(i), k = rewardOf(r), no = r.adv ? i - BASE_N + 1 : i + 1;
+      return `<button class="lrow ${done ? 'done' : open ? 'open' : 'lock'} ${r.boss ? 'boss' : ''}" onclick="openLadder(${i})"><span class="lno">${done ? '✓' : no}</span><span class="lmid"><b>${r.n}</b><small>${r.title}</small><span class="lhand">${done || open ? icons(r.hand) : mystery(r.hand.length)}</span></span><span class="lrt">${done ? '<em class="ok">Beaten</em>' : open ? '<em class="go">Fight</em>' : `<em>${i > 0 && !beaten(i - 1) ? 'Locked' : gateOf(i) + ' 🏆'}</em>`}<small>${k && (done || open || r.boss) ? `<img src="${ICON[k]}">` : ''}+${gemsFor(r)} 💎</small></span></button>`; }).join('');
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">The Ladder</div>
+      <div class="ntabs ltabs"><button class="${ladTab === 'base' ? 'on' : ''}" onclick="ladderTab('base')">Ladder ${nBase}/${BASE_N}</button><button class="${ladTab === 'adv' ? 'on' : ''}" onclick="ladderTab('adv')">Advanced ${nAdv}/${nA}</button></div>
+      <div class="ssub" style="margin:0">${ladTab === 'adv' ? (advOpen ? 'Thirty harder rivals, each built on two abilities that feed each other. 5-slot books. 100 gems for each first win.' : `Opens when all ${BASE_N} Ladder rivals are beaten. Thirty harder rivals, 100 gems each.`) : 'Each first win pays 10 gems and the rival\'s ability.'}</div>
       ${first ? `<div class="lintro"><b>Hoot</b>These rivals do not change. Tap one to study their <em>hand</em>, then build a <em>Battle Hand</em> that answers it. Beat them in order. A new rung opens every ${GATE} trophies. Every fifth is a <em>boss</em> with an ability you can win nowhere else.</div>` : ''}
       <div class="llist">${rows}</div>`;
     $('sheet').classList.add('on');
@@ -197,11 +308,11 @@
   };
   // home button, and a banner on the Rank Road
   const stage = document.querySelector('#home .stage'); if (stage && !$('ldBtn')) stage.insertAdjacentHTML('beforeend', `<button class="chbtn" id="ldBtn" onclick="openLadder()">Ladder<i></i></button>`);
-  const ldDot = () => { const b = $('ldBtn'); if (!b) return; const n = L.filter((r, i) => beaten(i)).length, next = L.findIndex((r, i) => !beaten(i)); b.querySelector('i').textContent = n + '/' + L.length; b.classList.toggle('ready', next >= 0 && openAt(next)); };
+  const ldDot = () => { const b = $('ldBtn'); if (!b) return; const n = L.filter((r, i) => beaten(i)).length, next = L.findIndex((r, i) => !beaten(i)), inBase = next >= 0 && !L[next].adv; b.querySelector('i').textContent = inBase ? n + '/' + BASE_N : n + '/' + L.length; b.classList.toggle('ready', next >= 0 && openAt(next)); };
   if (typeof refreshMeta === 'function') { const _rm = refreshMeta; window.refreshMeta = refreshMeta = function () { const r = _rm.apply(this, arguments); try { ldDot(); } catch (e) {} return r; }; }
   if (typeof renderRoad === 'function') { const _rr = renderRoad; window.renderRoad = renderRoad = function () { const r = _rr.apply(this, arguments);
       try { const road = $('road'); if (road && !$('ldBanner')) { const next = L.findIndex((q, i) => !beaten(i)), nx = next >= 0 ? L[next] : null; road.insertAdjacentHTML('beforebegin', `<button id="ldBanner" onclick="openLadder()"><b>The Ladder</b><small></small><em>Open</em></button>`); }
-        const bn = $('ldBanner'); if (bn) { const next = L.findIndex((q, i) => !beaten(i)); bn.querySelector('small').textContent = next < 0 ? 'All twenty rivals beaten.' : openAt(next) ? `Next: ${L[next].n}, ${L[next].title}` : `Next rival at ${gateOf(next)} trophies: ${L[next].n}`; } } catch (e) {}
+        const bn = $('ldBanner'); if (bn) { const next = L.findIndex((q, i) => !beaten(i)); bn.querySelector('small').textContent = next < 0 ? 'Every rival beaten.' : openAt(next) ? `Next: ${L[next].n}, ${L[next].title}` : `Next rival at ${gateOf(next)} trophies: ${L[next].n}`; } } catch (e) {}
       return r; }; }
   // variants in the spell book: shown, but won on the Ladder instead of bought with a token
   if (typeof openLocked === 'function') { const _ol = openLocked; window.openLocked = openLocked = function (k) { const v = VARIANTS[k]; if (!v) return _ol.apply(this, arguments);
@@ -224,6 +335,8 @@
   .lmid{flex:1;min-width:0;display:flex;flex-direction:column}.lmid b{font:14.5px 'Lilita One';letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lmid small{font:800 10.5px Nunito;color:#b9a6ee}
   .lhand{display:flex;gap:3px;margin-top:3px}.lhand img{width:24px;height:24px}.lrt{display:flex;flex-direction:column;align-items:flex-end;gap:3px}.lrt em{font:12px 'Lilita One';font-style:normal;border-radius:8px;padding:2px 8px;background:#0006;color:#cdbbff;white-space:nowrap}
   .lrt em.go{background:linear-gradient(#ffe27a,#f0a830);color:#2a1600}.lrt em.ok{background:#2fd08a;color:#062a16}.lrt small{display:flex;align-items:center;gap:3px;font:800 10.5px Nunito;color:#e8e0ff}.lrt small img{width:18px;height:18px}
+  .lhand .lq2,.lmys .lq2{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;background:#0d0a18;border:2px solid #000;color:#8d7fbf;font:14px 'Lilita One';font-style:normal}.lmys{display:flex;gap:6px;margin:4px 0}.lmys .lq2{width:38px;height:38px;font-size:20px;border-radius:10px}
+  .ltabs{margin:6px 0}.lab em.mn{font:800 9.5px Nunito;font-style:normal;background:#ffd75e;color:#2a1600;border-radius:5px;padding:0 5px;margin-left:4px;vertical-align:2px}
   .lintro{margin-top:8px;background:#fff8e6;color:#2a1a40;border:3px solid #000;border-radius:14px;padding:9px 11px;font:800 13px Nunito;line-height:1.3;box-shadow:0 3px 0 #000}.lintro b{display:block;font:15px 'Lilita One';color:#7a3fd6}.lintro em{font-style:normal;color:#c2410c}
   .lq{margin:8px 0 2px;text-align:center;font:italic 800 15px Nunito;color:#ffe9a8}.lbox{margin-top:8px;background:#0006;border:2px solid #000;border-radius:12px;padding:8px 10px}.lbox p{margin:2px 0 0;font:700 13px Nunito;line-height:1.35;color:#e8e0ff}
   .lbox.ltip{border-color:#7a5cff}.lab{display:flex;align-items:center;gap:8px;margin:5px 0}.lab img{width:34px;height:34px}.lab b{display:block;font:14px 'Lilita One'}.lab small{display:block;font:700 11px Nunito;color:#b9a6ee;line-height:1.25}

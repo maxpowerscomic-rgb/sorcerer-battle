@@ -177,7 +177,7 @@
 
   /* ---------------- hooks ---------------- */
   // no recordings of their own yet: borrow the nearest cast sounds
-  { const _sfx = sfx, AL = { c_bloodoath: ['c_rush', 1.1], c_bloodcraft: ['c_dissect', .82] }; window.sfx = sfx = function (id, o) { const al = AL[id]; return al ? _sfx(al[0], Object.assign({ rate: al[1] }, o || {})) : _sfx.apply(this, arguments); }; }
+  { const _sfx = sfx, AL = { c_bloodoath: ['c_rush', 1.1], c_bloodcraft: ['c_dissect', .82] }; window.sfx = sfx = function (id, o) { const al = AL[id]; return al && !(typeof AU !== 'undefined' && AU.man && AU.man[id]) ? _sfx(al[0], Object.assign({ rate: al[1] }, o || {})) : _sfx.apply(this, arguments); }; }   /* only until their own recordings exist */
   window.TECH_CAST = Object.assign(window.TECH_CAST || {}, { bloodoath: oathCast, bloodcraft: bloodCast });
   try { ONE_COPY.add('bloodoath'); } catch (e) {}
 

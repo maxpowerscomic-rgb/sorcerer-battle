@@ -97,6 +97,18 @@
   function prefMob(w, k) { const p = tgtPref(w, k); if (p !== 'strong' && p !== 'weak') return null;
     const mobs = enemyCreatures(w).filter(c => SUMMON_K.has(c.k) && c.e.x !== undefined); if (!mobs.length) return null;
     return mobs.reduce((a, b) => (p === 'strong' ? b.e.hp > a.e.hp : b.e.hp < a.e.hp) ? b : a).e; }
+  /* Leaving a Titan Shell does not break it: its plates let go one by one, drift apart and fade. */
+  let shellOffs = [];
+  function shellOff(w) { const sh = w.shell; if (!sh) return; const ac = sh.crimson ? ['#ffd6d2', '#ff2a3a'] : auraOf(w); w.shell = null; w.shellDown = 1;
+    shellOffs.push({ x: sh.ax === undefined ? w.x : sh.ax, y: sh.ay === undefined ? w.y : sh.ay, t: 0, l: ac[0], m: ac[1], seed: Math.random() * 9 }); text(w.x, w.y - 104 * HS, 'SHELL RELEASED', '#9fb8ff'); try { sfx('ui_deal', { x: w.x, rate: .6, vol: .7 }); } catch (e) {} }
+  window.shellOff = shellOff;
+  function drawShellOffs(x, dt) {
+    for (const o of shellOffs) { const k = o.t / .8; x.save(); x.translate(o.x, o.y); x.scale(SC, SC); x.lineCap = 'round';
+      for (let i = 0; i < 9; i++) { const d = i / 9 * .35, kk = Math.max(0, Math.min(1, (k - d) / (1 - d))), e = kk * kk, a0 = Math.PI + i / 9 * Math.PI, a1 = a0 + Math.PI / 9 * .86, out = e * 34, lift = e * 26, mid = (a0 + a1) / 2;
+        x.save(); x.translate(Math.cos(mid) * out, Math.sin(mid) * out * .6 - lift - 42); x.rotate((i % 2 ? 1 : -1) * e * .9); x.globalAlpha = (1 - kk) * .9;
+        x.strokeStyle = '#05020c'; x.lineWidth = 7; x.beginPath(); x.ellipse(0, 0, 50, 62, 0, a0, a1); x.stroke(); x.globalCompositeOperation = 'lighter'; x.strokeStyle = i % 2 ? o.l : o.m; x.lineWidth = 3.4; x.stroke(); x.restore(); }
+      x.restore(); }
+  }
   /* Titan Shell breaks like an ice wall: glassy shards in the shell's colour fly out, bounce and fade. Harmless. */
   let sshards = [];
   function shellShatter(w) {
@@ -257,7 +269,7 @@
     const loop = Math.floor((w.castN - 1) / Math.max(1, w.book.length));
     if (k === 'doubletake') { if (w.dtLoop === loop) { text(w.x, w.y - 80 * HS, 'ALREADY SWAPPED', '#bbb'); return; } w.dtLoop = loop; }
     if (k === 'polarity') { if (w.polLoop === loop) { text(w.x, w.y - 80 * HS, 'POLARITY SPENT', '#bbb'); return; } w.polLoop = loop;
-      if (w.bndSpent) { w.bndSpent = 0; w.boundary = 1; text(w.x, w.y - 80 * HS, 'BOUNDARY REFILLED', '#bcd2ff'); addFx({ k: 'refill', w, life: .6 }); return; } }
+      if (w.bndSpent) { w.bndSpent = 0; w.boundary = 1; text(w.x, w.y - 100 * HS, 'BOUNDARY READY', '#bcd2ff'); addFx({ k: 'refill', w, life: .6 }); } }
     if (k === 'sanctum') { const rest = U(w, k, 'rite') ? 1 : 2, burnt = loop < (w.sancFree || 0); if (burnt || (w.sancLoop >= 0 && loop - w.sancLoop < rest)) { text(w.x, w.y - 80 * HS, burnt ? 'BURNOUT' : loop === w.sancLoop ? 'SANCTUM SPENT' : 'SANCTUM RESTING', burnt ? '#ff9a6b' : '#bbb'); return; } w.sancLoop = loop; w.sancFree = 0; }
     // once per loop, so stacked defences can't loop forever (Ghost Form, Spell Shield, Hourglass, Titan Shell, Counter Stance)
     if (LOOP_ONCE[k]) { w.once = w.once || {}; if (w.once[k] === loop) { text(w.x, w.y - 80 * HS, LOOP_ONCE[k], '#bbb'); return; } w.once[k] = loop; }
@@ -388,17 +400,17 @@
       w.polN = (w.polN || 0) + 1; const str = U(w, k, 'field') ? 1.4 : 1;
       if (U(w, k, 'collapse') && w.polN % (U(w, k, 'rapid') ? 3 : 5) === 0) {
         const a = Math.atan2(o.y - w.y, o.x - w.x); { let L = 0; for (let q = 0; q < 900; q += 6) { const px = w.x + Math.cos(a) * q, py = w.y + Math.sin(a) * q; if (px < F.x0 - 30 || px > F.x1 + 30 || py < F.y0 - 40 || py > F.y1 + 30) break; L = q; }   // journey to the edge, for Unrestrained Collapse
-          orbsC.push({ o: w, x: w.x + Math.cos(a) * 20, y: w.y + Math.sin(a) * 20, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 2.9 + 1, wind: 1, dmg: S(w, k, 'dmg') * 2.4, hit: new Set(), t: 0, a, sx: w.x + Math.cos(a) * 20, sy: w.y + Math.sin(a) * 20, L, unbound: U(w, k, 'unbound') }); }
+          orbsC.push({ o: w, spm: U(w, k, 'fastorb') ? 1.3 : 1, big: U(w, k, 'bigorb') ? 1.3 : 1, x: w.x + Math.cos(a) * 20, y: w.y + Math.sin(a) * 20, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 2.9 + 1, wind: 1, dmg: S(w, k, 'dmg') * 2.4, hit: new Set(), t: 0, a, sx: w.x + Math.cos(a) * 20, sy: w.y + Math.sin(a) * 20, L, unbound: U(w, k, 'unbound') }); }
         text(w.x, w.y - 90 * HS, 'COLLAPSE', '#c48cff', true); shake = Math.max(shake, 4);
       } else if (w.polN % 2) { // Draw: a blue orb fired at the enemy; the first enemy it touches is hauled back to you
         const a = Math.atan2(o.y - w.y, o.x - w.x), loop = Math.floor(((w.castN || 1) - 1) / Math.max(1, w.book.length)), x0 = w.x + Math.cos(a) * 22, y0 = w.y + Math.sin(a) * 22;
-        orbsC.push({ o: w, draw: 1, out: 1, a, x: x0, y: y0, vx: Math.cos(a) * 330, vy: Math.sin(a) * 330, sp: 250 * str, life: 4.5, t: 0, dmg: S(w, k, 'dmg'), held: [], hitW: new Set(), hit: new Set(), loop,
+        orbsC.push({ o: w, draw: 1, out: 1, a, big: U(w, k, 'bigorb') ? 1.3 : 1, x: x0, y: y0, vx: Math.cos(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), vy: Math.sin(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), sp: 250 * str, life: 4.5, t: 0, dmg: S(w, k, 'dmg'), held: [], hitW: new Set(), hit: new Set(), loop,
           inD: new Set(domes.filter(d => d.o !== w && d.t < d.dur && Math.hypot(x0 - d.x, (y0 - d.y) * 1.4) < d.r)) });   // a dome it starts inside cannot stop it
         inkRing(x0, y0, '#3b9bff', 1, 30, 8, .35); shake = Math.max(shake, 4);
         text(w.x, w.y - 86 * HS, 'DRAW' + colTag(w), '#6fd3ff');
       } else { // Repel: an orb fired straight ahead that shoves back whatever it passes through
         const a = Math.atan2(o.y - w.y, o.x - w.x); w.repelT = 1.3 * str; addFx({ k: 'repel', x: w.x + Math.cos(a) * 16, y: w.y + Math.sin(a) * 16, life: .3, r: 44 }); shake = Math.max(shake, 5); text(w.x, w.y - 86 * HS, 'REPEL' + colTag(w), '#ff5a5a');
-        orbsC.push({ o: w, repel: 1, late: U(w, k, 'late'), bounced: 0, str, x: w.x + Math.cos(a) * 22, y: w.y + Math.sin(a) * 22, vx: Math.cos(a) * 330, vy: Math.sin(a) * 330, life: 4.5, dmg: S(w, k, 'dmg'), hit: new Set(), t: 0, a });
+        orbsC.push({ o: w, repel: 1, big: U(w, k, 'bigorb') ? 1.3 : 1, late: U(w, k, 'late'), bounced: 0, str, x: w.x + Math.cos(a) * 22, y: w.y + Math.sin(a) * 22, vx: Math.cos(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), vy: Math.sin(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), life: 4.5, dmg: S(w, k, 'dmg'), hit: new Set(), t: 0, a });
       }
     }
     if (k === 'zodiac') summonBeast(w);
@@ -409,7 +421,7 @@
       const max = S(w, k, 'hp') * (U(w, k, 'fortified') ? 1.8 : 1);
       if (w.shellDown) { w.shellDown = 0; w.shellForm = 1.2; text(w.x, w.y - 92 * HS, 'REFORMING…', '#9fb8ff'); }
       else if (w.shell) { const add = U(w, k, 'mend') ? max : max * .5; w.shell.max = max; w.shell.hp = Math.min(max, w.shell.hp + add); w.shell.mend = .6; text(w.x, w.y - 92 * HS, 'MENDED', '#bcd2ff'); }
-      else { w.shell = { hp: max, max, t: 0, form: 0, mend: 0 }; shake = Math.max(shake, 6); text(w.x, w.y - 96 * HS, 'TITAN SHELL', '#bcd2ff', true); }
+      else { w.shell = { hp: max, max, t: 0, form: 0, mend: 0, ax: w.x, ay: w.y }; shake = Math.max(shake, 6); text(w.x, w.y - 96 * HS, 'TITAN SHELL', '#bcd2ff', true); }
     }
     if (k === 'secondwind') {
       const mul = U(w, k, 'torrent') ? 2 : U(w, k, 'surge') ? 1.5 : 1;
@@ -803,7 +815,7 @@
     const prev = ents.map(w => ({ x: w.x, y: w.y }));
     const slowed = mudPre(dt);
     _update(dt);
-    updShards(dt);
+    updShards(dt); for (const o of shellOffs) o.t += dt; shellOffs = shellOffs.filter(o => o.t < .8);
     // runes, orb shots and arrows that fly through an enemy swarm hurt it (swarms take half damage)
     if (typeof swarms !== 'undefined' && swarms.length && typeof hurtSwarm === 'function') for (const L of [typeof runes !== 'undefined' ? runes : [], typeof arrows !== 'undefined' ? arrows : []]) for (const r of L) { if (!(r.life > 0)) continue;
       for (const q of swarms) if (q.o !== r.o && q.hp > 0 && Math.hypot(r.x - q.x, r.y - q.y) < 26) { r.hitS = r.hitS || new Set(); if (r.hitS.has(q)) continue; r.hitS.add(q); hurtSwarm(q, r.dmg || 8); } }
@@ -826,7 +838,14 @@
       if (w.dead) return; const o = w.foe;
       // Titan Shell roots you (Walking Titan: slow walk)
       if (w.shell) { w.shell.t += dt; w.shell.form = Math.min(1, w.shell.form + dt * 3); w.shell.hit = Math.max(0, (w.shell.hit || 0) - dt); w.shell.mend = Math.max(0, (w.shell.mend || 0) - dt);
-        const kk = U(w, 'titan', 'walking') ? .35 : 0; w.x = prev[i].x + (w.x - prev[i].x) * kk; w.y = prev[i].y + (w.y - prev[i].y) * kk; }
+        // The shell stands where it was raised. Walking Titan: it moves with you, slowly. Otherwise a pull holds you inside it
+        // unless you steer or dash; step out and it comes apart.
+        const sh = w.shell;
+        if (U(w, 'titan', 'walking')) { w.x = prev[i].x + (w.x - prev[i].x) * .35; w.y = prev[i].y + (w.y - prev[i].y) * .35; sh.ax = w.x; sh.ay = w.y; }
+        else { if (sh.ax === undefined) { sh.ax = prev[i].x; sh.ay = prev[i].y; }
+          const steering = w.me && window.STEER && STEER.p, dashing = (w.rush && w.rush.ph !== 'back') || (w.bo && w.bo.ph !== 'back') || w.drag;
+          if (!steering && !dashing) { w.x = prev[i].x + (w.x - prev[i].x) * .2; w.y = prev[i].y + (w.y - prev[i].y) * .2; const k2 = Math.min(1, dt * 5); w.x += (sh.ax - w.x) * k2; w.y += (sh.ay - w.y) * k2; }
+          if (Math.hypot(w.x - sh.ax, w.y - sh.ay) > 26) shellOff(w); } }
       if (w.shellForm > 0) w.shellForm -= dt;
       // Draw pull
       if (w.pull && w.pull.t > 0) { w.pull.t -= dt; const b = w.pull.by, d = dist(w, b) || 1; if (d > 34) { w.x += (b.x - w.x) / d * w.pull.s * dt; w.y += (b.y - w.y) / d * w.pull.s * dt; } if (Math.random() < .5) P({ x: w.x + rnd(-10, 10), y: w.y - rnd(10, 60) * HS, vx: (b.x - w.x) / d * 120, vy: (b.y - w.y) / d * 120, color: '#6fd3ff', size: 3, life: .3 }); }
@@ -856,9 +875,11 @@
       // Boundary: one shot stopped just before it lands
       if (w.boundary === undefined && U(w, 'polarity', 'boundary')) w.boundary = 1;
       // Boundary also stops a summon about to hit you: it freezes in place for a second
-      if (w.boundary) { const near = zombies.find(z => z.o !== w && z.hp > 0 && z.rise >= 1 && !(z.stun > 0) && Math.hypot(z.x - w.x, z.y - w.y) < 30) || golems.find(g => g.o !== w && g.hp > 0 && !(g.bndT > 0) && Math.hypot(g.x - w.x, g.y - w.y) < 40);
-        if (near) { w.boundary = 0; w.bndSpent = 1; near.bndT = 1; if (zombies.includes(near)) near.stun = 1; text(near.x, near.y - 70 * HS, 'BOUNDARY', '#bcd2ff', true); inkRing(w.x, w.y, '#bcd2ff', 2, 30, 36, .6); addFx({ k: 'ping', x: near.x, y: near.y - 20 * HS, life: .4 }); burst(near.x, near.y - 30 * HS, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); } }
-      if (w.boundary) for (const p of projs) if (p.o !== w && p.life > 0 && p.held === undefined && Math.hypot(p.x - w.x, p.y + 40 * HS - w.y) < 36) { p.held = 1; p.vx = 0; p.vy = 0; p.home = 0; p.bndBy = w; p.life = 2; w.boundary = 0; w.bndSpent = 1; text(w.x, w.y - 96 * HS, 'BOUNDARY', '#bcd2ff', true); addFx({ k: 'ping', x: p.x, y: p.y + 40 * HS, life: .4 }); inkRing(w.x, w.y, '#bcd2ff', 2, 30, 36, .6); burst(p.x, p.y, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); break; }
+      // (1.0.5) the first thing to arrive opens a one-second window; every summon and shot that arrives in it is stopped (wizard-rules.js runs the window)
+      if (w.boundary || w.bndWin > 0) { const open = () => { if (window.bndOpen) bndOpen(w); else { w.boundary = 0; w.bndWin = 1; } };
+        for (const near of zombies.filter(z => z.o !== w && z.hp > 0 && z.rise >= 1 && !(z.stun > 0) && Math.hypot(z.x - w.x, z.y - w.y) < 30).concat(golems.filter(g => g.o !== w && g.hp > 0 && !(g.bndT > 0) && Math.hypot(g.x - w.x, g.y - w.y) < 40))) {
+          open(); near.bndT = Math.max(.3, w.bndWin); if (zombies.includes(near)) near.stun = Math.max(.3, w.bndWin); addFx({ k: 'ping', x: near.x, y: near.y - 20 * HS, life: .4 }); burst(near.x, near.y - 30 * HS, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); }
+        for (const p of projs) if (p.o !== w && p.life > 0 && p.held === undefined && Math.hypot(p.x - w.x, p.y + 40 * HS - w.y) < 36) { open(); p.held = Math.max(.05, w.bndWin); p.vx = 0; p.vy = 0; p.home = 0; p.bndBy = w; p.life = 2; addFx({ k: 'ping', x: p.x, y: p.y + 40 * HS, life: .4 }); burst(p.x, p.y, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); } }
       // Spirit Arrow: the shell shoots while it stands
       if (w.shell && U(w, 'titan', 'arrow') && o && !o.dead) { w.shell.acd = (w.shell.acd === undefined ? 1 : w.shell.acd) - dt; if (w.shell.acd <= 0) { w.shell.acd = 2; const a = Math.atan2(o.y - w.y, o.x - w.x); tarrows.push({ o: w, x: w.x + Math.cos(a) * 24, y: w.y + Math.sin(a) * 24, vx: Math.cos(a) * 430, vy: Math.sin(a) * 430, life: 1.6, dmg: 7 }); } }
       // bleeding casters drip blood pools
@@ -927,7 +948,7 @@
       if (s.vivi) { const v = s.vivi, dx = s.x - v.x, dy = (s.y - v.y) * 1.4, d = Math.hypot(dx, dy);
         if (d > v.R) { const nx = dx / d, ny = dy / d, vy2 = s.vy * 1.4, dot = s.vx * nx + vy2 * ny; s.vx -= 2 * dot * nx; const ry = vy2 - 2 * dot * ny; s.vy = ry / 1.4; const k2 = (v.R - 2) / d; s.x = v.x + dx * k2; s.y = v.y + dy * k2 / 1.4; s.hit = new Set(); s.tested = new Set(); burst(s.x, s.y - 36 * HS, 5, ['#ffd6d2', '#ff3b4a', '#fff'], 120, 2.5, .25); } }
       else if (s.x < F.x0 - 20 || s.x > F.x1 + 20 || s.y < F.y0 - 30 || s.y > F.y1 + 20) s.life = 0;
-      for (const c of enemyCreatures(s.o)) { if (s.hit.has(c.e)) continue; if (Math.hypot(c.e.x - s.x, c.e.y - s.y) < 22 * (s.wd || 1)) { s.hit.add(c.e); hurtCreature(c.e, c.k, s.dmg, 'slash'); burst(c.e.x, c.e.y - 20 * HS, 8, ['#fff', '#ff3b4a'], 140, 3, .3);
+      for (const c of enemyCreatures(s.o)) { if (s.hit.has(c.e)) continue; if (Math.hypot(c.e.x - s.x, c.e.y - s.y) < 22 * (s.wd || 1)) { s.hit.add(c.e); hurtCreature(c.e, c.k, s.dmg * (s.keen ? 1.5 : 1), 'slash'); burst(c.e.x, c.e.y - 20 * HS, s.keen ? 12 : 8, ['#fff', '#ff3b4a'], 140, 3, .3); if (s.keen) text(c.e.x, c.e.y - 44 * HS, Math.round(s.dmg * 1.5), '#ffd6d2');
         // a cut stops at the first thing it hits; Rending Cut lets it carry on through two more, losing half its damage each time (Vivisection cuts keep rebounding)
         if (!s.vivi) { if (s.pierce > 0) { s.pierce--; s.dmg *= .5; inkRing(c.e.x, c.e.y, '#ff3b4a', 1, 5, 22); } else { s.life = 0; break; } } } }
       for (const wl of walls) if (wl.o !== s.o && s.life > 0 && wallD(wl, s.x, s.y) < 12 * (s.wd || 1)) {
@@ -999,7 +1020,7 @@
         if (!w.dead) { c.x = w.x + Math.cos(c.a) * 22; c.y = w.y + Math.sin(c.a) * 22; }   // the charge rides with the caster
         if (c.t >= c.wind) { c.launched = 1; c.t0 = c.t;
           const f = w.foe; if (f && !f.dead) c.a = Math.atan2(f.y - c.y, f.x - c.x);   // it fires at where the enemy is now
-          c.vx = Math.cos(c.a) * 150; c.vy = Math.sin(c.a) * 150; c.sx = c.x; c.sy = c.y;
+          c.vx = Math.cos(c.a) * 150 * (c.spm || 1); c.vy = Math.sin(c.a) * 150 * (c.spm || 1); c.sx = c.x; c.sy = c.y;
           { let L = 0; for (let q = 0; q < 900; q += 6) { const px = c.x + Math.cos(c.a) * q, py = c.y + Math.sin(c.a) * q; if (px < F.x0 - 30 || px > F.x1 + 30 || py < F.y0 - 40 || py > F.y1 + 30) break; L = q; } c.L = L; }
           shake = Math.max(shake, 18); slow = Math.min(slow, .06); setTimeout(() => { if (!ended) slow = 1; }, 170); if (typeof flashScreen === 'function') flashScreen();
           impacts.push({ x: c.x, y: c.y - 36 * HS, t: 0, r0: performance.now(), a: c.a, seed: Math.random() * 99 });
@@ -1023,8 +1044,8 @@
       if (c.draw && c.out) {   // outbound: straight through walls; an enemy Sanctum stops it; the first enemy it touches is caught
         const w = c.o, f = w.foe; let got = null;
         for (const dm of domes) if (c.life > 0 && dm.o !== w && dm.t < dm.dur && !c.inD.has(dm) && Math.hypot(c.x - dm.x, (c.y - dm.y) * 1.4) < dm.r) { c.life = 0; dm.hp -= c.dmg; dm.hit = .15; addFx({ k: 'ping', x: c.x, y: c.y, life: .35 }); burst(c.x, c.y - 36 * HS, 14, ['#3b9bff', '#bfe6ff', '#fff'], 160, 4, .4); text(c.x, c.y - 70 * HS, 'STOPPED', '#bcd2ff'); }
-        if (c.life > 0) { if (!f.dead && !ghosted(f) && Math.hypot(f.x - c.x, f.y - c.y) < 28) got = { e: f, k: 'wiz' };
-          else for (const e of enemyCreatures(w)) if (e.e.x !== undefined && e.k !== 'd' && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 26) { got = { e: e.e, k: e.k }; break; } }
+        if (c.life > 0) { if (!f.dead && !ghosted(f) && Math.hypot(f.x - c.x, f.y - c.y) < 28 * (c.big || 1)) got = { e: f, k: 'wiz' };
+          else for (const e of enemyCreatures(w)) if (e.e.x !== undefined && e.k !== 'd' && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 26 * (c.big || 1)) { got = { e: e.e, k: e.k }; break; } }
         if (got) { c.out = 0; c.t = 0; c.life = 3; c.vx = c.vy = 0; c.x = got.e.x; c.y = got.e.y;
           burst(c.x, c.y - 36 * HS, 16, ['#3b9bff', '#bfe6ff', '#061030'], 150, 4, .45); shake = Math.max(shake, 5);
           if (got.k === 'wiz' && anchored(f)) { c.life = 0; text(f.x, f.y - 96 * HS, 'ANCHORED', '#bcd2ff', true); }
@@ -1050,8 +1071,8 @@
       if (c.repel) {
         const f = c.o.foe, sp = Math.hypot(c.vx, c.vy) || 1, ux = c.vx / sp, uy = c.vy / sp;
         if (!c.bounced) {   // first pass: everything it touches is hurt once and shoved along its path; enemy shots are turned around
-          if (!f.dead && !ghosted(f) && !c.hit.has(f) && Math.hypot(f.x - c.x, f.y - c.y) < 28) { c.hit.add(f); damage(f, c.dmg, ux * 520 * c.str, uy * 520 * c.str, '#ffb0b0'); addFx({ k: 'repel', x: f.x, y: f.y, life: .35, r: 60 }); shake = Math.max(shake, 7); joltHit(c.o, f, 'wiz'); }
-          for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined && !c.hit.has(e.e) && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 26) { c.hit.add(e.e); hurtCreature(e.e, e.k, c.dmg * .6, 'crush'); const q = inArena(e.e.x + ux * 70 * c.str, e.e.y + uy * 70 * c.str); e.e.x = q.x; e.e.y = q.y; joltHit(c.o, e.e, e.k); }
+          if (!f.dead && !ghosted(f) && !c.hit.has(f) && Math.hypot(f.x - c.x, f.y - c.y) < 28 * (c.big || 1)) { c.hit.add(f); damage(f, c.dmg, ux * 520 * c.str, uy * 520 * c.str, '#ffb0b0'); addFx({ k: 'repel', x: f.x, y: f.y, life: .35, r: 60 }); shake = Math.max(shake, 7); joltHit(c.o, f, 'wiz'); }
+          for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined && !c.hit.has(e.e) && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 26 * (c.big || 1)) { c.hit.add(e.e); hurtCreature(e.e, e.k, c.dmg * .6, 'crush'); const q = inArena(e.e.x + ux * 70 * c.str, e.e.y + uy * 70 * c.str); e.e.x = q.x; e.e.y = q.y; joltHit(c.o, e.e, e.k); }
           for (const p of projs) if (p.o !== c.o && p.life > 0 && Math.hypot(p.x - c.x, p.y + 40 * HS - c.y) < 26) { p.vx = ux * 300; p.vy = uy * 300; p.o = c.o; p.tgt = null; }
           for (const q of slashes) if (q.o !== c.o && Math.hypot(q.x - c.x, q.y - c.y) < 26) { q.vx = ux * 380; q.vy = uy * 380; q.o = c.o; q.hit = new Set(); }
         }
@@ -1109,7 +1130,7 @@
   /* reset per round */
   const _startDuel = startDuel;
   window.startDuel = startDuel = function () {
-    slashes = []; domes = []; orbsC = []; halves = []; tarrows = []; clashes = []; sshards = []; fx = []; springs = []; motes = []; cleaves = []; muds = []; flames = []; EYE = null;
+    slashes = []; domes = []; orbsC = []; halves = []; tarrows = []; clashes = []; sshards = []; shellOffs = []; fx = []; springs = []; motes = []; cleaves = []; muds = []; flames = []; EYE = null;
     const r = _startDuel.apply(this, arguments);
     if (typeof ents !== 'undefined') ents.forEach(w => { w.shell = null; w.shellDown = 0; w.copyArmed = 0; w.copyGlow = 0; w.sanctNext = null; w.rush = null; w.jump = 0; w.infused = 0; w.cleaveN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].c) || 0; w.counter = null; w.qdSpent = 0; w.polN = (M && M.cnt && M.cnt[w.side] && M.cnt[w.side].p) || 0; w.zn = 0; w.zbag = null; w.ceaseT = 0; w.viviT = 0; w.viviLoop = undefined; w.pull = null; w.sw = null; w.swPause = 0; w.healAcc = 0; w.qdFill = 0; w.infArm = 0; w.repelT = 0; w.cdNum = 0; w.bleeds = null; w.braceT = 0; w.mom = 0; w.dmgSince = 0; w.finalUsed = 0; w.finalBoost = 0; w.fate = 0; w.fateUsed = 0; w.castN = 0; w.flyN = 0; w.dtLoop = -1; w.polLoop = -1; w.once = {}; w.mirN = 0; w.sancBurn = 0; w.sancFree = 0; w.sancLoop = -9; w.dragLoop = undefined; w.bo = null; w.chosenSaid = 0; w.dizzyT = 0; w.drag = null; w.boundary = undefined; w.bndSpent = 0; w._hpLast = w.hp; w._hpSeen = w.hp; });
     return r;
@@ -1225,6 +1246,7 @@
     for (const w of ents) if (!w.dead && w.up && U(w, 'doubletake', 'quickdraw') && has(w, 'doubletake')) { const rdy = !w.qdSpent; x.save(); x.translate(w.x, w.y + 9); x.globalAlpha = rdy ? .9 : .35; x.strokeStyle = '#000'; x.lineWidth = 4; x.fillStyle = rdy ? '#ffd6d2' : '#6a5560'; for (const s2 of [-1, 1]) { x.beginPath(); x.moveTo(s2 * 3, -3.5); x.lineTo(s2 * 10, 0); x.lineTo(s2 * 3, 3.5); x.closePath(); x.stroke(); x.fill(); } x.restore(); }
     // Titan Shells
     for (const w of ents) if (w.shell && !w.dead) drawShell(x, w);
+    drawShellOffs(x);
     for (const w of ents) if (w.shellForm > 0) { x.save(); x.globalAlpha = Math.min(1, w.shellForm) * .5; x.translate(w.x, w.y); x.strokeStyle = '#9fb8ff'; x.setLineDash([4, 5]); x.lineWidth = 1.5; x.beginPath(); x.ellipse(0, -46 * HS, 34 * SC, 62 * HS, 0, 0, 7); x.stroke(); x.restore(); }
     // Copy Cast armed: eye glow over the head
     for (const w of ents) if (w.copyArmed > 0 && !w.dead) { const ex = w.x + w.face * 3 * SC, ey = w.y - 47 * SC; x.save(); x.globalCompositeOperation = 'lighter'; const gg = x.createRadialGradient(ex, ey, 0, ex, ey, 12); gg.addColorStop(0, 'rgba(255,60,80,.9)'); gg.addColorStop(1, 'rgba(255,0,40,0)'); x.fillStyle = gg; x.beginPath(); x.arc(ex, ey, 12 + Math.sin(T * 10) * 2, 0, 7); x.fill(); x.restore(); }
@@ -1301,14 +1323,14 @@
     // Collapse: the arena dims and a violet singularity drags light into itself
     if (orbsC.some(c => !c.repel && !c.draw)) { x.save(); x.fillStyle = 'rgba(10,2,30,.32)'; x.fillRect(0, 0, cv.width / dpr, cv.height / dpr); x.restore(); }
     for (const c of orbsC) { if (c.draw) {   // Draw orb: a blue core inside a wavering, smoky halo that drags light in behind it
-        x.save(); x.translate(c.x, c.y - 36 * HS); const t = c.t, R = 13 + Math.sin(t * 16) * 1.5, grow = Math.min(1, t * 5); x.scale(grow, grow);
+        x.save(); x.translate(c.x, c.y - 36 * HS); const t = c.t, R = 13 + Math.sin(t * 16) * 1.5, grow = Math.min(1, t * 5) * (c.big || 1); x.scale(grow, grow);
         x.globalCompositeOperation = 'lighter';
         for (let i = 0; i < 6; i++) { const a = t * (1.6 + i * .3) + i * 1.05, rx = R * (2.2 + .5 * Math.sin(t * 3 + i)), ry = R * (1.3 + .4 * Math.cos(t * 2.4 + i)); x.save(); x.rotate(a); x.globalAlpha = .16 + .08 * Math.sin(t * 5 + i); const g = x.createRadialGradient(0, 0, 0, 0, 0, rx); g.addColorStop(0, 'rgba(90,170,255,.9)'); g.addColorStop(.5, 'rgba(20,80,220,.4)'); g.addColorStop(1, 'rgba(0,30,120,0)'); x.fillStyle = g; x.beginPath(); x.ellipse(rx * .15, 0, rx, ry, 0, 0, 7); x.fill(); x.restore(); }
         const g3 = x.createRadialGradient(0, 0, 0, 0, 0, R * 2.6); g3.addColorStop(0, '#ffffff'); g3.addColorStop(.3, 'rgba(110,190,255,.95)'); g3.addColorStop(.7, 'rgba(40,120,255,.35)'); g3.addColorStop(1, 'rgba(40,120,255,0)'); x.fillStyle = g3; x.beginPath(); x.arc(0, 0, R * 2.6, 0, 7); x.fill();
         x.lineCap = 'round'; for (let i = 0; i < 8; i++) { const a0 = i * .785 + t * 3, r0 = R * 3 * (1 - ((t * 1.4 + i / 8) % 1)) + R * .6; x.strokeStyle = `rgba(${i % 2 ? 190 : 90},${i % 2 ? 225 : 170},255,${.55 * (1 - ((t * 1.4 + i / 8) % 1))})`; x.lineWidth = 2; x.beginPath(); x.arc(0, 0, r0, a0, a0 + .9); x.stroke(); }
         x.globalCompositeOperation = 'source-over'; x.fillStyle = '#020a1a'; x.beginPath(); x.arc(0, 0, R * .55, 0, 7); x.fill(); x.strokeStyle = '#d6ecff'; x.lineWidth = 1.6; x.stroke();
         x.restore(); continue; }
-      if (c.repel) { x.save(); x.translate(c.x, c.y - 36 * HS); x.fillStyle = '#12020a'; x.beginPath(); x.arc(0, 0, (c.bounced ? 11 : 9), 0, 7); x.fill(); x.globalCompositeOperation = 'lighter'; const R3 = (c.bounced ? 14 : 11) + Math.sin(c.t * 22) * 1.5, g3 = x.createRadialGradient(0, 0, 0, 0, 0, R3 * 2.4); g3.addColorStop(0, '#ffffff'); g3.addColorStop(.35, c.bounced ? 'rgba(255,90,90,.95)' : 'rgba(255,150,150,.6)'); g3.addColorStop(1, 'rgba(255,40,40,0)'); x.fillStyle = g3; x.beginPath(); x.arc(0, 0, R3 * 2.4, 0, 7); x.fill();
+      if (c.repel) { x.save(); x.translate(c.x, c.y - 36 * HS); x.scale(c.big || 1, c.big || 1); x.fillStyle = '#12020a'; x.beginPath(); x.arc(0, 0, (c.bounced ? 11 : 9), 0, 7); x.fill(); x.globalCompositeOperation = 'lighter'; const R3 = (c.bounced ? 14 : 11) + Math.sin(c.t * 22) * 1.5, g3 = x.createRadialGradient(0, 0, 0, 0, 0, R3 * 2.4); g3.addColorStop(0, '#ffffff'); g3.addColorStop(.35, c.bounced ? 'rgba(255,90,90,.95)' : 'rgba(255,150,150,.6)'); g3.addColorStop(1, 'rgba(255,40,40,0)'); x.fillStyle = g3; x.beginPath(); x.arc(0, 0, R3 * 2.4, 0, 7); x.fill();
         if (c.bounced) { x.strokeStyle = '#fff'; x.lineWidth = 1.6; x.setLineDash([3, 4]); x.beginPath(); x.arc(0, 0, R3 * 1.7, c.t * 8, c.t * 8 + 6.283); x.stroke(); } x.restore(); continue; }
       if (c.wind && !c.launched) { drawCollapseWind(x, c); continue; }
       // rainbow wake from the launch point to the singularity, cycling like Desperate Output
@@ -1512,7 +1534,8 @@
       x.restore(); }
   }
 
-  function drawShell(x, w) {
+  function drawShell(x, w0) {
+    const w = w0.shell.ax === undefined ? w0 : Object.assign(Object.create(w0), { x: w0.shell.ax, y: w0.shell.ay });   // drawn where it stands, not where the fighter leans
     const sh = w.shell, f = sh.form, q = sh.hp / sh.max, H = 100, Wd = 44, t = sh.t, ac = sh.crimson ? ['#ffd6d2', '#ff2a3a'] : auraOf(w), rgb = h => { const n = parseInt(h.slice(1), 16); return `${n >> 16},${n >> 8 & 255},${n & 255}`; }, cL = rgb(ac[0]), cM = rgb(ac[1]), fort = U(w, 'titan', 'fortified');
     // liquid smoke outline: two slow, wobbling ink bands that hug the shell
     x.save(); x.translate(w.x, w.y); x.scale(SC, SC); x.lineJoin = 'round';
@@ -1886,8 +1909,8 @@
     if (p.held > 0) {
       p.held -= dt; p.life = Math.max(p.life, 1);
       if (Math.random() < dt * 8) P({ x: p.x + rnd(-14, 14), y: p.y + rnd(-14, 14), vx: rnd(-20, 20), vy: rnd(-20, 20), color: '#bcd2ff', size: 2, life: .3 });
-      if (p.held <= 0) { const src = p.o, fa = Math.atan2(src.y - 40 * HS - p.y, src.x - p.x); if (p.bndBy) p.o = p.bndBy; p.tgt = null; p.vx = Math.cos(fa) * 420; p.vy = Math.sin(fa) * 420; p.life = 1.6; burst(p.x, p.y, 10, ['#e6f0ff', '#7aa6ff'], 150, 3, .3); inkRing(p.x, p.y, '#bcd2ff', 1, 6, 24);
-        if (p.bndBy) { p.held = undefined; p.hitZ = new Set(); return false; } }   // sent back: it is a live shot again, now the catcher's
+      if (p.held <= 0) { const fa = rnd(0, 6.283); if (p.bndBy) p.o = p.bndBy;   /* flung off at random, still a live shot */ p.tgt = null; p.vx = Math.cos(fa) * 420; p.vy = Math.sin(fa) * 420; p.life = 1.6; burst(p.x, p.y, 10, ['#e6f0ff', '#7aa6ff'], 150, 3, .3); inkRing(p.x, p.y, '#bcd2ff', 1, 6, 24);
+        if (p.bndBy) { p.held = undefined; p.hitZ = new Set(); try { if (window.bndOut) bndOut(p, 'proj', 36 * HS); } catch (e) {} return false; } }   // sent back: it is a live shot again, now the catcher's
     } else { p.x += p.vx * dt; p.y += p.vy * dt; if (p.x < F.x0 - 60 || p.x > F.x1 + 60 || p.y < F.y0 - 100 || p.y > F.y1 + 60) p.life = 0; }
     const sp2 = Math.hypot(p.vx, p.vy) || 1;
     for (let q = 0; q < 2; q++) fireFx.push({ x: p.x - p.vx / sp2 * rnd(0, 10) + rnd(-3, 3), y: p.y - p.vy / sp2 * rnd(0, 10) + rnd(-3, 3), vx: -p.vx * .12 + rnd(-12, 12), vy: -p.vy * .12 - rnd(10, 30), t: 0, life: rnd(.22, .38), s: rnd(6, 10) * (p.r / 9), seed: rnd(0, 99), smoke: 0 });

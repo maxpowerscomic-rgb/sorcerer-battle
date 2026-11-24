@@ -15,7 +15,7 @@ const TECH = {
   dissect:    { n: 'Dissection',    el: 'ki',    t: 1.3, range: 170, d: 'Throw a razor-thin cutting slash. It stops at the first creature or caster it hits.', tag: 'Cuts' },
   sanctum:    { n: 'Sanctum',       el: 'ward',  t: 3, range: 150, d: 'A 100 HP dome. Inside it you deal 20% more damage, and enemies are trapped, slowed and hit by your casts. Leave it and it crumbles.', tag: 'Dome' },
   doubletake: { n: 'Double Take',   el: 'ki',    t: 1.5, range: 150, d: 'Clap, and swap places with the enemy. Their aim is thrown off for a moment. Only one Double Take per loop.', tag: 'Swaps' },
-  rush:       { n: 'Rushdown',      el: 'ki',    t: 1.9, range: 70,  d: 'Dash at the nearest enemy unit, land a 4-punch combo it cannot walk out of, then spring back. Ice in the way gets punched first.', tag: 'Brawls' },
+  rush:       { n: 'Rushdown',      el: 'ki',    t: 1.6, range: 70,  d: 'Dash at the nearest enemy unit, land a 4-punch combo it cannot walk out of, then spring back. Ice in the way gets punched first.', tag: 'Brawls' },
   polarity:   { n: 'Polarity',      el: 'ward',  t: 1.8, range: 160, d: 'Alternates each cast: Draw fires an orb that hauls the first enemy it touches back to you; Repel fires one that shoves back all it passes through.', tag: 'Push/Pull' },
   zodiac:     { n: 'Zodiac Beasts', el: 'beast', t: 2.4, range: 180, d: 'Summon one of the twelve zodiac shadow-beasts at random. Each one fights differently.', tag: 'Summons' },
   titan:      { n: 'Titan Shell',   el: 'ward',  t: 1.6, range: 120, d: 'A spectral guardian soaks direct hits until it breaks and deals 5 back to whatever hits it. You are rooted inside. Once per loop.', tag: 'Armor' },
@@ -44,7 +44,7 @@ UPG.healspring = [{ id: 'shared', n: 'Shared Waters', d: 'Your creatures standin
 const TECH_STATS = {
   healspring: { heal: [4, 4.5, 5, 5.5, 6], dur: [4, 4, 4.5, 4.5, 5], radius: [58, 60, 62, 65, 68] },
   dissect:    { dmg: [10, 11, 13, 15, 17] },
-  sanctum:    { dur: [3, 3.2, 3.4, 3.7, 4], radius: [115, 121, 127, 136, 144] },
+  sanctum:    { dur: [3, 3.2, 3.4, 3.7, 4], radius: [132, 139, 146, 156, 166] },
   doubletake: { stun: [0.3, 0.35, 0.4, 0.45, 0.5] },
   rush:       { dmg: [4.2, 4.6, 5.1, 5.7, 6.4] },
   polarity:   { dmg: [8, 9, 10, 12, 14], pull: [260, 280, 300, 330, 360] },
@@ -59,7 +59,7 @@ const TECH_STATS = {
   earthm:     { dur: [6, 6, 6.5, 6.5, 7], radius: [95, 98, 102, 106, 112], wall: [75, 82, 90, 100, 112] },
 };
 for (const k in TECH_STATS) for (const st in TECH_STATS[k]) {
-  const a = TECH_STATS[k][st], step = (a[4] - a[0]) / 4, dec = a.some(v => v % 1) ? 1 : 0;
+  const a = TECH_STATS[k][st], step = (a[4] - a[0]) / 4 * (LEVEL_SCALED.has(st) ? LEVEL_GROWTH : 1), dec = a.some(v => v % 1) ? 1 : 0;
   TECH_STATS[k][st] = Array.from({ length: MAXL }, (_, i) => { const v = a[0] + step * Math.min(i, 9) + step / 2 * Math.max(0, i - 9); return dec ? Math.round(v * 100) / 100 : Math.round(v); });
 }
 Object.assign(STATS, TECH_STATS);
@@ -71,7 +71,7 @@ Object.assign(STAT_LBL_SPELL, {
 });
 
 Object.assign(UPG, {
-  dissect:    [{ id: 'triple', n: 'Triple Cut', d: 'Throw 3 slashes in a fan, each at 65% damage.' }, { id: 'ceaseless', n: 'Ceaseless Cut', d: 'Keep slashing for 1.6 seconds: a storm of cuts at 35% each.', req: 'triple' }, { id: 'vivisect', n: 'Vivisection', d: 'Every other loop, 4 cuts rebound around you for 1.6s, slicing all nearby.', req: 'ceaseless' }, { id: 'vivi2', n: 'Flaying Spiral', d: 'Vivisection throws 8 rebounding cuts instead of 4.', req: 'vivisect' }, { id: 'keen', n: 'Keen Edge', d: 'Slashes do 3 times damage to ice walls, pillars and mud walls.' },
+  dissect:    [{ id: 'triple', n: 'Triple Cut', d: 'Throw 3 slashes in a fan, each at 65% damage.' }, { id: 'ceaseless', n: 'Ceaseless Cut', d: 'Keep slashing for 1.6 seconds: a storm of cuts at 35% each.', req: 'triple' }, { id: 'vivisect', n: 'Vivisection', d: 'Every other loop, 4 cuts rebound around you for 1.6s, slicing all nearby.', req: 'ceaseless' }, { id: 'vivi2', n: 'Flaying Spiral', d: 'Vivisection throws 8 rebounding cuts instead of 4.', req: 'vivisect' }, { id: 'keen', n: 'Keen Edge', d: 'Slashes do 3 times damage to ice walls, pillars and mud walls, and 50% more to summons.' },
                { id: 'cutter', n: 'Spell Cutter', d: 'Slashes have a 50% chance to cut an enemy spell in two mid-flight.' }, { id: 'sting', n: 'Stinging Wounds', d: 'Hits make the enemy bleed 0.5 a second for 3s. Stacks up to 3 times.' }, { id: 'cleave', n: 'Grand Bisection', d: 'Every fifth cast counts down 3, 2, 1 into one huge chop for 3.5x damage.', sig: 1 }, { id: 'swift', n: 'Swift Bisection', d: 'Grand Bisection comes every third cast instead of every fifth.', req: 'cleave' }, { id: 'fated', n: 'Inevitable Cut', d: 'Grand Bisection cannot be dodged or phased through. It always lands.', req: 'cleave', rare: 1 }, { id: 'narrow', n: 'Honed Edge', d: 'Grand Bisection becomes a thin cut: 50% more damage, but it can miss.', req: 'cleave' }, { id: 'rend', n: 'Rending Cut', d: 'Cuts pass through 2 targets instead of stopping, losing half damage each.' }, { id: 'broad', n: 'Broad Slash', d: 'Slashes are 30% wider and hit everything across that width.' }],
   sanctum:    [{ id: 'surehit', n: 'Sure Hit', d: 'The boosted cast cannot be dodged or blocked if the enemy is inside the dome.' }, { id: 'rite', n: 'Unbroken Rite', d: 'Sanctum no longer has to rest every other loop.' }, { id: 'vast', n: 'Vast Sanctum', d: 'The dome is 44% bigger and the boosted blast 50% bigger.' }, { id: 'linger', n: 'Lingering Sanctum', d: 'The dome lasts twice as long.' }, { id: 'oneway', n: 'One-Way Walls', d: 'Enemies can walk into the dome but cannot walk back out.' }],
   doubletake: [{ id: 'behind', n: 'Behind You', d: 'Instead of swapping, appear right behind the enemy.', grp: 'swap' }, { id: 'quickdraw', n: 'Quick Draw', d: 'Fires early to dodge a hit. The next Double Take cast only refills it.' }, { id: 'clap', n: 'Shock to the Senses', d: 'The clap hurts the enemy for 3 damage.' }, { id: 'dizzy', n: 'Disoriented', d: 'After a swap the enemy aims in random directions for 3 seconds.' }, { id: 'abrupt', n: 'Abrupt Swap', d: 'The enemy you swap with is stunned for 1 second.' }],
@@ -83,8 +83,9 @@ Object.assign(UPG, {
                { id: 'pain', n: 'Ignore the Pain', d: 'While rushing, stuns, knockback and slows cannot stop you.' }, { id: 'momentum', n: 'Momentum', d: 'Every punch that lands adds 2% punch damage. Resets each round.' }],
   polarity:   [{ id: 'collapse', n: 'Collapse', d: 'Every fifth cast fuses both forces into a singularity that pierces everything.', sig: 1 }, { id: 'rapid', n: 'Rapid Collapse', d: 'Collapse comes every third cast instead of every fifth.', req: 'collapse' }, { id: 'unbound', n: 'Unrestrained Collapse', d: 'Halfway across, Collapse bursts into a huge blast that hurts everyone, you too.', req: 'collapse', rare: 1 }, { id: 'field', n: 'Strong Field', d: 'Draw and Repel are 40% stronger and reach farther.' },
                { id: 'late', n: 'Late Detonation', d: 'The Repel orb bounces off the arena edge, then explodes on contact.' }, { id: 'drag', n: 'Crescent Drag', d: 'Draw swings a caught enemy caster behind you, smashing what is in the way. Rests 2 loops.' }, { id: 'dragfast', n: 'Waxing Crescent', d: 'Crescent Drag rests 1 loop instead of 2.', req: 'drag' },
-               { id: 'boundary', n: 'Boundary', d: 'Stops the next move that would hit you, holds it a second, then sends it back. A Polarity turn refills it.' },
-               { id: 'jolt', n: 'Stunning Force', d: 'Enemies caught by Draw or struck by Repel are stunned for 1 second.' }],
+               { id: 'boundary', n: 'Boundary', d: 'When something would hit you, everything arriving for 1 second is stopped, then flung off at random. Your next Polarity turn reloads it and still fires.' },
+               { id: 'jolt', n: 'Stunning Force', d: 'Enemies caught by Draw or struck by Repel are stunned for 1 second.' },
+               { id: 'fastorb', n: 'Swift Force', d: 'Polarity orbs fly 30% faster.' }, { id: 'bigorb', n: 'Wide Force', d: 'Polarity orbs are 30% bigger, so they catch and strike from farther.' }],
   zodiac:     [{ id: 'cycle', n: 'Full Cycle', d: 'No repeats until all twelve beasts have been summoned.' }, { id: 'tempo', n: 'Rising Tempo', d: 'First summon is 40% slower, then each is 12% faster (down to half).' }, { id: 'pack', n: 'Pack Call', d: 'Smaller beasts (rat, rabbit, rooster) come in pairs.' },
                { id: 'mend', n: 'Mend the Pack', d: 'Each Zodiac cast heals your living beasts by 50%.' }, { id: 'mend2', n: 'Full Mend', d: 'Each Zodiac cast heals your living beasts fully.', req: 'mend' }],
   titan:      [{ id: 'fortified', n: 'Fortified', d: 'The shell is 80% more durable.' }, { id: 'walking', n: 'Walking Titan', d: 'Move slowly while inside the shell instead of being rooted.', req: 'fortified' }, { id: 'mend', n: 'Deep Mend', d: 'Recasting repairs the shell fully instead of by half.' }, { id: 'arrow', n: 'Spirit Arrow', d: 'The shell fires an arrow at the enemy caster every 2 seconds.' }],

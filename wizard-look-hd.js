@@ -284,6 +284,17 @@
   const LEG_B = 'M-1.4,-21.4 C7.4,-21 14.4,-15.4 13.6,-7.4 L12.4,-4.2 L5.6,-4.2 C5.8,-8.6 3,-12.6 -2,-14.6 Z';
   const HAIR = 'M-9.4,1.6 L-12.8,-3 L-9.2,-4.4 L-13.2,-10.8 L-7.2,-9.2 L-7.8,-16.6 L-2,-12 L1.6,-18.6 L4.2,-11.8 L9.8,-16 L9,-8.8 L13,-7.6 L9.8,-3.4 C6,-6.8 -1,-7 -5.4,-4.2 C-7.4,-2.8 -8.6,-.6 -9.4,1.6 Z';
   const HAIR_CAP = 'M-9.4,1.6 C-11.4,-6 -6.2,-11.8 0,-11.6 C6.2,-11.8 10.8,-7.6 9.8,-3.4 C6,-6.8 -1,-7 -5.4,-4.2 C-7.4,-2.8 -8.6,-.6 -9.4,1.6 Z';
+  /* Hairstyles (wardrobe: Hairstyle). Each shares the hairline of the original so the headband still sits right. */
+  const HAIR_STYLES = {
+    spiky: HAIR,
+    wild: 'M-9.4,1.6 L-15,-1 L-10.6,-5 L-17,-9.6 L-10,-10.6 L-13,-18.6 L-5.6,-14 L-4,-22 L.6,-14.4 L5,-20.6 L6.6,-12.6 L12.6,-15 L10.6,-8.4 L14.6,-5.4 L9.8,-3.4 C6,-6.8 -1,-7 -5.4,-4.2 C-7.4,-2.8 -8.6,-.6 -9.4,1.6 Z',
+    mohawk: 'M-9.4,1.6 C-10.4,-3.4 -7.6,-8 -3.6,-9.6 L-5,-17 L-1.4,-13.6 L.4,-21.4 L2.8,-13.8 L6,-18 L6.2,-10.4 C9.4,-9 10.6,-6 9.8,-3.4 C6,-6.8 -1,-7 -5.4,-4.2 C-7.4,-2.8 -8.6,-.6 -9.4,1.6 Z',
+    bob: 'M-10.8,7 C-13.6,-5 -7.6,-12.8 0,-12.6 C7.6,-12.8 13,-6 10.8,6 C9.6,2.4 9.2,-.8 8.8,-3.6 C5,-6.6 -1,-6.8 -5,-4.4 C-7.8,-2.2 -9.6,2.4 -10.8,7 Z',
+    long: 'M-9.8,2 C-12,-6.4 -6.4,-12.4 0,-12.2 C6.4,-12.4 11.2,-7.8 9.8,-3.4 C6,-6.8 -1,-7 -5.4,-4.2 C-7.4,-2.8 -8.8,-.4 -9.8,2 Z',
+    bald: null,
+  };
+  const HAIR_BACK = { long: 'M-10,-3 C-15.6,5 -16.4,15 -13.4,24 L-7.6,21.6 L-5.4,25.4 L-1.6,20.4 C-5.6,13 -5.6,5 -3.6,-1 Z', bob: 'M-10.6,-2 C-13.4,3 -12.6,8.4 -9.6,11 L-5,8 C-7,5 -7,1 -5.6,-2 Z' };
+  window.HAIR_STYLE_IDS = Object.keys(HAIR_STYLES);
   const BAND = 'M-9,-3.4 C-4,-7 5,-7.4 10,-3.8 L9.8,-1 C5,-4.4 -4,-4 -8.8,-.5 Z';
   const ARMS = {      // [shoulder, elbow, hand] for the lead arm (front, +x) and the rear arm (-x)
     idle:   { lead: [[8, -38.6], [15.6, -31.6], [17.6, -40]], rear: [[-8.4, -38.4], [-14, -31.4], [-8, -27.6]] },
@@ -319,6 +330,7 @@
       x.fillStyle = hair; x.strokeStyle = '#000'; x.lineWidth = LW * (2.2); x.beginPath(); x.arc(-4.4, -12.6, 4.6, 0, 7); x.fill(); x.stroke();
       if (!fl) { x.strokeStyle = trim; x.lineWidth = LW * (2); x.beginPath(); x.moveTo(-7.6, -9.6); x.lineTo(-1.4, -9.2); x.stroke(); fs(x, 'M-3.4,-13 C1,-20 7,-23.6 13,-24.6 C11,-19 6,-14 -1.4,-10.6 Z', vgrad(x, -25, -10, '#ff8a96', '#e0344a'), 1.6); }
     }
+    { const hb = HAIR_BACK[w.hairStyle]; if (hb && gear !== 'hood' && gear !== 'feathered' && gear !== 'mushroom') fs(x, hb, fl ? '#fff' : hairD, 2); }   // hair that hangs behind the head
     drawHeadBase(x, w.skin, fl);
     const masked = gear === 'witch';
     if (!fl) drawFace(x, w, pose, { eyeY: 1.2, brow: mul(hair === '#fff' ? '#cccccc' : hair, .6), sharp: true, mouth: !masked });
@@ -326,10 +338,11 @@
     if (w.wnd && w.wnd.lvl > 0 && !fl && typeof drawWounds === 'function') { x.save(); x.translate(-1, 49.5); drawWounds(x, w, 'head'); x.restore(); }
     if (masked) { const mk = 'M-8.9,3.2 C-3,1.4 5.4,1.6 9.4,2.8 C9.9,7.4 6.6,11 1.6,12 C-4.2,11.4 -8.4,8.2 -8.9,3.2 Z'; fs(x, mk, F2(fl, mul(c[2], .9)), 2); if (!fl) { x.strokeStyle = trim; x.lineWidth = LW * (1.2); x.beginPath(); x.moveTo(-8.6, 3.6); x.bezierCurveTo(-3, 2, 5.4, 2.2, 9.2, 3.2); x.stroke(); x.strokeStyle = 'rgba(255,255,255,.25)'; x.lineWidth = LW * (1); x.beginPath(); x.moveTo(-2, 6); x.quadraticCurveTo(2, 7.4, 6, 6); x.moveTo(-1, 9); x.quadraticCurveTo(2, 10, 4.6, 9); x.stroke(); } }
     if (gear === 'hood') { drawHatHD(x, w, 'front', fl, 0); return; }
-    const sleek = gear === 'feathered' || gear === 'mushroom', hp = sleek ? HAIR_CAP : HAIR;
-    fs(x, hp, hair, 0);
-    if (!fl) within(x, hp, () => { x.fillStyle = hairD; x.globalAlpha = .55; x.fillRect(3.4, -22, 14, 26); x.globalAlpha = .6; x.strokeStyle = '#fff'; x.lineWidth = LW * (1.2); x.beginPath(); if (sleek) { x.moveTo(-6.6, -5.4); x.quadraticCurveTo(-3, -9.6, 2, -9.8); } else { x.moveTo(-9.4, -5); x.lineTo(-10.6, -8.4); x.moveTo(-5.4, -9.4); x.lineTo(-6, -13); x.moveTo(.4, -12); x.lineTo(1.4, -15); } x.stroke(); x.globalAlpha = 1; });
-    x.lineWidth = LW * (2.3); x.strokeStyle = '#000'; x.stroke(path(hp));
+    const sleek = gear === 'feathered' || gear === 'mushroom', chosen = w.hairStyle && w.hairStyle in HAIR_STYLES ? HAIR_STYLES[w.hairStyle] : HAIR, hp = sleek ? HAIR_CAP : (chosen || HAIR_CAP), bald = !sleek && chosen === null;
+    if (bald) { if (!fl) { x.save(); x.globalAlpha = .16; x.fillStyle = hair; x.fill(path(HAIR_CAP)); x.restore(); } }
+    else fs(x, hp, hair, 0);
+    if (!fl && !bald) within(x, hp, () => { x.fillStyle = hairD; x.globalAlpha = .55; x.fillRect(3.4, -22, 14, 26); x.globalAlpha = .6; x.strokeStyle = '#fff'; x.lineWidth = LW * (1.2); x.beginPath(); if (sleek) { x.moveTo(-6.6, -5.4); x.quadraticCurveTo(-3, -9.6, 2, -9.8); } else { x.moveTo(-9.4, -5); x.lineTo(-10.6, -8.4); x.moveTo(-5.4, -9.4); x.lineTo(-6, -13); x.moveTo(.4, -12); x.lineTo(1.4, -15); } x.stroke(); x.globalAlpha = 1; });
+    if (!bald) { x.lineWidth = LW * (2.3); x.strokeStyle = '#000'; x.stroke(path(hp)); }
     if (gear === 'mushroom') { // straw hat
       const kasa = 'M-21.6,-5 L-.4,-18.6 L21.6,-5 Q0,1.2 -21.6,-5 Z';
       fs(x, kasa, fl ? '#fff' : vgrad(x, -18, 0, '#f2d78a', '#b98a3a'), 0);

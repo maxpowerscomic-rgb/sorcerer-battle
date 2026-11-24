@@ -897,5 +897,183 @@
   "files": [
    "audio/bgm_final2.mp3"
   ]
+ },
+ "c_chosen": {
+  "kind": "sfx",
+  "prompt": "soft radiant chime swell, a bright shimmering light rising quickly and settling, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 0.6,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_chosen.mp3"
+  ]
+ },
+ "c_bloodoath": {
+  "kind": "sfx",
+  "prompt": "a sword pulled from its sheath with a steel ring, then two fast wet blade cuts, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 0.8,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_bloodoath.mp3"
+  ]
+ },
+ "c_bloodcraft": {
+  "kind": "sfx",
+  "prompt": "thick liquid whoosh, a spinning disc of heavy liquid slicing through the air with a wet splatter tail, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 0.6,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_bloodcraft.mp3"
+  ]
+ },
+ "c_bluefire": {
+  "kind": "sfx",
+  "prompt": "hissing blue-hot flame burst, sharper and higher pitched than a fireball, like a gas torch igniting with a roar, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 0.7,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_bluefire.mp3"
+  ]
+ },
+ "c_opensanctum": {
+  "kind": "sfx",
+  "prompt": "deep resonant temple bell with an airy shimmer spreading outward, wide and open, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 1.0,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_opensanctum.mp3"
+  ]
+ },
+ "c_crimsontitan": {
+  "kind": "sfx",
+  "prompt": "heavy armoured guardian appearing, a deep metallic clang with a low menacing growl underneath, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 0.9,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_crimsontitan.mp3"
+  ]
+ },
+ "c_violetbolt": {
+  "kind": "sfx",
+  "prompt": "double thunder crack, a sharp electric zap followed at once by a lower echoing zap, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 0.7,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_violetbolt.mp3"
+  ]
+ },
+ "c_shadowrush": {
+  "kind": "sfx",
+  "prompt": "fast ghostly dash whoosh passing right by, airy and dark, ending in one hard thud, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 0.7,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_shadowrush.mp3"
+  ]
+ },
+ "c_mirrorcounter": {
+  "kind": "sfx",
+  "prompt": "bright glass chime ping with a quick reversing shimmer, like a mirror catching the light, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 0.6,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_mirrorcounter.mp3"
+  ]
+ },
+ "c_starfallarcher": {
+  "kind": "sfx",
+  "prompt": "bowstring twang followed by a rising sparkling twinkle, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 0.6,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_starfallarcher.mp3"
+  ]
+ },
+ "c_glassgolem": {
+  "kind": "sfx",
+  "prompt": "a creature of crystal forming, glassy crackling and one resonant glass thunk, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 0.9,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_glassgolem.mp3"
+  ]
+ },
+ "c_blackfrost": {
+  "kind": "sfx",
+  "prompt": "dark ice forming fast, a deep cracking freeze with a low ominous hum, cartoon fantasy mobile game, punchy and clean, no music, no voice",
+  "dur": 0.8,
+  "group": "sfx",
+  "vol": 0.7,
+  "cd": 0.05,
+  "variants": 1,
+  "influence": 0.6,
+  "files": [
+   "audio/c_blackfrost.mp3"
+  ]
+ },
+ "bgm_phase3b": {
+  "kind": "music",
+  "prompt": "Original instrumental battle music for a wizard duel game, in the same world as a cosy mystical lo-fi hip-hop menu theme: dusty vinyl-textured drums, warm Rhodes electric piano, a music-box and celesta melody, round sub bass, distant chimes. This is the LATE fight, a second take with its own melody: tense and stalking around 112 BPM, a half-time boom-bap groove with crisp rimshots and rolling hi-hats, a brooding detuned Rhodes riff, a haunting music-box counter-melody, deep sliding 808 bass, low cellos and a whispering choir, suspense that keeps tightening. Instrumental only, no vocals, loopable with no ending and no fade.",
+  "ms": 90000,
+  "group": "music",
+  "vol": 0.76,
+  "loop": true,
+  "files": [
+   "audio/bgm_phase3b.mp3"
+  ]
+ },
+ "bgm_final3": {
+  "kind": "music",
+  "prompt": "Original instrumental battle music for a wizard duel game, in the same world as a cosy mystical lo-fi hip-hop menu theme: dusty vinyl-textured drums, warm Rhodes electric piano, a music-box and celesta melody, round sub bass, distant chimes. This is the FINAL ROUND, a second climax theme with its own melody: fierce and bittersweet around 132 BPM, pounding breakbeat drums and big toms, a racing celesta and bell arpeggio, overdriven Rhodes power chords, soaring string lines and a heroic choir, heavy sub bass, vinyl crackle still under it all, last-stand energy from the first bar. Instrumental only, no vocals, loopable with no ending and no fade.",
+  "ms": 90000,
+  "group": "music",
+  "vol": 0.8,
+  "loop": true,
+  "files": [
+   "audio/bgm_final3.mp3"
+  ]
  }
 }

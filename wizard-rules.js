@@ -3,8 +3,9 @@
    Loaded after wizard-blood.js. Uses window.TECHX (techniques internals) and BLOOD_DEBUG.
 
    - Cast lock: no new cast while one of your abilities is still playing out.
-   - Boundary catches any kind of move, holds it for a second and sends it back at its caster.
-     A Spell Cannon beam is held off for as long as it fires and scatters into wild rays; blood sprays.
+   - Boundary: the first move to arrive opens a one-second window. Everything arriving in it is stopped; when it
+     closes the caught shots fly off in random directions at full damage. A Spell Cannon beam is held off for as
+     long as it fires and scatters into wild rays; blood sprays.
    - Raise Dead: Second Body (a killing blow moves you into one of your zombies).
    - Blink: enemy casts aim at the afterimage while it is visible.
    - Last stand: Not Yet and Final Attempt burn white.
@@ -30,24 +31,33 @@
 
   /* ---------------- Boundary ---------------- */
   const HOLD = 1;
-  let held = [], returns = [], jets = [], rays = [];
-  function spend(w, x0, y0) { w.boundary = 0; w.bndSpent = 1; text(w.x, w.y - 96 * HS, 'BOUNDARY', '#bcd2ff', true); inkRing(w.x, w.y, '#bcd2ff', 2, 30, 36, .6); X.addFx({ k: 'ping', x: x0, y: y0, life: .4 }); burst(x0, y0 - 30 * HS, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); try { sfx('ui_deal', { x: w.x, rate: .7 }); } catch (e) {} }
+  let held = [], returns = [], jets = [], rays = [], outs = [], wash = 0, slowUntil = 0;
+  // a catch drops the fight into slow motion for a beat (the first catch of a window is the long one)
+  function slowBeat(big) { wash = Math.max(wash, big ? 1 : .6);
+    try { if (ended || typeof slow === 'undefined' || (window.YARD && YARD.on)) return; const now = performance.now(); if (!big && now < slowUntil + 140) return; slow = Math.min(slow, big ? .2 : .45);
+      slowUntil = Math.max(slowUntil, now + (big ? 320 : 130)); setTimeout(() => { try { if (performance.now() >= slowUntil - 8 && !ended) slow = 1; } catch (e) {} }, slowUntil - now + 8); } catch (e) {} }
+  // the window opens on the first catch and stays open for HOLD seconds
+  function bndOpen(w) { if (w.bndWin > 0) { slowBeat(false); return; } slowBeat(true); w.boundary = 0; w.bndWin = HOLD; text(w.x, w.y - 96 * HS, 'BOUNDARY', '#bcd2ff', true); inkRing(w.x, w.y, '#bcd2ff', 2, 30, 36, .6); try { sfx('ui_deal', { x: w.x, rate: .7 }); } catch (e) {} }
+  window.bndOpen = bndOpen;
+  window.bndOut = function (o, kind, gy) { outs.push({ o, kind: kind || 'rune', gy: gy || 0, lx: o.x, ly: o.y, still: 0 }); };   // other files mark what they fling off
+  function spend(w, x0, y0) { bndOpen(w); X.addFx({ k: 'ping', x: x0, y: y0, life: .4 }); burst(x0, y0 - 30 * HS, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); }
   // a flying thing is caught: it hangs where it is, then turns on whoever threw it
-  function hold(w, o, kind, gy) { const sp = Math.hypot(o.vx || 0, o.vy || 0) || 380; o.bnd = 1; o.vx = 0; o.vy = 0; held.push({ o, kind, by: w, src: o.o, t: HOLD, sp, gy: gy || 0 }); spend(w, o.x, o.y + (gy || 0)); }
+  function hold(w, o, kind, gy) { const sp = Math.hypot(o.vx || 0, o.vy || 0) || 380; o.bnd = 1; o.vx = 0; o.vy = 0; spend(w, o.x, o.y + (gy || 0)); held.push({ o, kind, by: w, src: o.o, t: Math.max(.05, w.bndWin), sp, gy: gy || 0 }); }
   function release(h) {
-    const o = h.o, src = h.src, by = h.by; o.bnd = 0; if (!src || src.dead || ended) { if (o.life !== undefined) o.life = 0; return; }
-    const tx = src.x, ty = src.y - h.gy, a = Math.atan2(ty - o.y, tx - o.x); o.o = by; o.vx = Math.cos(a) * h.sp; o.vy = Math.sin(a) * h.sp; if (o.hit) o.hit = new Set(); if (o.hitW) o.hitW = new Set(); if (o.tested) o.tested = new Set();
+    const o = h.o, by = h.by; o.bnd = 0; if (ended) { if (o.life !== undefined) o.life = 0; return; }
+    const a = rnd(0, 6.283); o.o = by; o.vx = Math.cos(a) * h.sp; o.vy = Math.sin(a) * h.sp * .8; if (o.hit) o.hit = new Set(); if (o.hitW) o.hitW = new Set(); if (o.tested) o.tested = new Set();
     if (o.life !== undefined) o.life = Math.max(o.life, 1.6); if (o.a !== undefined) o.a = a; if (h.kind === 'orb') { o.sx = o.x; o.sy = o.y; o.L = 600; o.inD = new Set(); }
     burst(o.x, o.y + h.gy - 30 * HS, 10, ['#e6f0ff', '#7aa6ff'], 150, 3, .3); inkRing(o.x, o.y + h.gy, '#bcd2ff', 1, 6, 24);
+    outs.push({ o, kind: h.kind, gy: h.gy, lx: o.x, ly: o.y, still: 0 });
   }
-  // an instant hit (lightning, a punch, a blast): the damage is caught and comes back a second later
+  // an instant hit (lightning, a punch, a blast) inside the window is simply stopped: sparks fly off, nothing lands
   const DOT_SRC = new Set(['burnbody', 'bubbles', 'thorns', 'earthm', 'counter', 'titan']);
   function catchHit(t, d, col) {
-    spend(t, t.x, t.y); returns.push({ by: t, to: t.foe, d, t: HOLD, src: SRC, col }); for (let i = 0; i < 10; i++) { const an = rnd(0, 6.283); P({ x: t.x + Math.cos(an) * 30, y: t.y - 40 * HS + Math.sin(an) * 30, vx: -Math.cos(an) * 60, vy: -Math.sin(an) * 60, color: '#bcd2ff', size: 3, life: .5 }); }
+    spend(t, t.x, t.y); text(t.x + rnd(-10, 10), t.y - 76 * HS, 'STOPPED', '#bcd2ff'); for (let i = 0; i < 10; i++) { const an = rnd(0, 6.283); P({ x: t.x + Math.cos(an) * 30, y: t.y - 40 * HS + Math.sin(an) * 30, vx: -Math.cos(an) * 60, vy: -Math.sin(an) * 60, color: '#bcd2ff', size: 3, life: .5 }); }
   }
   const _dm = damage;
   window.damage = damage = function (t, d) {
-    if (d > 0 && t && t.boundary && !t.dead && !ended && t.foe && !t.foe.dead && !catchHit.back && SRC && !DOT_SRC.has(SRC) && !(t.book.includes(SRC) && !t.foe.book.includes(SRC))) { catchHit(t, d, arguments[4]); return; }
+    if (d > 0 && t && (t.boundary || t.bndWin > 0) && !t.dead && !ended && t.foe && !t.foe.dead && !catchHit.back && SRC && !DOT_SRC.has(SRC) && !(t.book.includes(SRC) && !t.foe.book.includes(SRC))) { catchHit(t, d, arguments[4]); return; }
     return _dm.apply(this, arguments);
   };
   // blood does not come back: it bursts into high-pressure jets that gouge the floor where they land
@@ -59,22 +69,29 @@
   function near(w, x0, y0, r) { return Math.hypot(x0 - w.x, y0 - w.y) < r; }
   function boundaryUpdate(dt) {
     for (const w of ents) {
-      if (w.dead || !w.boundary) continue; const f = w.foe; let got = false;
-      const scan = (list, kind, gy, ok) => { if (got || !list) return; for (const o of list) { if (o.o === w || o.bnd || !(o.life > 0) || (ok && !ok(o))) continue; if (near(w, o.x, o.y + gy, 38)) { hold(w, o, kind, gy); got = true; return; } } };
+      if (w.dead) continue; if (w.bndWin > 0) { w.bndWin -= dt; if (w.bndWin <= 0) { w.bndWin = 0; if (!w.bndBeam) w.bndSpent = 1; } }
+      if (!(w.boundary || w.bndWin > 0)) continue; const f = w.foe; let got = false;
+      const scan = (list, kind, gy, ok) => { if (!list) return; for (const o of list) { if (o.o === w || o.bnd || !(o.life > 0) || (ok && !ok(o))) continue; if (near(w, o.x, o.y + gy, 38)) hold(w, o, kind, gy); } };
       if (typeof runes !== 'undefined') scan(runes, 'rune', 0);
       if (typeof arrows !== 'undefined') scan(arrows, 'arrow', 42 * HS);
       scan(X.slashes, 'slash', 0); scan(X.tarrows, 'tarrow', 0); scan(B().cuts, 'cut', 0, o => !(o.t < 0));
       scan(X.orbsC, 'orb', 0, o => !o.fused && (o.repel || (o.draw && o.out) || (!o.draw && !o.repel && (!o.wind || o.launched))));
-      if (!got) for (const b of B().bloods) { if (b.o === w) continue; if (b.k === 'blob') { if (b.t / b.T > .7 && near(w, b.tx, b.ty, 80) && !b.dead) { b.dead = 1; sprayBlood(w, b.x, b.y, Math.atan2(b.ty - b.sy, b.tx - b.sx), b.dmg, b.o); got = true; break; } }
-        else if (b.life > 0 && near(w, b.x, b.y, 40)) { b.life = 0; sprayBlood(w, b.x, b.y, Math.atan2(b.vy, b.vx), b.dmg, b.o); got = true; break; } }
-      if (!got && typeof meteors !== 'undefined') for (const m of meteors) if (m.o !== w && !m.done && !m.bnd && m.t > m.fall * .72 && near(w, m.tx, m.ty, m.r + 6)) { m.bnd = 1; held.push({ o: m, kind: 'meteor', by: w, src: m.o, t: HOLD, at: m.t }); spend(w, m.tx, m.ty); got = true; break; }
+      for (const b of B().bloods) { if (b.o === w) continue; if (b.k === 'blob') { if (b.t / b.T > .7 && near(w, b.tx, b.ty, 80) && !b.dead) { b.dead = 1; sprayBlood(w, b.x, b.y, Math.atan2(b.ty - b.sy, b.tx - b.sx), b.dmg, b.o); } }
+        else if (b.life > 0 && near(w, b.x, b.y, 40)) { b.life = 0; sprayBlood(w, b.x, b.y, Math.atan2(b.vy, b.vx), b.dmg, b.o); } }
+      if (typeof meteors !== 'undefined') for (const m of meteors) if (m.o !== w && !m.done && !m.bnd && m.t > m.fall * .72 && near(w, m.tx, m.ty, m.r + 6)) { m.bnd = 1; spend(w, m.tx, m.ty); held.push({ o: m, kind: 'meteor', by: w, src: m.o, t: Math.max(.05, w.bndWin), at: m.t }); }
     }
     for (const h of held) { h.t -= dt; const o = h.o;
-      if (h.kind === 'meteor') { o.t = h.at; if (h.t <= 0) { o.bnd = 0; const s = h.src; if (s && !s.dead) { o.tx = s.x; o.ty = s.y; o.o = h.by; o.t = o.fall * .45; } else o.done = 1; } continue; }
+      if (h.kind === 'meteor') { o.t = h.at; if (h.t <= 0) { o.bnd = 0; o.tx = rnd(F.x0 + 30, F.x1 - 30); o.ty = rnd(F.y0 + 30, F.y1 - 30); o.o = h.by; o.t = o.fall * .45; outs.push({ o, kind: 'meteor', gy: 0 }); } continue; }   // it comes down somewhere else
       o.vx = 0; o.vy = 0; if (o.life !== undefined) o.life = Math.max(o.life, .6);
       if (Math.random() < .5) P({ x: o.x + rnd(-10, 10), y: o.y + h.gy - 36 * HS + rnd(-10, 10), vx: rnd(-20, 20), vy: rnd(-30, 10), color: Math.random() < .5 ? '#bcd2ff' : '#ffffff', size: rnd(1.6, 3), life: .3 });
       if (h.t <= 0) release(h); }
     held = held.filter(h => h.t > 0);
+    // flung-off attacks keep a blue outline until they land or fade
+    for (const q of outs) { const o = q.o; if (q.kind === 'meteor') { q.gone = o.done || o.t >= o.fall; continue; }
+      if (Math.abs(o.x - q.lx) + Math.abs(o.y - q.ly) < .2) q.still += dt; else q.still = 0; q.lx = o.x; q.ly = o.y;
+      q.gone = !(o.life > 0) || o.dead || o.done || o.bnd || q.still > .3 || o.x < F.x0 - 60 || o.x > F.x1 + 60 || o.y < F.y0 - 90 || o.y > F.y1 + 60;
+      if (!q.gone && Math.random() < dt * 30) P({ x: o.x + rnd(-4, 4), y: o.y + q.gy - 36 * HS + rnd(-4, 4), vx: -(o.vx || 0) * .12, vy: -(o.vy || 0) * .12, color: Math.random() < .6 ? '#7aa6ff' : '#e6f0ff', size: rnd(1.4, 2.6), life: .28 }); }
+    outs = outs.filter(q => !q.gone); wash = Math.max(0, wash - dt * 3.2);
     for (const r of returns) { r.t -= dt; if (r.t <= 0 && !r.done) { r.done = 1; const to = r.to, by = r.by; if (to && !to.dead && !ended) { const keep = SRC; SRC = 'polarity'; X.addFx({ k: 'redir', x: by.x, y: by.y - 40 * HS, x2: to.x, y2: to.y - 40 * HS, life: .35 }); catchHit.back = 1; try { damage(to, r.d, 0, 0, '#bcd2ff'); } finally { catchHit.back = 0; SRC = keep; } text(to.x, to.y - 100 * HS, 'SENT BACK', '#bcd2ff', true); } } }
     returns = returns.filter(r => !r.done);
     // blood jets: arc out, land, cut a groove and leave a pool
@@ -98,8 +115,8 @@
   // the beam stops short of a fighter whose Boundary is up
   if (typeof beamGeom === 'function') { const _bg = beamGeom;
     window.beamGeom = beamGeom = function (c) { const g = _bg.apply(this, arguments), f = c.o.foe;
-      if (f && !f.dead && !ended && (f.bndBeam === c || (f.boundary && !f.bndBeam))) { const q = closestOn(g.O, g.E, f.x, f.y), d = Math.hypot(f.x - q.x, f.y - q.y), along = Math.hypot(q.x - g.O.x, q.y - g.O.y);
-        if (d < 40 && along > 44) { if (f.bndBeam !== c) { f.bndBeam = c; f.boundary = 0; text(f.x, f.y - 96 * HS, 'BOUNDARY', '#bcd2ff', true); inkRing(f.x, f.y, '#bcd2ff', 2, 30, 36, .6); for (let i = 0; i < 5; i++) rays.push({ c, off: (i - 2) * .9 + rnd(-.2, .2) || .5, va: rnd(-4, 4), sc: rnd(0, .16), live: 1 }); }
+      if (f && !f.dead && !ended && (f.bndBeam === c || ((f.boundary || f.bndWin > 0) && !f.bndBeam))) { const q = closestOn(g.O, g.E, f.x, f.y), d = Math.hypot(f.x - q.x, f.y - q.y), along = Math.hypot(q.x - g.O.x, q.y - g.O.y);
+        if (d < 40 && along > 44) { if (f.bndBeam !== c) { f.bndBeam = c; bndOpen(f); for (let i = 0; i < 5; i++) rays.push({ c, off: (i - 2) * .9 + rnd(-.2, .2) || .5, va: rnd(-4, 4), sc: rnd(0, .16), live: 1 }); }
           const L = along - 40, ux = (q.x - g.O.x) / along, uy = (q.y - g.O.y) / along; g.E = { x: g.O.x + ux * L, y: g.O.y + uy * L }; g.blk = null; g.bnd = f; } }
       return g; }; }
 
@@ -110,8 +127,22 @@
     const f = w && w.foe; let keep = null;
     // Blink: while the afterimage is still fading, enemy casts are aimed at it, not at where the caster went
     if (f && !f.dead && typeof afters !== 'undefined' && !AIM_SKIP.has(k)) { const a = afters.find(q => q.look === f && q.t < q.life * .9); if (a) { keep = { x: f.x, y: f.y }; f.x = a.x; f.y = a.y; } }
-    try { return _cast.apply(this, arguments); } finally { if (keep) { f.x = keep.x; f.y = keep.y; } }
+    let r; try { r = _cast.apply(this, arguments); } finally { if (keep) { f.x = keep.x; f.y = keep.y; } }
+    // Sanctum: raising the dome wipes the enemy's hazards standing inside it
+    try { if (k === 'sanctum' && w && !X.isCopying()) { const dm = X.domes.filter(d => d.o === w && d.t < .05 && !d.open).pop(); if (dm) eraseHazards(w, dm); } } catch (e) {}
+    return r;
   };
+  let erases = [];
+  function eraseHazards(w, dm) {
+    const inD = (x0, y0, pad) => Math.hypot(x0 - dm.x, (y0 - dm.y) * 1.4) < dm.r + (pad || 0), zap = (x0, y0, r) => { erases.push({ x: x0, y: y0, r: Math.max(18, r || 24), t: 0 }); burst(x0, y0 - 14 * HS, 12, ['#ffffff', '#bcd2ff', '#7aa6ff'], 170, 3, .4); };
+    let n = 0; const sweep = (list, rOf) => { if (!list) return; for (let i = list.length - 1; i >= 0; i--) { const q = list[i]; if (q.o === w || q.x === undefined || !inD(q.x, q.y, 0)) continue; zap(q.x, q.y, rOf ? rOf(q) : q.r); list.splice(i, 1); n++; } };
+    try { sweep(typeof patches !== 'undefined' && patches, q => q.r); sweep(typeof pits !== 'undefined' && pits, q => q.rmax || q.r); sweep(typeof wells !== 'undefined' && wells, q => q.r * .6); } catch (e) {}
+    try { if (typeof decals !== 'undefined') for (let i = decals.length - 1; i >= 0; i--) { const d = decals[i]; if ((d.k === 'acid' || d.k === 'fire' || d.k === 'frost') && d.o && d.o !== w && inD(d.x, d.y, 0)) { zap(d.x, d.y, d.r); decals.splice(i, 1); n++; } } } catch (e) {}
+    try { for (const m of (window.TECH_DEBUG ? TECH_DEBUG.muds : [])) if (m.o !== w && m.t < m.dur && inD(m.x, m.y, m.r * .5)) { zap(m.x, m.y, m.r * .7); m.t = m.dur; n++; } for (const sp of (window.TECH_DEBUG ? TECH_DEBUG.springs : [])) if (sp.o !== w && sp.t < sp.dur && inD(sp.x, sp.y, 0)) { zap(sp.x, sp.y, sp.r); sp.t = sp.dur; n++; } } catch (e) {}
+    try { if (typeof totems !== 'undefined') for (const q of totems.slice()) if (q.o !== w && q.hp > 0 && inD(q.x, q.y, 0)) { zap(q.x, q.y, 22); SRC = 'sanctum'; hurtTotem(q, 9999); n++; } } catch (e) {}
+    if (n) { text(dm.x, dm.y - 118 * HS, 'ERASED', '#ffffff', true); shake = Math.max(shake, 8); try { sfx('shatter', { x: dm.x, vol: .6, rate: 1.3 }); } catch (e) {} }
+  }
+  window.eraseHazards = eraseHazards;
 
   // Raise Dead, Second Body: a killing blow moves the caster into one of their zombies
   const _kill = kill;
@@ -128,7 +159,7 @@
   };
 
   const _su = startDuel;
-  window.startDuel = startDuel = function () { held = []; returns = []; jets = []; rays = []; const r = _su.apply(this, arguments); try { ents.forEach(w => { w.hopUsed = 0; w.bndBeam = null; }); } catch (e) {} return r; };
+  window.startDuel = startDuel = function () { held = []; returns = []; jets = []; rays = []; erases = []; outs = []; wash = 0; const r = _su.apply(this, arguments); try { ents.forEach(w => { w.hopUsed = 0; w.bndBeam = null; w.bndWin = 0; }); } catch (e) {} return r; };
 
   const _up = update;
   window.update = update = function (dt) {
@@ -136,7 +167,7 @@
     if (typeof ents !== 'undefined' && ents && !ended) for (const w of ents) { if (w.dead || !w.book || !w.book.length) continue; w.busyT = busy(w) ? (w.busyT || 0) + dt : 0; if (w.busyT > 0 && w.busyT < 6) { const ct = castT(w, w.book[w.i]); w.p = Math.min(w.p, ct - .13); } }
     const r = _up.apply(this, arguments);
     if (typeof ents === 'undefined' || !ents || !ents.length || ended) return r;
-    boundaryUpdate(dt);
+    boundaryUpdate(dt); for (const e of erases) e.t += dt; erases = erases.filter(e => e.t < .55);
     for (const w of ents) if (!w.dead && (w.fate || w.finalBoost)) { if (Math.random() < dt * 26) P({ x: w.x + rnd(-16, 16), y: w.y - rnd(0, 20) * HS, vx: rnd(-8, 8), vy: -rnd(70, 170), color: Math.random() < .75 ? '#ffffff' : '#fff3c8', size: rnd(1.8, 3.4), life: rnd(.5, .9) }); }
     return r;
   };
@@ -155,6 +186,23 @@
     // things Boundary is holding in the air
     for (const h of held) { const o = h.o, px = h.kind === 'meteor' ? o.tx : o.x, py = (h.kind === 'meteor' ? o.ty : o.y + h.gy) - (h.kind === 'meteor' ? 0 : 36 * HS), k = 1 - h.t / HOLD; x.save(); x.translate(px, py); x.globalCompositeOperation = 'lighter';
       x.strokeStyle = `rgba(188,210,255,${.9 - k * .3})`; x.lineWidth = 2.5; x.beginPath(); x.arc(0, 0, 16 + Math.sin(T * 30) * 1.5, 0, 7); x.stroke(); x.setLineDash([4, 5]); x.lineDashOffset = -T * 40; x.strokeStyle = 'rgba(255,255,255,.8)'; x.lineWidth = 1.5; x.beginPath(); x.arc(0, 0, 23, -1.57, -1.57 + 6.283 * (1 - k)); x.stroke(); x.restore(); }
+    // attacks Boundary has flung off: a blue outline rides them
+    const OR = { proj: [24, 19], rune: [18, 14], arrow: [19, 8], tarrow: [19, 8], slash: [27, 12], cut: [24, 11], orb: [0, 0] };
+    for (const q of outs) { const o = q.o; x.save(); x.globalCompositeOperation = 'lighter'; x.lineCap = 'round';
+      if (q.kind === 'meteor') { const f = Math.min(1, o.t / o.fall), sz = o.r / 52, mx = o.tx + (1 - f) * 160, my = o.ty - (1 - f) * 520;
+        x.save(); x.translate(o.tx, o.ty); x.scale(1, .5); x.setLineDash([9, 7]); x.lineDashOffset = -T * 60; x.strokeStyle = 'rgba(122,166,255,.95)'; x.lineWidth = 3.5; x.shadowColor = '#4f8dff'; x.shadowBlur = 12; x.beginPath(); x.arc(0, 0, o.r + 5, 0, 7); x.stroke(); x.restore();
+        x.strokeStyle = 'rgba(188,210,255,.95)'; x.lineWidth = 3; x.shadowColor = '#4f8dff'; x.shadowBlur = 14; x.beginPath(); x.arc(mx, my, 24 * sz + Math.sin(T * 26) * 1.5, 0, 7); x.stroke(); x.restore(); continue; }
+      const a = Math.atan2(o.vy || 0, o.vx || 1), d = OR[q.kind] || OR.rune, rx = q.kind === 'orb' ? (o.r || 12) * (o.big ? 1.3 : 1) + 7 : d[0], ry = q.kind === 'orb' ? rx : d[1], pu = 1 + Math.sin(T * 28) * .07;
+      x.translate(o.x, o.y + q.gy - 36 * HS); x.rotate(a);
+      // a hard blue rim that reads over a bright shot, a glow around it, and speed lines behind
+      x.globalCompositeOperation = 'source-over'; x.strokeStyle = '#0b1c5a'; x.lineWidth = 6.5; x.beginPath(); x.ellipse(0, 0, rx * pu, ry * pu, 0, 0, 7); x.stroke();
+      x.strokeStyle = '#3f7dff'; x.lineWidth = 4; x.shadowColor = '#4f8dff'; x.shadowBlur = 14; x.beginPath(); x.ellipse(0, 0, rx * pu, ry * pu, 0, 0, 7); x.stroke(); x.shadowBlur = 0;
+      x.strokeStyle = '#e2ecff'; x.lineWidth = 1.5; x.beginPath(); x.ellipse(0, 0, rx * pu, ry * pu, 0, 0, 7); x.stroke();
+      x.globalCompositeOperation = 'lighter'; x.setLineDash([5, 6]); x.lineDashOffset = -T * 70; x.strokeStyle = 'rgba(160,196,255,.8)'; x.lineWidth = 1.6; x.beginPath(); x.ellipse(0, 0, (rx + 6) * pu, (ry + 6) * pu, 0, 0, 7); x.stroke(); x.setLineDash([]);
+      for (let i = 0; i < 3; i++) { const yy = (i - 1) * ry * .8, len = 14 + i * 6 + Math.sin(T * 40 + i) * 3; x.strokeStyle = `rgba(122,166,255,${.85 - i * .12})`; x.lineWidth = 2.2; x.beginPath(); x.moveTo(-rx - 8, yy); x.lineTo(-rx - 8 - len, yy); x.stroke(); }
+      x.restore(); }
+    // the slow beat: a blue wash closes in from the edges of the screen
+    if (wash > 0) { x.save(); const g = x.createRadialGradient(W / 2, H / 2, H * .18, W / 2, H / 2, H * .62); g.addColorStop(0, 'rgba(60,110,255,0)'); g.addColorStop(1, `rgba(60,110,255,${.42 * wash})`); x.fillStyle = g; x.fillRect(0, 0, W, H); x.globalCompositeOperation = 'lighter'; x.fillStyle = `rgba(150,190,255,${.07 * wash})`; x.fillRect(0, 0, W, H); x.restore(); }
     // a beam breaking on Boundary: a hard blue wall of light where it stops, and the wild rays whipping off it
     for (const r0 of rays) { if (!r0.live || r0.x0 === undefined) continue; x.save(); x.globalCompositeOperation = 'lighter'; x.lineCap = 'round';
       const n = 7, pts = []; for (let i = 0; i <= n; i++) { const u = i / n, jx = i && i < n ? rnd(-7, 7) : 0, jy = i && i < n ? rnd(-5, 5) : 0; pts.push([r0.x0 + (r0.x1 - r0.x0) * u + jx, r0.y0 + (r0.y1 - r0.y0) * u + jy]); }
@@ -163,11 +211,17 @@
     const seen = new Set(); for (const r0 of rays) { if (!r0.live || seen.has(r0.c) || r0.x0 === undefined) continue; seen.add(r0.c); const f = r0.c.g && r0.c.g.bnd; if (!f) continue; x.save(); x.globalCompositeOperation = 'lighter'; x.translate(r0.x0, r0.y0);
       const g = x.createRadialGradient(0, 0, 2, 0, 0, 34); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(.4, 'rgba(120,200,255,.6)'); g.addColorStop(1, 'rgba(79,227,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, 34 + Math.sin(T * 40) * 4, 0, 7); x.fill();
       x.rotate(r0.c.ang + Math.PI / 2); x.strokeStyle = 'rgba(230,240,255,.95)'; x.lineWidth = 4; x.beginPath(); x.moveTo(-30, 0); x.quadraticCurveTo(0, -12, 30, 0); x.stroke(); x.restore(); }
+    // a hazard erased by a Sanctum: a hard flash of light over where it stood
+    for (const e of erases) { const k = e.t / .55; x.save(); x.translate(e.x, e.y); x.globalCompositeOperation = 'lighter'; x.save(); x.scale(1, .5);
+      const g = x.createRadialGradient(0, 0, 2, 0, 0, e.r * 1.3); g.addColorStop(0, `rgba(255,255,255,${(1 - k) * .95})`); g.addColorStop(.6, `rgba(160,200,255,${(1 - k) * .5})`); g.addColorStop(1, 'rgba(120,170,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, e.r * 1.3, 0, 7); x.fill();
+      x.strokeStyle = `rgba(255,255,255,${1 - k})`; x.lineWidth = 3 * (1 - k) + 1; x.beginPath(); x.arc(0, 0, e.r * (.4 + .9 * k), 0, 7); x.stroke(); x.restore();
+      x.lineCap = 'round'; for (let i = 0; i < 7; i++) { const bx = Math.sin(i * 2.3) * e.r * .8, h = (30 + (i % 3) * 22) * (1 - k * .4); x.strokeStyle = `rgba(255,255,255,${(1 - k) * .9})`; x.lineWidth = 2.4 * (1 - k) + .5; x.beginPath(); x.moveTo(bx, Math.cos(i * 1.7) * e.r * .25 - k * 30); x.lineTo(bx, Math.cos(i * 1.7) * e.r * .25 - k * 30 - h); x.stroke(); }
+      x.restore(); }
     // blood jets in flight
-    for (const j of jets) { x.save(); x.fillStyle = '#07020d'; x.beginPath(); x.arc(j.x, j.y - j.z, 4.2, 0, 7); x.fill(); x.fillStyle = '#e0162f'; x.beginPath(); x.arc(j.x, j.y - j.z, 3, 0, 7); x.fill(); x.restore(); }
+    for (const j of jets) { x.save(); x.shadowColor = '#4f8dff'; x.shadowBlur = 8; x.fillStyle = '#9cc0ff'; x.beginPath(); x.arc(j.x, j.y - j.z, 4.6, 0, 7); x.fill(); x.shadowBlur = 0; x.fillStyle = '#e0162f'; x.beginPath(); x.arc(j.x, j.y - j.z, 3, 0, 7); x.fill(); x.restore(); }
     // cast lock: a small hourglass tick over a fighter who is waiting on their own move
     x.restore();
     return r;
   };
-  window.RULES_DEBUG = { get held() { return held; }, get rays() { return rays; }, get jets() { return jets; }, get returns() { return returns; }, busy };
+  window.RULES_DEBUG = { get held() { return held; }, get rays() { return rays; }, get jets() { return jets; }, get returns() { return returns; }, get outs() { return outs; }, busy };
 })();

@@ -23,6 +23,7 @@
     { id: 'rooster', n: 'Dawn Rooster', r: 'rare', cls: 'sorc', unlock: { type: 'gems', v: 40 } },
     { id: 'wolf', n: 'Shadow Wolf', r: 'legendary', cls: 'sorc', unlock: { type: 'ladder', who: 'Oro Vant' } },
     { id: 'dog', n: 'Loyal Pup', r: 'common', unlock: { type: 'free' } },
+    { id: 'fox', n: 'Cinder Fox', r: 'legendary', unlock: { type: 'streak', v: 10 } },
   ];
   for (const p of PETS) if (!COSMETICS.pet.some(q => q.id === p.id)) COSMETICS.pet.push(p);
   const MINE = new Set(PETS.map(p => p.id));
@@ -72,8 +73,10 @@
       for (let i = 0; i < 3; i++) { x.save(); x.translate(-7, -11); x.rotate(-.9 + i * .38 + Math.sin(t * 3) * .05); el(x, -5.5, 0, 6.2, 2.2, ['#1f6f7a', '#2fb0a0', '#ffd75e'][i]); x.restore(); }
       el(x, 0, -9.5, 8.4, 7.2, grad(x, -17, -2, '#ffffff', '#ece6da')); el(x, -1.5, -8.6, 4.6, 3.4, '#f2e8d2', .3);
       x.save(); x.translate(6, -18 + hb); for (let i = 0; i < 3; i++) el(x, -1.8 + i * 2.2, -5.4 - (i === 1 ? 1.2 : 0), 1.9, 2.4, '#ff3b4a'); el(x, 0, 0, 5.2, 5, '#ffffff'); x.beginPath(); x.moveTo(4.2, -1.4); x.lineTo(9.6, .4); x.lineTo(4.2, 2); x.closePath(); x.fillStyle = '#ffb020'; x.fill(); x.stroke(); el(x, 3.6, 4.4, 1.5, 2.3, '#ff3b4a'); dot(x, 1.6, -1, 1.25); dot(x, 2, -1.4, .45, '#fff'); x.restore(); }
-    else if (id === 'wolf' || id === 'dog') { const dg = id === 'dog', wag = Math.sin(t * (dg ? 9 : 4)) * (dg ? .5 : .22), A = dg ? '#e0a45a' : '#6a7088', Bc = dg ? '#fff1d6' : '#c9cfe0', D = dg ? '#b0763a' : '#3d4257', hb = Math.sin(t * 2.4) * .8; shadow(x, 10.5);
-      x.save(); x.translate(-7.5, -5); x.rotate(-.9 + wag); x.beginPath(); x.moveTo(0, 0); x.quadraticCurveTo(-5, -4, -3, -12); x.quadraticCurveTo(1.6, -7, 2.6, -1); x.closePath(); x.fillStyle = A; x.fill(); x.stroke(); if (!dg) { x.beginPath(); x.moveTo(-3.4, -8); x.quadraticCurveTo(-2.4, -11, -3, -12); x.quadraticCurveTo(-.4, -10, -.6, -8); x.closePath(); x.fillStyle = Bc; x.fill(); } x.restore();
+    else if (id === 'wolf' || id === 'dog' || id === 'fox') { const dg = id === 'dog', fx = id === 'fox', wag = Math.sin(t * (dg ? 9 : fx ? 6 : 4)) * (dg ? .5 : .22), A = dg ? '#e0a45a' : fx ? '#ff8a3a' : '#6a7088', Bc = dg || fx ? '#fff1d6' : '#c9cfe0', D = dg ? '#b0763a' : fx ? '#c2501a' : '#3d4257', hb = Math.sin(t * 2.4) * .8; shadow(x, 10.5);
+      x.save(); x.translate(-7.5, -5); x.rotate(-.9 + wag); x.beginPath(); x.moveTo(0, 0); x.quadraticCurveTo(-5, -4, -3, -12); x.quadraticCurveTo(1.6, -7, 2.6, -1); x.closePath(); x.fillStyle = A; x.fill(); x.stroke(); if (!dg) { x.beginPath(); x.moveTo(-3.4, -8); x.quadraticCurveTo(-2.4, -11, -3, -12); x.quadraticCurveTo(-.4, -10, -.6, -8); x.closePath(); x.fillStyle = Bc; x.fill(); }
+      if (fx) { const f = Math.sin(t * 14) * 1.2, fl = (s2, c) => { x.beginPath(); x.moveTo(-3 + f * .5, -12 - 11 * s2 - f); x.bezierCurveTo(-3 + 6 * s2, -12 - 5 * s2, -3 + 5 * s2, -12 + 3 * s2, -3, -12 + 3.4 * s2); x.bezierCurveTo(-3 - 5 * s2, -12 + 3 * s2, -3 - 6 * s2, -12 - 5 * s2, -3 + f * .5, -12 - 11 * s2 - f); x.closePath(); x.fillStyle = c; x.fill(); }; fl(1, '#ff5a1f'); x.stroke(); fl(.62, '#ffb347'); fl(.32, '#fff3b0'); }
+      x.restore();
       el(x, -1, -8, 8, 8.4, grad(x, -16, 0, A, D)); el(x, 1.6, -5.4, 4.2, 5.2, Bc); el(x, 3.6, -1.4, 3.2, 2, A); el(x, -4.4, -1.4, 3.2, 2, A);
       x.save(); x.translate(4.5, -19 + hb);
       if (dg) { el(x, -5.4, .6, 2.6, 5, D, .35); el(x, 4.2, .4, 2.4, 4.6, D, -.5); } else for (const s of [-1, 1]) { x.beginPath(); x.moveTo(s * 2 - 1, -4.6); x.lineTo(s * 5.6 - 1, -12.6); x.lineTo(s * 6.6 - 1, -3.4); x.closePath(); x.fillStyle = A; x.fill(); x.stroke(); }
@@ -118,12 +121,24 @@
         x.globalCompositeOperation = 'lighter'; x.strokeStyle = 'rgba(255,255,255,.7)'; x.lineWidth = 1; x.beginPath(); x.moveTo(0, -s * 1.3); x.lineTo(0, s * 1.3); x.stroke(); x.restore(); }
       x.restore(); },
   };
+  // wildfire (20 wins in a row): a ring of flame tongues standing at the feet, sparks climbing off them
+  AS.wildfire = function (x, w, inten, l, m) { const L = rgb(l), Mc = rgb(m), t = T; x.save(); x.translate(w.x, w.y);
+    // a burning ring on the floor
+    x.save(); x.scale(1, .32); x.globalCompositeOperation = 'lighter'; x.strokeStyle = `rgba(${Mc},${.55 * inten})`; x.lineWidth = 7; x.beginPath(); x.arc(0, 0, 29 * SC, 0, 7); x.stroke(); x.strokeStyle = `rgba(255,255,255,${.5 * inten})`; x.lineWidth = 1.8; x.setLineDash([7, 9]); x.lineDashOffset = -t * 34; x.beginPath(); x.arc(0, 0, 29 * SC, 0, 7); x.stroke(); x.restore();
+    for (let pass = 0; pass < 2; pass++) for (let i = 0; i < 14; i++) { const a = i / 14 * 6.283 + .2, dep = Math.sin(a); if ((dep < 0) !== (pass === 0)) continue;
+      const bx = Math.cos(a) * 29 * SC, by = dep * 9.3 * SC, fl = .7 + .3 * Math.sin(t * 10 + i * 2.3), h = (26 + ((i * 7) % 5) * 13) * HS * fl * (.7 + .3 * inten), wd = (4 + (i % 3) * 1.1) * SC, sw = Math.sin(t * 7 + i * 1.9) * 6 * SC;
+      const tongue = s => { x.beginPath(); x.moveTo(bx - wd * s, by); x.bezierCurveTo(bx - wd * 1.5 * s, by - h * .4 * s, bx - sw * .5, by - h * .7 * s, bx + sw, by - h * s); x.bezierCurveTo(bx + sw * .1 + wd * .7 * s, by - h * .62 * s, bx + wd * 1.5 * s, by - h * .32 * s, bx + wd * s, by); x.closePath(); };
+      x.globalCompositeOperation = 'source-over'; x.fillStyle = `rgba(5,2,12,${.5 * inten})`; tongue(1.2); x.fill();
+      x.globalCompositeOperation = 'lighter'; x.fillStyle = `rgba(${Mc},${.85 * inten})`; tongue(1); x.fill(); x.fillStyle = `rgba(${L},${.7 * inten})`; tongue(.6); x.fill(); x.fillStyle = `rgba(255,255,255,${.5 * inten})`; tongue(.26); x.fill(); }
+    x.globalCompositeOperation = 'lighter'; for (let i = 0; i < 12; i++) { const ph = (t * .7 + i / 12) % 1, a = i * 2.4 + t * 1.2, px = Math.cos(a) * (29 - ph * 12) * SC, py = Math.sin(a) * 9 * SC - ph * 112 * HS; x.fillStyle = `rgba(${i % 2 ? L : '255,255,255'},${(1 - ph) * inten})`; x.beginPath(); x.arc(px, py, 2 * (1 - ph) + .6, 0, 7); x.fill(); }
+    x.restore(); };
   window.AURA_STYLES = AS;
   COSMETICS.aurastyle = [
     { id: 'flame', n: 'Ink Flame', r: 'common', unlock: { type: 'free' } },
     { id: 'shards', n: 'Shards', r: 'epic', unlock: { type: 'gems', v: 60 } },
     { id: 'tempest', n: 'Tempest', r: 'legendary', unlock: { type: 'ladder', who: 'Rook Sable' } },
     { id: 'halo', n: 'Halo', r: 'legendary', unlock: { type: 'ladder', who: 'Gilda Goldmantle' } },
+    { id: 'wildfire', n: 'Wildfire', r: 'legendary', unlock: { type: 'streak', v: 20 } },
   ];
 
   /* ---------------- trails ---------------- */
@@ -133,6 +148,7 @@
     { id: 'stardust', n: 'Stardust', r: 'epic', unlock: { type: 'gems', v: 60 } },
     { id: 'bloom', n: 'Bloom', r: 'legendary', unlock: { type: 'ladder', who: 'Kessa Thornwhistle' } },
     { id: 'afterimage', n: 'Afterimage', r: 'legendary', unlock: { type: 'ladder', who: 'Old Nix' } },
+    { id: 'blaze', n: 'Blaze', r: 'legendary', unlock: { type: 'streak', v: 20 } },
   ];
   COSMETICS.atk = [
     { id: 'none', n: 'Standard', r: 'common', unlock: { type: 'free' } },
@@ -143,7 +159,8 @@
   { const _cf = window.catsFor; window.catsFor = () => { const base = _cf ? _cf() : CATS; return cls() === 'sorc' ? base : base.filter(c => c[0] !== 'aurastyle'); }; }
   { const _ci = catItems; window.catItems = catItems = function (c) { const L = _ci.apply(this, arguments); if (c !== 'pet') return L;
       const cur = COSMETICS.pet.find(p => p.id === PR.look.pet); if (cur && !allowed(cur)) PR.look.pet = 'none'; return L.filter(allowed); }; }
-  { const _ut = unlockText; window.unlockText = unlockText = function (u) { return u && u.type === 'ladder' ? 'Beat ' + u.who + ' on the Ladder' : _ut.apply(this, arguments); }; }
+  { const _ut = unlockText; window.unlockText = unlockText = function (u) { return u && u.type === 'ladder' ? 'Beat ' + u.who + ' on the Ladder' : u && u.type === 'streak' ? 'Win ' + u.v + ' matches in a row' : _ut.apply(this, arguments); }; }
+  { const _ow = owns; window.owns = owns = function (cat, it) { const u = (it && it.unlock) || {}; if (u.type === 'streak') return ((PR.stats && PR.stats.best) || 0) >= u.v; return _ow.apply(this, arguments); }; }
   window.grantCosmetic = function (cat, id) { PR.owned = PR.owned || []; const key = cat + '.' + id; if (!PR.owned.includes(key)) PR.owned.push(key); try { save(); } catch (e) {} };
   let blooms = [];
   const PETAL = ['#ff8ac0', '#ffd45e', '#c792ff', '#ffffff', '#7ef0d0', '#ff9a6b'];
@@ -151,6 +168,12 @@
     if (tr === 'bloom') { if (w._tacc > 11) { w._tacc = 0; if (blooms.length < 90) blooms.push({ x: w.x + rnd(-9, 9), y: w.y + rnd(-2, 7), t: 0, life: rnd(2.4, 3.4), c: PETAL[Math.random() * PETAL.length | 0], rot: rnd(0, 6.3), sz: rnd(3.4, 5.6) }); } }
     else if (tr === 'afterimage') { if (w._tacc > 14) { w._tacc = 0; try { window.TECHX.addFx({ k: 'after', x: w.x, y: w.y, life: .34, w }); } catch (e) {} } }
     else if (tr === 'smoke') { if (w._tacc > 7) { w._tacc = 0; P({ x: w.x + rnd(-6, 6), y: w.y + rnd(-2, 4), vx: rnd(-10, 10), vy: -rnd(10, 30), color: ['#4d4458', '#6a6078', '#2e2838'][Math.random() * 3 | 0], size: rnd(5, 9), life: rnd(.7, 1.2), glow: false, shrink: false, grow: 1.9, drag: .88, fade: .4 }); } }
+    else if (tr === 'blaze') { if (w._tacc > 4) { w._tacc = 0; P({ x: w.x + rnd(-8, 8), y: w.y + rnd(-2, 5), vx: rnd(-12, 12), vy: -rnd(40, 95), color: ['#ff5a1f', '#ffb347', '#ff8a2a'][Math.random() * 3 | 0], size: rnd(4, 7.5), life: rnd(.4, .75), drag: .92 }); P({ x: w.x + rnd(-8, 8), y: w.y + rnd(-2, 4), vx: rnd(-30, 30), vy: -rnd(70, 150), color: '#fff3b0', size: rnd(1.4, 2.4), life: rnd(.35, .7) }); } }
+    else if (tr === 'embers') { if (w._tacc > 5) { w._tacc = 0; P({ x: w.x + rnd(-9, 9), y: w.y - rnd(0, 14) * HS, vx: rnd(-16, 16), vy: -rnd(30, 80), color: ['#ffb347', '#ff5a1f', '#ffe27a'][Math.random() * 3 | 0], size: rnd(1.8, 3.2), life: rnd(.4, .8) }); } }
+    else if (tr === 'snow') { if (w._tacc > 5) { w._tacc = 0; P({ x: w.x + rnd(-12, 12), y: w.y - rnd(10, 50) * HS, vx: rnd(-18, 18), vy: rnd(14, 40), color: Math.random() < .6 ? '#ffffff' : '#bfe9ff', size: rnd(1.8, 3.2), life: rnd(.6, 1.1), glow: false }); } }
+    else if (tr === 'sparks') { if (w._tacc > 6) { w._tacc = 0; for (let i = 0; i < 2; i++) P({ x: w.x + rnd(-8, 8), y: w.y - rnd(0, 20) * HS, vx: rnd(-90, 90), vy: rnd(-90, 30), color: Math.random() < .5 ? '#fff7b0' : '#9fd8ff', size: rnd(1.4, 2.4), life: rnd(.15, .3) }); } }
+    else if (tr === 'golddust') { if (w._tacc > 5) { w._tacc = 0; P({ x: w.x + rnd(-10, 10), y: w.y - rnd(0, 30) * HS, vx: rnd(-10, 10), vy: rnd(6, 30), color: Math.random() < .7 ? '#ffd75e' : '#fff3c8', size: rnd(1.6, 2.8), life: rnd(.6, 1), grav: 20 }); } }
+    else if (tr === 'voidmotes') { if (w._tacc > 6) { w._tacc = 0; P({ x: w.x + rnd(-10, 10), y: w.y - rnd(0, 36) * HS, vx: rnd(-8, 8), vy: -rnd(8, 26), color: Math.random() < .6 ? '#7a4dff' : '#1a0a3a', size: rnd(2.4, 4.4), life: rnd(.6, 1.1), glow: Math.random() < .5 }); } }
     else if (tr === 'stardust') { if (w._tacc > 5) { w._tacc = 0; P({ x: w.x + rnd(-10, 10), y: w.y - rnd(0, 40) * HS, vx: rnd(-14, 14), vy: rnd(8, 40), color: ['#ffffff', '#ffe9a0', '#c8b8ff'][Math.random() * 3 | 0], size: rnd(1.6, 3.2), life: rnd(.5, 1), grav: 30 }); } } }
   function drawBlooms(x) { for (const b of blooms) { const k = b.t / b.life, gk = Math.min(1, b.t / .35), g = gk < 1 ? 1 + 2.70158 * Math.pow(gk - 1, 3) + 1.70158 * Math.pow(gk - 1, 2) : 1, a = k > .8 ? (1 - k) / .2 : 1, s = b.sz * Math.max(0, g);
       x.save(); x.translate(b.x, b.y); x.scale(1, .62); x.globalAlpha = a; x.fillStyle = '#3f9a4a'; x.beginPath(); x.ellipse(s * 1.2, s * .5, s * .9, s * .4, .5, 0, 7); x.ellipse(-s * 1.1, s * .6, s * .8, s * .36, -.5, 0, 7); x.fill();
@@ -158,8 +181,8 @@
       x.fillStyle = '#ffd45e'; x.beginPath(); x.arc(0, 0, s * .46, 0, 7); x.fill(); x.restore(); } }
   { const _dd = drawDecals; window.drawDecals = drawDecals = function (x) { _dd.apply(this, arguments); if (x === ctx && blooms.length) drawBlooms(x); }; }
   { const _su = startDuel; window.startDuel = startDuel = function () { blooms = []; const r = _su.apply(this, arguments);
-      try { const me = ents[0], fo = ents[1], rv = (typeof M !== 'undefined' && M && (M.ladder || M.rival)) || {}; me.auraStyle = cls() === 'sorc' ? PR.look.aurastyle : null; me.trail = PR.look.trail; me.atkSkin = PR.look.atk !== 'none' ? PR.look.atk : null;
-        fo.auraStyle = rv.auraStyle || null; fo.trail = rv.trail || null; fo.atkSkin = rv.skin || null; ents.forEach(w => { w._tx = w._ty = undefined; }); } catch (e) {} return r; }; }
+      try { const me = ents[0], fo = ents[1], rv = (typeof M !== 'undefined' && M && (M.ladder || M.rival)) || {}; me.auraStyle = cls() === 'sorc' ? PR.look.aurastyle : null; me.trail = window.effTrail ? effTrail(PR.look) : PR.look.trail; me.atkSkin = PR.look.atk !== 'none' ? PR.look.atk : null;
+        fo.auraStyle = rv.auraStyle || null; fo.trail = rv.trail || (window.effTrail && M && M.foeLook ? effTrail(M.foeLook) : null); fo.atkSkin = rv.skin || null; ents.forEach(w => { w._tx = w._ty = undefined; }); } catch (e) {} return r; }; }
   { const _up = update; window.update = update = function (dt) { const r = _up.apply(this, arguments); try { if (typeof ents !== 'undefined' && ents && !ended) for (const w of ents) trailStep(w, dt); for (const b of blooms) b.t += dt; blooms = blooms.filter(b => b.t < b.life); } catch (e) {} return r; }; }
 
   /* ---------------- wardrobe previews for the new tabs ---------------- */
@@ -171,6 +194,7 @@
         if (it.id === 'none') { x.strokeStyle = '#6f6496'; x.lineWidth = 6; x.beginPath(); x.arc(0, 0, 24, 0, 7); x.moveTo(-17, 17); x.lineTo(17, -17); x.stroke(); }
         else if (it.id === 'bloom') { const keep = blooms; blooms = [[-36, 14, '#ff8ac0', 7], [-12, 4, '#ffd45e', 8], [12, 16, '#c792ff', 7.4], [36, 2, '#7ef0d0', 6.6]].map(([bx, by, col, sz], i) => ({ x: bx, y: by, t: 1, life: 3, c: col, rot: i, sz })); drawBlooms(x); blooms = keep; }
         else if (it.id === 'afterimage') { for (let i = 0; i < 4; i++) { x.globalAlpha = .18 + i * .22; x.fillStyle = i === 3 ? '#e8e0ff' : '#8a6cff'; x.beginPath(); x.ellipse(-36 + i * 24, -2, 9, 22, 0, 0, 7); x.fill(); x.beginPath(); x.arc(-36 + i * 24, -30, 8, 0, 7); x.fill(); } }
+        else if (it.id === 'blaze') { x.globalCompositeOperation = 'lighter'; for (let i = 0; i < 6; i++) { const bx = -42 + i * 17, h = 20 + (i % 3) * 12 + Math.sin(T * 8 + i * 2) * 4, wd = 8; for (const [s2, c] of [[1, '#ff5a1f'], [.66, '#ffb347'], [.32, '#fff3b0']]) { x.fillStyle = c; x.globalAlpha = .35 + i * .12; x.beginPath(); x.moveTo(bx - wd * s2, 20); x.quadraticCurveTo(bx - wd * 1.2 * s2, 20 - h * .5 * s2, bx + 2, 20 - h * s2); x.quadraticCurveTo(bx + wd * 1.2 * s2, 20 - h * .5 * s2, bx + wd * s2, 20); x.closePath(); x.fill(); } } }
         else if (it.id === 'smoke') { for (let i = 0; i < 6; i++) { x.globalAlpha = .3 + i * .1; x.fillStyle = ['#4d4458', '#6a6078', '#8a8098'][i % 3]; x.beginPath(); x.arc(-40 + i * 16, 8 - i * 3 + Math.sin(i) * 4, 16 - i * 1.6, 0, 7); x.fill(); } }
         else if (it.id === 'stardust') { for (let i = 0; i < 16; i++) { const px = -44 + (i * 37 % 88), py = -30 + (i * 53 % 60), s = 2 + (i % 3) * 1.6; x.fillStyle = ['#ffffff', '#ffe9a0', '#c8b8ff'][i % 3]; x.beginPath(); x.moveTo(px, py - s * 2); x.lineTo(px + s * .5, py - s * .5); x.lineTo(px + s * 2, py); x.lineTo(px + s * .5, py + s * .5); x.lineTo(px, py + s * 2); x.lineTo(px - s * .5, py + s * .5); x.lineTo(px - s * 2, py); x.lineTo(px - s * .5, py - s * .5); x.closePath(); x.fill(); } }
         x.restore(); }
@@ -180,7 +204,78 @@
   { const _rw = renderWardrobe; window.renderWardrobe = renderWardrobe = function () { const r = _rw.apply(this, arguments);
       try { if (wCat === 'aurastyle' || wCat === 'trail' || wCat === 'atk') { const items = catItems(wCat); document.querySelectorAll('#items canvas').forEach(c => { const it = items[+c.dataset.i]; if (it) preview(c, wCat, it); }); } } catch (e) {} return r; }; }
   { const _pi = pickItem; window.pickItem = pickItem = function (i) { const r = _pi.apply(this, arguments); try { const c = $('buyCv'); if (c && (wCat === 'aurastyle' || wCat === 'trail' || wCat === 'atk')) preview(c, wCat, catItems(wCat)[i]);
-        const it = catItems(wCat)[i]; if (it && it.unlock && it.unlock.type === 'ladder' && !ownsItem(wCat, it)) toast(unlockText(it.unlock)); } catch (e) {} return r; }; }
+        const it = catItems(wCat)[i]; if (it && it.unlock && (it.unlock.type === 'ladder' || it.unlock.type === 'streak') && !ownsItem(wCat, it)) toast(unlockText(it.unlock)); } catch (e) {} return r; }; }
   // the home screen hero shows the chosen aura style through the drawInkAura hook (PR.look.aurastyle)
   window.COS_DEBUG = { PETS, get blooms() { return blooms; } };
+})();
+
+
+/* ---------------- 1.0.5: hairstyles, trails that come with an outfit, and trying things on ---------------- */
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const isSorc = () => (PR.look && PR.look.cls) === 'sorc';
+
+  /* hairstyles (sorcerers). The old Hair tab keeps choosing the colour. */
+  COSMETICS.hairstyle = [
+    { id: 'spiky', n: 'Spiky', r: 'common', unlock: { type: 'free' } }, { id: 'bob', n: 'Curtains', r: 'common', unlock: { type: 'free' } }, { id: 'bald', n: 'Shaved', r: 'common', unlock: { type: 'free' } },
+    { id: 'wild', n: 'Wild Mane', r: 'rare', unlock: { type: 'level', v: 3 } }, { id: 'long', n: 'Long', r: 'rare', unlock: { type: 'gems', v: 40 } }, { id: 'mohawk', n: 'Mohawk', r: 'epic', unlock: { type: 'gems', v: 40 } },
+  ];
+  if (!CATS.some(c => c[0] === 'hairstyle')) { const i = CATS.findIndex(c => c[0] === 'beard'); CATS.splice(i >= 0 ? i : 3, 0, ['hairstyle', 'Hairstyle']); }
+  PR.look.hairstyle = PR.look.hairstyle || 'spiky';
+  { const _cf = window.catsFor; window.catsFor = () => { const base = _cf ? _cf() : CATS; return isSorc() ? base : base.filter(c => c[0] !== 'hairstyle'); }; }
+  { const _cn = window.catN; window.catN = (c, n) => isSorc() && c === 'beard' ? 'Hair Colour' : (_cn ? _cn(c, n) : n); }
+  const STY = ['spiky', 'wild', 'bob', 'long', 'mohawk', 'spiky'];
+
+  /* some robes carry a trail of their own; it shows when no other trail is equipped */
+  const ITEM_TRAIL = { robe: { sunfire: 'embers', ember: 'embers', frost: 'snow', stormcl: 'sparks', royal: 'golddust', voidweave: 'voidmotes' } };
+  const TRAIL_N = { embers: 'Ember trail', snow: 'Snowfall trail', sparks: 'Spark trail', golddust: 'Gold dust trail', voidmotes: 'Void mote trail' };
+  window.ITEM_TRAIL = ITEM_TRAIL;
+  window.effTrail = look => { if (!look) return null; if (look.trail && look.trail !== 'none') return look.trail; return (ITEM_TRAIL.robe[look.robe]) || null; };
+  { const _rl = resolveLook; window.resolveLook = resolveLook = function (look) { const o = _rl.apply(this, arguments);
+      try { if (look) { let hs = look.hairstyle; if (!hs && look.cls === 'sorc') { let h = 0; for (const ch of String(look.robe) + String(look.beard) + String(look.hat)) h = (h * 31 + ch.charCodeAt(0)) | 0; hs = STY[Math.abs(h) % STY.length]; } o.hairStyle = hs || 'spiky'; } } catch (e) {} return o; }; }
+
+  /* trying things on: a locked item can be worn in the wardrobe before it is bought or earned. Nothing tried on is ever saved. */
+  let TRY = null;
+  const stopTry = () => { if (TRY) { PR.look = TRY.real; TRY = null; } const b = $('tryBar'); if (b) b.remove(); };
+  window.stopTry = function () { stopTry(); try { renderWardrobe(); } catch (e) {} };
+  { const _sv = save; window.save = save = function () { if (!TRY) return _sv.apply(this, arguments); const t = PR.look; PR.look = TRY.real; try { return _sv.apply(this, arguments); } finally { PR.look = t; } }; }
+  { const _eq = equip; window.equip = equip = function () { stopTry(); return _eq.apply(this, arguments); }; }
+  { const _sh = show; window.show = show = function (s0) { if (s0 !== 'wardrobe' && TRY) stopTry(); return _sh.apply(this, arguments); }; }
+  window.tryBuy = function () { if (!TRY) return; const { cat, i } = TRY; stopTry(); wCat = cat; renderWardrobe(); basePick(i); };
+  let basePick = null;
+  { const _pi = pickItem; basePick = function (i) { return _pi(i); };
+    window.pickItem = pickItem = function (i) { const it = catItems(wCat)[i];
+      if (it && !ownsItem(wCat, it) && wCat !== 'icon' && wCat !== 'emblem') { stopTry(); TRY = { real: PR.look, cat: wCat, id: it.id, i }; PR.look = Object.assign({}, PR.look, { [wCat]: it.id }); renderWardrobe(); try { sfx('ui_pick'); } catch (e) {} return; }
+      stopTry(); return _pi(i); }; }
+  { const _rw = renderWardrobe; window.renderWardrobe = renderWardrobe = function () { if (TRY && TRY.cat !== wCat) stopTry(); const r = _rw.apply(this, arguments);
+      try { // mark outfits that bring a trail
+        if (ITEM_TRAIL[wCat]) { const items = catItems(wCat); document.querySelectorAll('#items .item').forEach((el, i) => { const tr = items[i] && ITEM_TRAIL[wCat][items[i].id]; if (tr && !el.querySelector('.trb')) el.insertAdjacentHTML('beforeend', `<i class="trb" title="${TRAIL_N[tr]}">✦</i>`); }); }
+        let bar = $('tryBar'); if (bar) bar.remove();
+        if (TRY) { const it = (catItems(TRY.cat) || []).find(q => q.id === TRY.id) || {}, u = it.unlock || {}, name = typeof cosN === 'function' ? cosN(TRY.cat, it) : it.n, tr = ITEM_TRAIL[TRY.cat] && ITEM_TRAIL[TRY.cat][TRY.id];
+          const how = u.type === 'gems' ? `<button class="tb buy" onclick="tryBuy()" ${PR.gems < u.v ? 'disabled' : ''}><i class="ci">${SVG.gem}</i>${u.v}</button>` : `<small>${typeof unlockText === 'function' ? unlockText(u) : ''}</small>`;
+          const st = document.querySelector('#wardrobe .wstage'); if (st) st.insertAdjacentHTML('afterend', `<div id="tryBar"><span><b>Trying on: ${name}</b>${tr ? `<em>✦ ${TRAIL_N[tr]}</em>` : ''}${u.type === 'gems' ? (PR.gems < u.v ? '<small>Not enough gems</small>' : '') : ''}${u.type !== 'gems' ? how : ''}</span>${u.type === 'gems' ? how : ''}<button class="tb" onclick="stopTry()">Take off</button></div>`);
+          document.querySelectorAll('#items .item.eq').forEach(el => el.classList.add('trying')); }
+        const cur = PR.look.robe && ITEM_TRAIL.robe[PR.look.robe]; } catch (e) {}
+      return r; }; }
+
+  /* the wardrobe (and home) figure shows its trail: the fighter is standing still there, so the trail drifts off behind it */
+  { const _tf = window.titleFxHome; window.titleFxHome = function (x, cx, cy, sc, t) { if (_tf) { try { _tf.apply(this, arguments); } catch (e) {} }
+      try { const kind = window.effTrail ? effTrail(PR.look) : null; if (!kind) return; const N = kind === 'afterimage' ? 3 : kind === 'bloom' ? 5 : 12; x.save();
+        for (let i = 0; i < N; i++) { const ph = (t * (kind === 'bloom' ? .22 : .5) + i / N) % 1, px = cx - 26 * sc - ph * 95 * sc, a = 1 - ph, seed = Math.sin(i * 12.9898) * 43758.5453, rr = seed - Math.floor(seed);
+          if (kind === 'bloom') { const g = Math.min(1, ph * 5), s0 = (5 + rr * 3) * sc * g, col = ['#ff8ac0', '#ffd45e', '#c792ff', '#ffffff', '#7ef0d0'][i % 5], py = cy + (rr - .5) * 14; x.globalAlpha = Math.min(1, a * 2.2); x.save(); x.translate(px, py); x.scale(1, .62);
+            for (let j = 0; j < 5; j++) { const an = j / 5 * 6.283 + i; x.fillStyle = '#07020d'; x.beginPath(); x.arc(Math.cos(an) * s0 * .8, Math.sin(an) * s0 * .8, s0 * .62 + .8, 0, 7); x.fill(); } for (let j = 0; j < 5; j++) { const an = j / 5 * 6.283 + i; x.fillStyle = col; x.beginPath(); x.arc(Math.cos(an) * s0 * .8, Math.sin(an) * s0 * .8, s0 * .62, 0, 7); x.fill(); } x.fillStyle = '#ffd45e'; x.beginPath(); x.arc(0, 0, s0 * .46, 0, 7); x.fill(); x.restore(); }
+          else if (kind === 'afterimage') { x.globalAlpha = a * .35; x.fillStyle = '#b9a6ff'; x.beginPath(); x.ellipse(px + 20 * sc, cy - 34 * sc, 13 * sc, 30 * sc, 0, 0, 7); x.fill(); x.beginPath(); x.arc(px + 20 * sc, cy - 74 * sc, 11 * sc, 0, 7); x.fill(); }
+          else { const up = kind === 'embers' || kind === 'voidmotes' || kind === 'smoke' || kind === 'blaze', py = cy - rr * 46 * sc + (up ? -ph * 46 * sc : ph * 30 * sc), cols = { blaze: ['#ff5a1f', '#ffb347', '#fff3b0'], embers: ['#ffb347', '#ff5a1f', '#ffe27a'], snow: ['#ffffff', '#bfe9ff'], sparks: ['#fff7b0', '#9fd8ff'], golddust: ['#ffd75e', '#fff3c8'], voidmotes: ['#7a4dff', '#2a1060'], smoke: ['#6a6078', '#4d4458'], stardust: ['#ffffff', '#ffe9a0', '#c8b8ff'] }[kind] || ['#fff'];
+            x.globalAlpha = a * (kind === 'smoke' ? .5 : .95); x.globalCompositeOperation = kind === 'smoke' || kind === 'voidmotes' ? 'source-over' : 'lighter'; x.fillStyle = cols[i % cols.length]; const s0 = (kind === 'smoke' ? 6 + ph * 8 : kind === 'blaze' ? 3.4 + rr * 3 : 2.2 + rr * 1.6) * sc;
+            x.beginPath(); if (kind === 'stardust') { x.moveTo(px, py - s0 * 1.6); x.lineTo(px + s0 * .45, py - s0 * .45); x.lineTo(px + s0 * 1.6, py); x.lineTo(px + s0 * .45, py + s0 * .45); x.lineTo(px, py + s0 * 1.6); x.lineTo(px - s0 * .45, py + s0 * .45); x.lineTo(px - s0 * 1.6, py); x.lineTo(px - s0 * .45, py - s0 * .45); x.closePath(); } else x.arc(px, py, s0, 0, 7); x.fill(); x.globalCompositeOperation = 'source-over'; } }
+        x.restore(); } catch (e) {} }; }
+
+  const css = document.createElement('style');
+  css.textContent = `.item .trb{position:absolute;top:6px;left:6px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(#ffe27a,#f0a830);color:#2a1600;border:2px solid #000;font:12px/1 system-ui;font-style:normal;box-shadow:0 2px 0 #000}.item{position:relative}
+  #tryBar{display:flex;align-items:center;gap:8px;margin:8px 0 0;padding:8px 10px;border:2px solid #ffd75e;border-radius:14px;background:linear-gradient(#3a2d66,#221848);box-shadow:0 3px 0 #000}#tryBar span{flex:1;min-width:0;display:flex;flex-direction:column}
+  #tryBar b{font:14px 'Lilita One';letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#tryBar small{font:800 11px Nunito;color:#ffb38a}#tryBar em{font:800 11px Nunito;font-style:normal;color:#ffe9a0}
+  #tryBar .tb{flex:0 0 auto;display:flex;align-items:center;gap:4px;font:13px 'Lilita One';color:#fff;background:linear-gradient(#4a3a80,#2b2050);border:2px solid #000;border-radius:10px;padding:6px 10px;box-shadow:0 2px 0 #000;cursor:pointer}#tryBar .tb.buy{background:linear-gradient(#e07bff,#9a3fd6)}#tryBar .tb[disabled]{filter:grayscale(1) brightness(.7)}#tryBar .tb .ci{width:14px;height:14px;display:inline-grid}
+  .item.trying{outline:3px dashed #ffd75e;outline-offset:-3px}`;
+  document.head.appendChild(css);
 })();

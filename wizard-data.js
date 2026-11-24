@@ -1,6 +1,6 @@
 /* The version shown at the bottom of Options. Bump the last number with every update pushed live (1.0 -> 1.0.1 -> 1.0.2);
    bump the middle number for a big content drop. */
-const GAME_VERSION = '1.0.4';
+const GAME_VERSION = '1.0.5';
 /* =====================================================================
    SPELLBINDER: GAME DATA
    Pure data, no rendering. Port these tables straight into the real build.
@@ -86,9 +86,13 @@ const STATS = {
   gravity:   { pull: [120, 130, 140, 155, 170], radius: [70, 74, 78, 82, 86] },
 };
 /* Stretch the 5 hand-tuned levels to 20: the per-level step continues to level 10, then halves to level 20. */
+/* (1.0.5) Levels were out-running health: damage roughly doubled by level 6 while a rank adds 25 HP. Each level now adds
+   60% of what it used to, for damage and for the things damage is measured against (summon, wall and shell health, healing).
+   Level 1 values are unchanged. One number to turn if fights feel too slow or too fast. */
+const LEVEL_GROWTH = .6, LEVEL_SCALED = new Set(['dmg', 'dps', 'hp', 'wall', 'heal', 'regen']);
 (function stretchStats() {
   for (const k in STATS) for (const st in STATS[k]) {
-    const a = STATS[k][st], step = (a[4] - a[0]) / 4, dec = a.some(v => v % 1) ? 1 : 0;
+    const a = STATS[k][st], step = (a[4] - a[0]) / 4 * (LEVEL_SCALED.has(st) ? LEVEL_GROWTH : 1), dec = a.some(v => v % 1) ? 1 : 0;
     STATS[k][st] = Array.from({ length: MAXL }, (_, i) => { const v = a[0] + step * Math.min(i, 9) + step / 2 * Math.max(0, i - 9); return dec ? Math.round(v * 10) / 10 : Math.round(v); });
   }
 })();
@@ -133,7 +137,7 @@ const UPG = {
   bubbles:   [{ id: 'more', n: 'Bubble Stream', d: 'Blow 5 bubbles instead of 3.' }, { id: 'sticky', n: 'Sticky Acid', d: 'Puddles slow enemies inside.' }, { id: 'linger', n: 'Lingering Acid', d: 'Puddles last twice as long.' }],
   ricochet:  [{ id: 'twin', n: 'Twin Runes', d: 'Fire 2 bolts in a V.' }, { id: 'pierce', n: 'Phasing Rune', d: 'Passes through creatures instead of stopping.' }, { id: 'build', n: 'Momentum', d: 'Every bounce adds +3 damage.' }, { id: 'split', n: 'Splitting Rune', d: 'The rune splits in two on every bounce.' }, { id: 'seeker', n: 'Seeking Shards', d: 'Split runes home in on the enemy.', req: 'split' }],
   archer:    [{ id: 'volley', n: 'Volley', d: 'Shoots 3 arrows at once.' }, { id: 'fire', n: 'Fire Arrows', d: 'Arrows set targets on fire.' }, { id: 'twin', n: 'Twin Archers', d: 'Summon 2 archers.' }],
-  beam:      [{ id: 'wide', n: 'Wide Beam', d: 'A much thicker beam that is easier to land.' }, { id: 'overload', n: 'Overload', d: 'Beam hits 25% harder and melts ice walls much faster.' }, { id: 'quick', n: 'Quick Charge', d: 'Charges in 2.4 seconds instead of 3, but the beam is 35% shorter.' }],
+  beam:      [{ id: 'wide', n: 'Wide Beam', d: 'A much thicker beam that is easier to land.' }, { id: 'overload', n: 'Overload', d: 'Beam hits 25% harder and melts walls 65% faster.' }, { id: 'quick', n: 'Quick Charge', d: 'Charges in 2.4 seconds instead of 3, but the beam is 35% shorter.' }],
   shield:    [{ id: 'grand', n: 'Grand Bubble', d: 'The bubble is 60% bigger, so it catches far more.' }, { id: 'longhold', n: 'Long Hold', d: 'Holds absorbed spells 3 seconds instead of 1.5, so you choose a better moment.' }, { id: 'capacity', n: 'Deep Barrier', d: 'Absorbs 2 more spells.' }, { id: 'amplify', n: 'Amplify', d: 'Spells fired back hit 50% harder.' }],
   golem:     [{ id: 'iron', n: 'Iron Skin', d: 'Double health.' }, { id: 'quake', n: 'Quake Stomp', d: 'Stomps hit everything nearby and knock them back.' }, { id: 'toss', n: 'Rock Toss', d: 'Throws a boulder at the enemy every 2 seconds while walking.' }, { id: 'bloom', n: 'Shatter Bloom', d: 'Breaks into 3 pebble golems when destroyed.' }],
   hourglass: [{ id: 'stasis', n: 'Stasis', d: 'Enemy spells and creatures inside stop completely.' }, { id: 'rewind', n: 'Rewind', d: 'Heal back half the health you lost while the bubble was up.' }, { id: 'wide', n: 'Wide Glass', d: 'A much bigger bubble.' }, { id: 'hasten', n: 'Hasten', d: 'You cast faster while inside your bubble.' }],

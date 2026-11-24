@@ -455,8 +455,11 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
 .curtain .logo{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);text-align:center;z-index:2;line-height:.9}
 .curtain.logo .logo{animation:vsStamp2 .4s cubic-bezier(.3,1.8,.5,1) forwards}.curtain.opening .logo{transform:translate(-50%,-50%) scale(1);animation:fadeOut .25s forwards}
 @keyframes vsStamp2{from{transform:translate(-50%,-50%) scale(2.6) rotate(-8deg);opacity:0}to{transform:translate(-50%,-50%) scale(1) rotate(-4deg);opacity:1}}@keyframes fadeOut{to{opacity:0;transform:translate(-50%,-50%) scale(.8)}}
-.lgA{font:30px 'Lilita One';color:#cdbbff;letter-spacing:6px;-webkit-text-stroke:2px #000;paint-order:stroke;text-shadow:0 4px 0 #000}
-.lgB{font:68px 'Lilita One';background:linear-gradient(#fff3b0,#ffd45e 45%,#f08a1a);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:3px #000;paint-order:stroke;filter:drop-shadow(0 6px 0 #000) drop-shadow(0 0 18px #ffd45e66)}
+.lgA{font:64px 'Lilita One';letter-spacing:1px;background:linear-gradient(#ffd9d0,#ff5a4a 45%,#c9182a);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:3px #000;paint-order:stroke;filter:drop-shadow(0 6px 0 #000) drop-shadow(0 0 18px #ff5a4a66)}
+.lgB{font:58px 'Lilita One';letter-spacing:1px;background:linear-gradient(#d9eeff,#4fb0ff 45%,#1f5fe0);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:3px #000;paint-order:stroke;filter:drop-shadow(0 6px 0 #000) drop-shadow(0 0 18px #4fb0ff66)}.lgB small{display:block;font-size:26px;letter-spacing:5px;margin:4px 0 2px;background:linear-gradient(#fff3b0,#ffd45e 45%,#f08a1a);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:2px #000;paint-order:stroke}
+/* load splash: the curtain starts closed with the logo on it, then opens (wizard-v105b.js). If scripts never run it clears itself. */
+.curtain.splash{display:block;pointer-events:auto;animation:splashSafe .01s 8s forwards}.curtain.splash .top,.curtain.splash .bot{transform:none}.curtain.splash .logo{transform:translate(-50%,-50%) rotate(-4deg);animation:splashIn .5s cubic-bezier(.3,1.6,.5,1) backwards}
+@keyframes splashIn{from{transform:translate(-50%,-50%) scale(1.5) rotate(-8deg);opacity:0}}@keyframes splashSafe{to{visibility:hidden;pointer-events:none}}.curtain.splash .rcd{display:none}
 
 .cards{justify-content:center!important;gap:12px!important;padding:0 10px}
 .card{flex:0 0 calc((100% - 44px)/3)!important}
@@ -772,7 +775,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
   <div class="lvup" id="lvup"><div class="lvrays" id="lvRays"></div><div class="kicker" id="lvK">Level up!</div><div class="lvstar" id="lvNum">7</div><div class="h1" id="lvTitle">Level <em id="lvNum2">8</em></div>
     <div class="lvrew" id="lvRew"><div class="gempile" id="gemPile"></div><div class="gemct">×<span id="lvGemN">0</span></div><div class="gemlbl">Gems</div></div>
     <button class="btn" id="lvClaim" style="padding:13px 46px;font-size:24px">Claim</button></div>
-  <div class="curtain" id="curtain"><div class="ct top"><div class="rside" id="rcTop"></div></div><div class="ct bot"><div class="rside" id="rcBot"></div></div><div class="logo"><div class="lgA" id="logoA">Sorcerer</div><div class="lgB" id="logoB">Battle</div></div><div class="rcd" id="rcard"><canvas id="rcAva" width="128" height="128"></canvas><div class="rcn" id="rcName"></div><div class="rcr" id="rcRound"></div><div class="rcp" id="rcPips"></div><div class="rcf" id="rcFoe"></div></div></div>
+  <div class="curtain splash" id="curtain"><div class="ct top"><div class="rside" id="rcTop"></div></div><div class="ct bot"><div class="rside" id="rcBot"></div></div><div class="logo"><div class="lgA" id="logoA">WIZARDS</div><div class="lgB" id="logoB"><small>VS</small>SORCERERS</div></div><div class="rcd" id="rcard"><canvas id="rcAva" width="128" height="128"></canvas><div class="rcn" id="rcName"></div><div class="rcr" id="rcRound"></div><div class="rcp" id="rcPips"></div><div class="rcf" id="rcFoe"></div></div></div>
   <div class="chestov" id="chestOv"><div class="chrays"></div><div class="chname" id="chName"></div><div class="chbox" id="chBox"></div><div class="chcards" id="chCards"></div><button class="btn" id="chDone">Collect</button></div>
   <div class="pause" id="rep"><div class="pzb" id="repBody"></div></div>
   <div class="pause" id="pause"><div class="pzb" id="pzBody"></div></div>
@@ -813,7 +816,7 @@ function rivalName(el){PR.recentFoes=PR.recentFoes||[];let n,guard=0;do{const f=
 function newMatch(o={}){resetScars();WIN=o.tut?2:4;const prof=o.profile||genRival();M={foeRank:clamp(rankOf(PR.trophies)+(Math.random()<.25?-1:Math.random()<.33?1:0),0,RANKS.length-1),arena:o.arena||ARENAS[Math.random()*ARENAS.length|0],opts:o,profile:prof,unlocked:unlockedSpells(),foeLook:o.look||(o.profile&&prof.look)||randomLook(),mode:o.mode||PR.mode,foeName:o.name||prof.name||FOES[Math.random()*FOES.length|0],foeLv:o.lv||null,round:1,casts:{},score:{me:0,foe:0},me:{book:[],up:new Set(),pool:PR.hand.slice()},foe:{book:[],up:new Set(),pool:foeHand(prof)},pick:0,offer:[],sel:0,swapSel:null,lastAdded:-1};
  M.mySyn=synergyOf(PR.hand);M.foeSyn=synergyOf(M.foe.pool);setArena(M.arena);showVs(startDraft);}
 function hasUp(p,id){return p.up.has(id)}
-const capOf=()=>BOOK_BASE+BOOK_SLOT_RANKS.filter(r=>rankOf(PR.trophies)>=r).length;
+const capOf=()=>Math.max(BOOK_BASE+BOOK_SLOT_RANKS.filter(r=>rankOf(PR.trophies)>=r).length,(typeof M!=='undefined'&&M&&M.ladder&&M.ladder.adv)?5:0);   /* Advanced Ladder fights always have at least 5 book slots */
 const ONE_COPY=new Set(['beam']),MAX_COPIES=2;   /* no ability more than twice in a spellbook */
 function genOffer(p,round){const UN=(p.pool||M.unlocked).filter(k=>!(ONE_COPY.has(k)&&p.book.includes(k))&&(n=>n<MAX_COPIES&&n+1<=Math.ceil((p.book.length+1)/2))(p.book.filter(b=>b===k).length));   /* max 2 copies, and never more than half the book */
  if(p.book.length>=capOf()&&round>1){const ups=[];new Set(p.book).forEach(k=>UPG[k].forEach(u=>{if(!p.up.has(k+'.'+u.id)&&(!u.req||p.up.has(k+'.'+u.req))&&!(u.rare&&Math.random()<.6)&&upGate(p,k,u))ups.push({type:'up',k,u})}));ups.sort(()=>Math.random()-.5);
@@ -844,7 +847,8 @@ function openChestEvent(name,got,c){setTimeout(()=>sfx('ui_chest'),1250);const o
   setTimeout(()=>$('chDone').classList.add('on'),400+Object.keys(got).length*220);},1900);}
 $('chDone').onclick=()=>{$('chestOv').className='chestov';nav('spells');};
 /* ================= CURTAIN TRANSITION ================= */
-function curtain(mid){sfx('ui_curtain');const c=$('curtain');$('rcTop').innerHTML='';$('rcBot').innerHTML='';$('logoA').textContent=GAME_NAME[0];$('logoB').textContent=GAME_NAME[1];c.className='curtain on closing';
+function setLogo(){$('logoA').textContent=GAME_NAME[0];$('logoB').innerHTML=GAME_NAME[1].replace(/^VS\s+/,'<small>VS</small>');}
+function curtain(mid){sfx('ui_curtain');const c=$('curtain');$('rcTop').innerHTML='';$('rcBot').innerHTML='';setLogo();c.className='curtain on closing';
  setTimeout(()=>{c.classList.add('logo');},420);setTimeout(()=>{mid();},700);setTimeout(()=>{c.classList.remove('closing','logo');c.classList.add('opening');},1350);setTimeout(()=>{c.className='curtain';},1900);}
 function sideCard(id,look,embSvg,name,score,justWon,foe,extra){const el=$(id);el.innerHTML=`<canvas width="128" height="128"></canvas><div class="rsi"><div class="rcn ${foe?'f':''} ${name.length>17?'long':''}"><span class="nemb">${embSvg}</span>${name}</div><div class="rcp ${foe?'foe':''}">${[...Array(WIN).keys()].map(i=>`<i class="${i<score-(justWon?1:0)?'w':''} ${justWon&&i===score-1?'fillnow':''}"></i>`).join('')}</div>${extra?`<div class="rcx">${extra}</div>`:''}</div>`;drawAva(el.querySelector('canvas'),lookWiz(look));}
 function dmgStrip(side){const d=(M.rdmg&&M.rdmg[side])||{},rows=Object.entries(d).filter(([k,v])=>SP[k]&&v>=.5).sort((a,b)=>b[1]-a[1]).slice(0,4);
@@ -856,7 +860,7 @@ function roundCurtain(won,mid){sfx('ui_curtain');const c=$('curtain'),fw=M.lastW
  sideCard('rcBot',PR.look,emblemSVG(PR.emblem),PR.name,M.score.me,won,false,'');
  $('rcTop').querySelector('.rsi').insertAdjacentHTML('beforeend',dmgStrip('foe'));$('rcBot').querySelector('.rsi').insertAdjacentHTML('beforeend',dmgStrip('me'));countStrips();
  c.querySelector('.logo').style.visibility='hidden';
- c.className='curtain on closing rshow';setTimeout(()=>c.classList.add('logo'),380);setTimeout(()=>{mid()},900);setTimeout(()=>{c.classList.remove('closing','logo');c.classList.add('opening')},3100);setTimeout(()=>{c.className='curtain';c.querySelector('.logo').style.visibility='';$('logoA').textContent=GAME_NAME[0];$('logoB').textContent=GAME_NAME[1];$('rcTop').innerHTML='';$('rcBot').innerHTML=''},3650);}
+ c.className='curtain on closing rshow';setTimeout(()=>c.classList.add('logo'),380);setTimeout(()=>{mid()},900);setTimeout(()=>{c.classList.remove('closing','logo');c.classList.add('opening')},3100);setTimeout(()=>{c.className='curtain';c.querySelector('.logo').style.visibility='';setLogo();$('rcTop').innerHTML='';$('rcBot').innerHTML=''},3650);}
 /* ================= PAUSE ================= */
 const QUIT_LOSS=18;
 const SET=()=>(PR.settings=Object.assign({slowmo:true,shake:true,music:70,sfx:80},PR.settings||{}));
@@ -1047,7 +1051,7 @@ function cast(w,k){w.chg=0;if(k!=='lightning'&&typeof sfx==='function')sfx('c_'+
  if(k==='gale'){const sus=U(w,k,'sustain'),g={o:w,t:0,dur:sus?S(w,k,'dur'):.5,sus,ang,push:S(w,k,'push'),cut:U(w,k,'cutting'),tail:U(w,k,'tail'),shoved:new Set(),st:[],acc:0};for(let i=0;i<22;i++)g.st.push(newWisp(g,true));gales.push(g);shake=Math.max(shake,4);if(U(w,k,'current'))currents.push({o:w,t:0,life:1.5,ret:U(w,k,'return')});}
  if(k==='ringfire'){const n=1;for(let j=0;j<n;j++){const go=()=>{if(ended||w.dead)return;firerings.push({o:w,x:w.x,y:w.y,r:14,max:S(w,k,'radius')*(U(w,k,'wide')?1.4:1),t:0,hit:new Set(),dmg:S(w,k,'dmg'),wall:U(w,k,'wall'),blast:U(w,k,'blast'),inner:U(w,k,'inner'),hold:0,seed:Math.random()*99});shake=Math.max(shake,6);lights.push({x:w.x,y:w.y,r:110,c:'#ff8a3a',t:0,life:.5});};j?setTimeout(go,500):go();}}
  if(k==='burnbody'){w.bodyT=S(w,k,'dur');w.bodyDps=S(w,k,'dps');w.bodyR=U(w,k,'heat')?62:42;w.bodyWard=U(w,k,'ward');w.bodyTrail=U(w,k,'trail');w.bodyFlare=U(w,k,'flare');burst(w.x,w.y-30*HS,30,['#ff7a2a','#ffd45e','#fff3b0'],200,6,.6);inkRing(w.x,w.y-20*HS,'#ff7a2a',2,8,40);}
- if(k==='beam'){const dur=S(w,k,'dur')*(U(w,k,'quick')?.65:1)*(U(w,k,'desperate')?1.5:1);cannons.push({o:w,t:0,dur,desp:U(w,k,'desperate'),dps:S(w,k,'dps')*(U(w,k,'overload')?1.25:1),wide:U(w,k,'wide'),wallDps:U(w,k,'overload')?45:30,ang,acc:0,clashT:0});w.beamT=dur;shake=Math.max(shake,8);inkRing(w.x+w.face*22,w.y-64*HS,'#4fe3ff',2,8,46);}
+ if(k==='beam'){const dur=S(w,k,'dur')*(U(w,k,'quick')?.65:1)*(U(w,k,'desperate')?1.5:1);cannons.push({o:w,t:0,dur,desp:U(w,k,'desperate'),dps:S(w,k,'dps')*(U(w,k,'overload')?1.25:1),wide:U(w,k,'wide'),wallDps:U(w,k,'overload')?49.5:30,ang,acc:0,clashT:0});w.beamT=dur;shake=Math.max(shake,8);inkRing(w.x+w.face*22,w.y-64*HS,'#4fe3ff',2,8,46);}
 }
 function spawnZ(w,x,y,rise){decals.push({k:'hole',x,y,t:0,life:12});zombies.push({o:w,x,y,mx:S(w,'zombies','hp'),hp:S(w,'zombies','hp'),rise,cd:rnd(0,.5),t:rnd(0,9),flash:0,lunge:0});}
 function hurtZ(z,d,by,kind){if(z.hp<=0)return;z.hp-=d;z.flash=.12;if(kind)z.lastK=kind;if(z.hp<=0){const K=kind||z.lastK||'hit';
@@ -2094,5 +2098,8 @@ nav('home');
 <script src="wizard-modes.js"></script>
 <script src="wizard-ladder.js"></script>
 <script src="wizard-cosmetics.js"></script>
+<script src="wizard-v105.js"></script>
+<script src="wizard-yard.js"></script>
+<script src="wizard-v105b.js"></script>
 <script src="wizard-release.js"></script>
 </body></html>
