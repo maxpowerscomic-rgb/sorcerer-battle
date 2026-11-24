@@ -878,7 +878,7 @@
       // (1.0.5) the first thing to arrive opens a one-second window; every summon and shot that arrives in it is stopped (wizard-rules.js runs the window)
       if (w.boundary || w.bndWin > 0) { const open = () => { if (window.bndOpen) bndOpen(w); else { w.boundary = 0; w.bndWin = 1; } };
         for (const near of zombies.filter(z => z.o !== w && z.hp > 0 && z.rise >= 1 && !(z.stun > 0) && Math.hypot(z.x - w.x, z.y - w.y) < 30).concat(golems.filter(g => g.o !== w && g.hp > 0 && !(g.bndT > 0) && Math.hypot(g.x - w.x, g.y - w.y) < 40))) {
-          open(); near.bndT = Math.max(.3, w.bndWin); if (zombies.includes(near)) near.stun = Math.max(.3, w.bndWin); addFx({ k: 'ping', x: near.x, y: near.y - 20 * HS, life: .4 }); burst(near.x, near.y - 30 * HS, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); }
+          open(); near.bndT = Math.max(.3, w.bndWin); near._bndBy = w; if (zombies.includes(near)) near.stun = Math.max(.3, w.bndWin); addFx({ k: 'ping', x: near.x, y: near.y - 20 * HS, life: .4 }); burst(near.x, near.y - 30 * HS, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); }
         for (const p of projs) if (p.o !== w && p.life > 0 && p.held === undefined && Math.hypot(p.x - w.x, p.y + 40 * HS - w.y) < 36) { open(); p.held = Math.max(.05, w.bndWin); p.vx = 0; p.vy = 0; p.home = 0; p.bndBy = w; p.life = 2; addFx({ k: 'ping', x: p.x, y: p.y + 40 * HS, life: .4 }); burst(p.x, p.y, 14, ['#e6f0ff', '#7aa6ff'], 160, 3, .35); } }
       // Spirit Arrow: the shell shoots while it stands
       if (w.shell && U(w, 'titan', 'arrow') && o && !o.dead) { w.shell.acd = (w.shell.acd === undefined ? 1 : w.shell.acd) - dt; if (w.shell.acd <= 0) { w.shell.acd = 2; const a = Math.atan2(o.y - w.y, o.x - w.x); tarrows.push({ o: w, x: w.x + Math.cos(a) * 24, y: w.y + Math.sin(a) * 24, vx: Math.cos(a) * 430, vy: Math.sin(a) * 430, life: 1.6, dmg: 7 }); } }
@@ -1072,7 +1072,7 @@
         const f = c.o.foe, sp = Math.hypot(c.vx, c.vy) || 1, ux = c.vx / sp, uy = c.vy / sp;
         if (!c.bounced) {   // first pass: everything it touches is hurt once and shoved along its path; enemy shots are turned around
           if (!f.dead && !ghosted(f) && !c.hit.has(f) && Math.hypot(f.x - c.x, f.y - c.y) < 28 * (c.big || 1)) { c.hit.add(f); damage(f, c.dmg, ux * 520 * c.str, uy * 520 * c.str, '#ffb0b0'); addFx({ k: 'repel', x: f.x, y: f.y, life: .35, r: 60 }); shake = Math.max(shake, 7); joltHit(c.o, f, 'wiz'); }
-          for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined && !c.hit.has(e.e) && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 26 * (c.big || 1)) { c.hit.add(e.e); hurtCreature(e.e, e.k, c.dmg * .6, 'crush'); const q = inArena(e.e.x + ux * 70 * c.str, e.e.y + uy * 70 * c.str); e.e.x = q.x; e.e.y = q.y; joltHit(c.o, e.e, e.k); }
+          for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined && !c.hit.has(e.e) && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 26 * (c.big || 1)) { c.hit.add(e.e); hurtCreature(e.e, e.k, c.dmg * .6, 'crush'); if (window.bowl) bowl(e.e, e.k, ux, uy, 300 * c.str); else { const q = inArena(e.e.x + ux * 70 * c.str, e.e.y + uy * 70 * c.str); e.e.x = q.x; e.e.y = q.y; } joltHit(c.o, e.e, e.k); }
           for (const p of projs) if (p.o !== c.o && p.life > 0 && Math.hypot(p.x - c.x, p.y + 40 * HS - c.y) < 26) { p.vx = ux * 300; p.vy = uy * 300; p.o = c.o; p.tgt = null; }
           for (const q of slashes) if (q.o !== c.o && Math.hypot(q.x - c.x, q.y - c.y) < 26) { q.vx = ux * 380; q.vy = uy * 380; q.o = c.o; q.hit = new Set(); }
         }
@@ -1080,9 +1080,9 @@
         if (b) { inkRing(c.x, c.y, '#ff5a5a', 2, 6, 30, .6); if (!c.late) { c.life = 0; burst(c.x, c.y - 36 * HS, 12, ['#ff8a8a', '#fff'], 150, 3, .35); } else { c.bounced++; if (c.bounced > 5) c.life = 0; } }
         if (c.late && c.bounced && c.life > 0) {   // Late Detonation: after the bounce it explodes on the first thing it touches
           let hitE = null; if (!f.dead && !ghosted(f) && Math.hypot(f.x - c.x, f.y - c.y) < 26) hitE = { e: f, k: 'wiz' }; if (!hitE) for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 24) { hitE = e; break; } let hitW = null; if (!hitE) for (const wl of walls) if (wl.o !== c.o && wallD(wl, c.x, c.y) < 16) { hitW = wl; break; }
-          if (hitE || hitW) { c.life = 0; addFx({ k: 'implode', x: c.x, y: c.y - 36 * HS, life: .6 }); shake = Math.max(shake, 10); const R2 = 70;
+          if (hitE || hitW) { c.life = 0; addFx({ k: 'implode', x: c.x, y: c.y - 36 * HS, life: .6 }); shake = Math.max(shake, 10); try { if (window.repelSparks) repelSparks(c.x, c.y - 36 * HS, 1); } catch (e) {} const R2 = 70;
             if (!f.dead && !ghosted(f) && Math.hypot(f.x - c.x, f.y - c.y) < R2) { const d = Math.hypot(f.x - c.x, f.y - c.y) || 1; damage(f, c.dmg * 1.3, (f.x - c.x) / d * 620, (f.y - c.y) / d * 620, '#ffb0b0'); }
-            for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined && Math.hypot(e.e.x - c.x, e.e.y - c.y) < R2) { const d = Math.hypot(e.e.x - c.x, e.e.y - c.y) || 1; hurtCreature(e.e, e.k, c.dmg * 1.3, 'crush'); const q = inArena(e.e.x + (e.e.x - c.x) / d * 60, e.e.y + (e.e.y - c.y) / d * 60); e.e.x = q.x; e.e.y = q.y; }
+            for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined && Math.hypot(e.e.x - c.x, e.e.y - c.y) < R2) { const d = Math.hypot(e.e.x - c.x, e.e.y - c.y) || 1; hurtCreature(e.e, e.k, c.dmg * 1.3, 'crush'); if (window.bowl) bowl(e.e, e.k, (e.e.x - c.x) / d, (e.e.y - c.y) / d, 320); else { const q = inArena(e.e.x + (e.e.x - c.x) / d * 60, e.e.y + (e.e.y - c.y) / d * 60); e.e.x = q.x; e.e.y = q.y; } }
             if (hitW) { hitW.hp -= c.dmg * 2.6; hitW.flash = .15; } } }
         if (Math.random() < .8) P({ x: c.x + rnd(-5, 5), y: c.y - 36 * HS + rnd(-5, 5), vx: -c.vx * .15 + rnd(-20, 20), vy: -c.vy * .15 + rnd(-20, 20), color: Math.random() < .5 ? '#ff6b6b' : '#ffffff', size: rnd(2, 3.6), life: rnd(.2, .4) });
         continue; }

@@ -136,7 +136,7 @@
     window.renderBook = renderBook = function () { const r = _rb.apply(this, arguments);
       try { const b = M.me.book, sel = M.swapSel ?? (M.lastAdded >= 0 ? M.lastAdded : 0), k = b[sel], d = $('detail'); if (!d || !k || !SP[k]) return r;
         const lv = (PR.spells[k] && PR.spells[k].lvl) || 1, stt = STATS[k] || {}, lbl = (typeof STAT_LBL_SPELL !== 'undefined' && STAT_LBL_SPELL[k]) || {}, gen = typeof STAT_LBL !== 'undefined' ? STAT_LBL : {};
-        const rows = Object.keys(stt).map(s0 => `<span><small>${lbl[s0] || gen[s0] || s0}</small><b>${stt[s0][Math.min(lv, stt[s0].length) - 1]}</b></span>`).join('');
+        const rows = Object.keys(stt).map(s0 => { const bk = window.dmgBreak && (s0 === 'dmg' || s0 === 'dps') ? dmgBreak(k, s0, lv, M.mySyn || (typeof synergyOf === 'function' ? synergyOf(PR.hand) : null)) : null; return `<span><small>${lbl[s0] || gen[s0] || s0}</small><b>${bk ? bk.total : stt[s0][Math.min(lv, stt[s0].length) - 1]}</b>${bk ? `<em class="dbk">${bk.txt}</em>` : ''}</span>`; }).join('');
         const sts = STATUS[k] || STATUS[SP[k].variantOf] || [], rs = window.castRestr ? castRestr(k) : [];
         d.insertAdjacentHTML('beforeend', `<div class="odet"><div class="odesc"><em>Lv ${lv}</em>${SP[k].d}</div>${rows ? `<div class="ostats">${rows}</div>` : ''}${sts.length || rs.length ? `<div class="ostat">${rs.map(x => `<i class="r">${x}</i>`).join('')}${sts.map(x => `<i>${x}</i>`).join('')}</div>` : ''}</div>`); } catch (e) {}
       return r; }; }
