@@ -129,6 +129,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.10.2', d: '24 Nov 2026', items: ['Music: during a fight, Loop this song keeps the current song for the rest of the match.', 'Double-tap a song to favourite it. Favourites sit right under Now playing.', 'The tutorial now covers the training yard, the Ladder, streaks, rematches, saved hands, the hand rating and the battle report.', 'The open slot in the draft tray now turns clockwise instead of pulsing.'] },
     { v: '1.0.10.1', d: '24 Nov 2026', items: ['Options shows the name of the song that is playing. The "Follows the fight" wording is gone; that choice is now called Auto.'] },
     { v: '1.0.10', d: '24 Nov 2026', items: ['Summons can be bowled: a Repel orb, or Boundary letting go of a summon it caught, sends it sliding into the others and knocks them on like pins.', 'The Repel detonation throws sparks.', 'Damage now shows where it comes from: base, level bonus and hand bonuses, on the order screen and in the spell book.', 'Signature upgrades like Grand Bisection, and boss abilities, arrive in the draft with a chime and a shine.'] },
     { v: '1.0.9', d: '24 Nov 2026', items: ['Rematch: after a ranked or casual loss, pay 75 gold to fight the same rival again with the same hand. In ranked, a win gives your trophies back plus 10; a second loss costs double.', 'Music: Options shows the song that is playing. Tap it, then Change, to pick a song. Songs are grouped into Main menu and Battle, and each says when it plays.'] },

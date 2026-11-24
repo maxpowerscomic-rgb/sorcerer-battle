@@ -56,7 +56,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
 .tray{display:flex;justify-content:center;align-items:center;gap:10px;padding:10px 12px;background:#0008;border:2px solid #000;border-radius:18px;box-shadow:0 4px 0 #000;flex:none;min-height:76px}
 .tray .trl{font:12px 'Lilita One';color:#9a8cc4;margin-right:4px;letter-spacing:1px;text-transform:uppercase;width:52px;line-height:1.1}
 .tray .sl{position:relative;width:50px;height:50px;border-radius:50%;border:3px dashed #ffffff30;display:grid;place-items:center}
-.tray .sl.cur{border-color:var(--gold);box-shadow:0 0 14px #ffd45e55;animation:breathe 1.2s ease-in-out infinite}
+.tray .sl.cur{border-color:transparent;box-shadow:0 0 14px #ffd45e55}.tray .sl.cur::before{content:"";position:absolute;inset:-3px;border-radius:50%;border:3px dashed var(--gold);animation:slSpin 3.2s linear infinite}@keyframes slSpin{to{transform:rotate(360deg)}}
 @keyframes breathe{50%{transform:scale(1.08)}}
 .tray .sl.fill{border:none}.tray .sl img{width:100%;height:100%}.tray .sl.pop{animation:pop .45s cubic-bezier(.3,1.8,.5,1)}
 .tray .sl b{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;border-radius:50%;background:var(--gold);color:#000;font:16px/16px 'Lilita One';border:2px solid #000;text-align:center}
