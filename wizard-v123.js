@@ -87,7 +87,8 @@
     else if ((m = /^rgba?\(([^)]+)\)/.exec(col))) { const p = m[1].split(',').map(parseFloat); r = p[0]; g = p[1]; b = p[2]; if (p.length > 3) a = p[3]; }
     else if (typeof d === 'number' && (m = /^hsla?\(([^)]+)\)/.exec(col))) { const p = m[1].split(',').map(parseFloat); v = `hsla(${((p[0] + d) % 360 + 360) % 360},${p[1]}%,${p[2]}%,${p.length > 3 ? p[3] : 1})`; cache.set(key, v); return v; }
     if (r !== undefined && !isNaN(r + g + b)) { const R = r / 255, G = g / 255, B = b / 255, mx = Math.max(R, G, B), mn = Math.min(R, G, B), df = mx - mn, l = (mx + mn) / 2;
-      if (d === 'white') { if (l > .16) v = `hsla(250,${df > .07 ? 14 : 0}%,${(l * 48 + 52).toFixed(0)}%,${a.toFixed(3)})`; }
+      if (typeof d === 'string' && d[0] === 'h') { if (df > .07 && l > .1) v = `hsla(${d.slice(2)},${Math.max(60, Math.min(100, df / (1 - Math.abs(2 * l - 1) || 1) * 100)).toFixed(0)}%,${(l * 100).toFixed(0)}%,${a.toFixed(3)})`; }
+      else if (d === 'white') { if (l > .16) v = `hsla(250,${df > .07 ? 14 : 0}%,${(l * 48 + 52).toFixed(0)}%,${a.toFixed(3)})`; }
       else if (d === 'gold') { if (l > .16) v = `hsla(${l > .8 ? 52 : 44},${l > .8 ? 100 : 86}%,${(l * 100).toFixed(0)}%,${a.toFixed(3)})`; }
       else if (df > .07) { const s = df / (1 - Math.abs(2 * l - 1) || 1); let h = mx === R ? ((G - B) / df) % 6 : mx === G ? (B - R) / df + 2 : (R - G) / df + 4; h = ((h * 60 + d) % 360 + 360) % 360; v = `hsla(${h.toFixed(0)},${(Math.min(1, s) * 100).toFixed(0)}%,${(l * 100).toFixed(0)}%,${a.toFixed(3)})`; } }
     if (cache.size > 4000) cache.clear(); cache.set(key, v); return v; }
@@ -105,7 +106,7 @@
     try { (0, eval)(name + ' = window.' + name); } catch (e) {} }
   wrap('drawFireball', 'fireball', (x, p) => p && p.o, (x, p) => p.blue || (p.src && p.src !== 'fireball'));
   wrap('drawOrb', 'orbs', e => e && e.o); wrap('drawBubble', 'bubbles', e => e && e.o); wrap('drawRune', 'ricochet', e => e && e.o); wrap('drawSwarm', 'flies', e => e && e.o);
-  wrap('drawZombie', 'zodiac', e => e && e.beast && e.o, null, e => e && e.crim ? 105 : null);   /* Crimson Zodiac beasts are red for everyone */ wrap('drawWell', 'gravity', e => e && e.o); wrap('drawPatch', 'thorns', e => e && e.o); wrap('drawCrystal', 'icewall', (c, wl) => wl && wl.o, (c, wl) => wl && wl.mud);
+  wrap('drawZombie', 'zodiac', e => e && e.beast && e.o, null, e => e && e.crim ? 105 : e && e.hue ? e.hue : null);   /* Crimson Zodiac beasts are red for everyone */ wrap('drawWell', 'gravity', e => e && e.o); wrap('drawPatch', 'thorns', e => e && e.o); wrap('drawCrystal', 'icewall', (c, wl) => wl && wl.o, (c, wl) => wl && wl.mud);
   // sparks thrown off a recoloured attack follow its colour: any spark born this frame beside one is turned the same way
   const LISTS = { fireball: () => projs.filter(p => !p.blue && (!p.src || p.src === 'fireball')), orbs: () => orbs, bubbles: () => bubbles, ricochet: () => runes, flies: () => swarms, gravity: () => wells, zodiac: () => zombies.filter(z => z.beast && z.hp > 0), thorns: () => patches, icewall: () => { const o = []; for (const wl of walls) if (!wl.mud) for (const c of wl.cr) o.push({ o: wl.o, x: c.x, y: c.y }); return o; } };
   if (typeof update === 'function') { const _u2 = update; window.update = update = function (dt) { let spots = null;
@@ -115,12 +116,10 @@
       try { if (spots) for (const p of parts) if (!p._s) { p._s = 1; for (const s of spots) { if (Math.abs(p.x - s[0].x) < 42 && Math.abs(p.y - s[0].y) < 70 || Math.abs(p.x - s[1]) < 42 && Math.abs(p.y - s[2]) < 70) { p.color = shift(p.color, s[3]); break; } } } } catch (e) {}
       return r; }; }
   // picker on the ability page
-  window.cwPick = function (k, i) { PR.cway = PR.cway || {}; if (i > 0) { const n = cwNeed(k, i - 1); if (!n[0]) return toast(n[1]); } if (i) PR.cway[k] = i; else delete PR.cway[k]; save(); try { sfx('ui_click'); } catch (e) {} const el = document.querySelector('#sheetP .cw-row'); if (el) el.outerHTML = cwHTML(k); };
+  window.cwPick = function (k, i) { PR.cway = PR.cway || {}; if (i > 0) { const n = cwNeed(k, i - 1); if (!n[0]) return toast(n[1]); } if (i) PR.cway[k] = i; else delete PR.cway[k]; save(); try { sfx('ui_click'); } catch (e) {} const el = document.querySelector('#sheetP .cw-row'); if (el) el.outerHTML = cwHTML(k); try { if ($('wardrobe').classList.contains('on')) renderWardrobe(); } catch (e) {} };
   function cwHTML(k) { const c = CW[k], cur = (PR.cway && PR.cway[k]) || 0;
     return `<div class="cw-row"><b>Colour</b><div class="cw-sw"><button class="${cur ? '' : 'on'}" onclick="cwPick('${k}',0)" style="--c:${k === 'zodiac' ? 'radial-gradient(circle at 35% 30%,#fff,#7dffa8 45%,#000 130%)' : hcss(c[0])}"><i></i><small>Standard</small></button>${c[1].map((h, i) => { const n = cwNeed(k, i); return `<button class="${cur === i + 1 ? 'on' : ''}${n[0] ? '' : ' lk'}" onclick="cwPick('${k}',${i + 1})" style="--c:${hcss(h)}"><i></i><small>${hname(h)}</small></button>`; }).join('')}</div>${cur ? '' : `<p>${(() => { const nx = [0, 1, 2, 3].find(i => !cwNeed(k, i)[0]); return nx === undefined ? 'All four colours earned.' : 'Next colour: ' + cwNeed(k, nx)[1] + '.'; })()}</p>`}</div>`; }
-  if (typeof openSpell === 'function') { const _os = openSpell; window.openSpell = openSpell = function (k) { const r = _os.apply(this, arguments);
-      try { const Pn = $('sheetP'); if (ok && CW[k] && Pn && !Pn.querySelector('.cw-row') && typeof isUnl === 'function' && isUnl(k)) { const at = Pn.querySelector('.trials') || Pn.lastElementChild; if (at) at.insertAdjacentHTML('beforebegin', cwHTML(k)); else Pn.insertAdjacentHTML('beforeend', cwHTML(k)); } } catch (e) {}
-      return r; }; }
+  /* (1.0.24) the colour picker moved to the wardrobe's Attacks tab (wizard-v124.js) */
 
   /* ---------------- Hoot button: fold his review of the hand away ---------------- */
   function hootBtn() { const hl = document.querySelector('#handBar .hl'), hx = $('handX'); if (!hl || !hx) return; hx.classList.toggle('hoot-off', !!PR.hootOff);
@@ -165,5 +164,5 @@
   #handBar{position:relative}.hoot-btn{position:absolute;top:8px;right:10px;width:34px;height:34px;border-radius:50%;border:2px solid #000;padding:0;overflow:hidden;background:radial-gradient(circle at 40% 35%,#5a3fa8,#1d1240);box-shadow:0 2px 0 #000;opacity:.55}
   .hoot-btn.on{opacity:1;outline:2px solid #ffd45e}.hoot-btn canvas{width:100%;height:100%;display:block}#handX.hoot-off .hrate{display:none}`;
   document.head.appendChild(css);
-  window.V123 = { cwNeed, shift, tgHud };
+  window.V123 = { cwNeed, shift, tgHud, hname, hcss, hueOn, hueOff, ok: () => ok };
 })();

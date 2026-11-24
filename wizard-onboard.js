@@ -127,7 +127,7 @@ const ONB_STEPS = [
   { id: 'yard', dot: 6, enter() { nav('home'); }, target: '#home .stage', place: 'bottom',
     html: () => `<b class="who">Hoot</b>Home is your <em>training yard</em>. Your fighter practises your hand on a dummy. Tap the dummy to let hits move it or give it abilities; the speaker mutes it. In a duel, <em>swipe up or down</em> to change range, and the <em>four buttons on the left</em> choose what you aim at: caster, walls, summons or nearest.<div class="row"><button class="go" data-next>Next</button></div>` },
   { id: 'ladder', dot: 6, enter() { nav('home'); }, target: '#ldBtn', place: 'bottom',
-    html: () => `<b class="who">Hoot</b>The <em>Ladder</em>: fixed rivals with gems and new abilities to win. Wins in a row pay <em>streak gold</em>, and after a loss you can pay for a <em>rematch</em>.<div class="row"><button class="go" data-next>Next</button></div>` },
+    html: () => `<b class="who">Hoot</b>The <em>Ladder</em>: fixed rivals with gems and new abilities to win. The <em>Club</em> tab has bounties and <em>Survival</em>, where you hold out against waves of mobs. Wins in a row pay <em>streak gold</em>, and after a loss you can pay for a <em>rematch</em>.<div class="row"><button class="go" data-next>Next</button></div>` },
   { id: 'done', dot: -1, enter() { nav('home'); },
     html: () => `<b class="who">Hoot</b>That's everything, <em>${PR.name}</em>. The arena awaits! Take these to get started.<div class="gift"><span class="ci" style="width:22px;height:22px;display:grid">${SVG.gem}</span>+100 gems</div><div class="row"><button class="go" data-finish>Let's duel!</button></div>` },
 ];

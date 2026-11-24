@@ -765,7 +765,7 @@
     // (1.0.23) Vanguard: the round's first summon is the Juggernaut. Only one Juggernaut can be out at a time.
     if (!w.czNow && !w.zn && U(w, k, 'vanguard') && typeof JUGGERNAUT !== 'undefined' && !zombies.some(q => q.o === w && q.beast && q.beast.boss && q.hp > 0)) b = JUGGERNAUT;
     // (1.0.23) Dome Breaker: summoning while standing inside an enemy Sanctum shatters it
-    if (U(w, k, 'domebreak')) for (const od of domes) if (od.o !== w && od.t < od.dur && !od.open && Math.hypot(w.x - od.x, (w.y - od.y) * 1.4) < od.r) { od.hp = 0; text(w.x, w.y - 118 * HS, 'DOME BREAKER', '#ffe08a', true); shake = Math.max(shake, 12); }
+    if (U(w, k, 'domebreak') && zombies.some(q => q.o === w && q.beast && q.beast.boss && q.hp > 0 && q.rise >= 1)) for (const od of domes) if (od.o !== w && od.t < od.dur && !od.open && Math.hypot(w.x - od.x, (w.y - od.y) * 1.4) < od.r) { od.hp = 0; text(w.x, w.y - 118 * HS, 'DOME BREAKER', '#ffe08a', true); shake = Math.max(shake, 12); }
     // (1.0.23.1) a fallen Juggernaut (killed, or spent on Take the Blow) stays down for its caster's next 3 Zodiac casts
     if (w.jRef && w.jRef.hp <= 0) { w.jRef = null; w.jDown = 3; }
     if (w.jDown > 0) { w.jDown--; if (b === JUGGERNAUT) b = ZODIAC[Math.random() * ZODIAC.length | 0]; }

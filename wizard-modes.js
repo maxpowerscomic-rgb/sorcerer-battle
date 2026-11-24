@@ -130,6 +130,13 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.24', d: '24 Nov 2026', items: ['Survival, a new Fight Club tab: mobs rise all around you. Survive 30, 60 and 90 seconds with 3 lives, or go Endless. You draft between attempts.',
+      'Four kinds of mob (Shambler, Skitter, Hulk, Burster). Their damage and numbers grow 5% every 10 seconds.',
+      'Bring an AI partner: a random hand, one of your saved hands, or a Fight Club favourite. Best runs are listed with the build you used.',
+      'Colour options moved to the wardrobe: the Attacks tab lists every colour by attack, split into Spells and Techniques.',
+      'New cosmetics: six hairstyles, nine hair colours (Living Flame, Aurora and Storm Front are animated) and six premium pets with their own effects.',
+      'Home screen: your fighter\'s head (bottom right) opens the wardrobe, the bell sits beside the gear, and the login bonus is inside notifications.',
+      'Dome Breaker only works while your Juggernaut is on the field.'] },
     { v: '1.0.23.1', d: '24 Nov 2026', items: ['Skill points: a win now gives 5 to every ability in your hand (a loss gives 2), so an Echo Rune on a win makes it 10.', 'Levelling an ability needs 1.5 times as many skill points, and trials pay half as many.', 'A fallen Juggernaut cannot be summoned again for its caster\'s next 3 Zodiac casts.'] },
     { v: '1.0.23', d: '24 Nov 2026', items: ['Target buttons in battle: four buttons on the left choose what you aim at (caster, walls, summons, nearest). Tap the lit one again for auto.',
       'Colourways: four new colours each for Fireball, Arcane Orbs, Bubbles, Ricochet, Fly Swarm, Gravity Well, Thorns, Ice Wall and Zodiac Beasts. Earn them by playing, on the ability page.',
