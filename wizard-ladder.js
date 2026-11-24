@@ -17,7 +17,7 @@
   COL.bluefire = ['#e6f6ff', '#3aa0ff', '#061a4a']; COL.violet = ['#f1dcff', '#a24dff', '#1c0640']; COL.openward = ['#ffffff', '#9fd0ff', '#102a5a']; COL.crimson = ['#ffd6d2', '#ff2a3a', '#3a0008']; COL.shade = ['#d9ccff', '#5a3fb8', '#0c0620']; COL.glass = ['#ffffff', '#9fe6ff', '#0a3a5c']; COL.star = ['#fff6c8', '#ffb020', '#3a2200'];
   const VARIANTS = {
     bluefire:     { base: 'fireball', n: 'Blue Flame', el: 'bluefire', t: 1, boss: 4, d: 'A fireball that burns hotter: 35% more damage. It burns itself out at half the distance.', tag: 'Variant',
-                    ups: [{ id: 'wall', n: 'Blue Wall', d: 'Where a Blue Flame burns out, it leaves a wall of fire for 3 seconds.' }] },
+                    ups: [{ id: 'wall', n: 'Blue Wall', d: 'Each cast also sprays a fountain of blue fire in front of you. It stands as a cone of flame for 3 seconds and burns enemies inside it.' }] },
     opensanctum:  { base: 'sanctum', n: 'Open Sanctum', el: 'openward', t: 1, boss: 9, d: 'A Sanctum with no walls. Its damage bonus and boosted blast reach you and the enemy anywhere. Nothing is trapped or slowed.', tag: 'Variant',
                     drop: ['oneway', 'vast'], ups: [{ id: 'endless', n: 'Endless Rite', d: 'Open Sanctum lasts 2 seconds longer.' }] },
     crimsontitan: { base: 'titan', n: 'Crimson Titan', el: 'crimson', t: 1.15, boss: 14, d: 'A red Titan Shell that fights back: every 3 seconds it swipes a line of force at the enemy, breaking any wall in the way.', tag: 'Variant',
@@ -56,7 +56,8 @@
   function mirror(w) { if (!w || !w.book) return; for (const k of new Set(w.book)) { const v = VARIANTS[k]; if (!v) continue; const b = v.base;
       if (!w.book.includes(b)) w.lv[b] = w.lv[k] || 1; for (const u of [...w.up]) if (u.startsWith(k + '.')) { const id = u.slice(k.length + 1); if ((UPG[b] || []).some(q => q.id === id)) w.up.add(b + '.' + id); } } }
   let swipes = [], vbolts = [];
-  let bwalls = [], seenArrows = new WeakSet();
+  let bwalls = [], seenArrows = new WeakSet(), cones = [], blueDead = [];
+  const bluify = (p, w) => { p.blue = 1; p.dmgMul = (p.dmgMul || 1) * 1.35; p.x0 = p.x; p.y0 = p.y; p.reach = 255; };
   const listsNow = () => ({ archers: typeof archers !== 'undefined' ? new Set(archers) : new Set(), golems: typeof golems !== 'undefined' ? new Set(golems) : new Set(), walls: typeof walls !== 'undefined' ? new Set(walls) : new Set(), projs: typeof projs !== 'undefined' ? new Set(projs) : new Set(), bolts: typeof bolts !== 'undefined' ? new Set(bolts) : new Set(), domes: X ? new Set(X.domes) : new Set() });
   const _cast = cast;
   window.cast = cast = function (w, k) {
@@ -66,7 +67,10 @@
       try { r = _cast.call(this, w, b); } finally { if (own) window.sfx = sfx = _s; } }
     try {
       if (w.me && typeof M !== 'undefined' && M) { for (const o of [M.casts, M.rc]) if (o && o[b]) { o[b]--; if (!o[b]) delete o[b]; o[k] = (o[k] || 0) + 1; } }
-      if (k === 'bluefire') for (const p of projs) if (!before.projs.has(p) && p.o === w) { p.blue = 1; p.dmgMul = (p.dmgMul || 1) * 1.35; p.x0 = p.x; p.y0 = p.y; p.reach = 255; p.wallUp = U(w, k, 'wall'); }
+      if (k === 'bluefire') { for (const p of projs) if (!before.projs.has(p) && p.o === w) bluify(p, w);
+        w.blueT = T + .7;   // Twin and Triple fire their extra shots a moment later: those are blue too (caught in update)
+        if (U(w, k, 'wall')) { const f = w.foe, a = Math.atan2(f.y - w.y, f.x - w.x); cones.push({ o: w, x: w.x + Math.cos(a) * 14, y: w.y + Math.sin(a) * 14, a, len: 150, half: .44, t: 0, life: 3, tick: 0 }); text(w.x, w.y - 96 * HS, 'BLUE WALL', '#9fd0ff');
+          for (let i = 0; i < 26; i++) { const an = a + rnd(-.44, .44), v = rnd(160, 420); P({ x: w.x + Math.cos(a) * 16, y: w.y - 30 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .8 - rnd(0, 60), color: ['#e6f6ff', '#3aa0ff', '#7fd0ff'][i % 3], size: rnd(2.4, 4.6), life: rnd(.3, .6), grav: 260 }); } } }
       if (k === 'violetbolt') { for (const q of bolts) if (!before.bolts.has(q)) q.violet = 1; const stun = U(w, k, 'afterclap');
         setTimeout(() => { try { if (ended || w.dead || w.foe.dead) return; const b0 = new Set(bolts), keepLv = w.lv.lightning; zap(w, 'lightning', 1, .6); for (const q of bolts) if (!b0.has(q)) q.violet = 1; if (stun && !w.foe.dead && !(w.foe.ghostT > 0)) { w.foe.stunT = Math.max(w.foe.stunT || 0, .5); } text(w.x, w.y - 100 * HS, 'ECHO', '#d9b3ff'); } catch (e) {} }, 430); }
       if (k === 'opensanctum' && X) for (const d of X.domes) if (!before.domes.has(d) && d.o === w) { d.open = 1; d.r = 0; d.trap = []; d.hp = d.max = 9999; if (U(w, k, 'endless')) d.dur += 2;
@@ -90,7 +94,7 @@
     if (U(w, 'crimsontitan', 'burst')) setTimeout(() => { try { if (ended) return; SRC = 'titan'; if (typeof boom === 'function') boom(x1, y1 - 20 * HS, .8); if (!f.dead && !(f.ghostT > 0) && Math.hypot(f.x - x1, f.y - y1) < 56) damage(f, dmg, 0, 0, '#ff8a96'); for (const c of enemyCreatures(w)) if (c.e.x !== undefined && Math.hypot(c.e.x - x1, c.e.y - y1) < 56) hurtCreature(c.e, c.k, dmg, 'fire'); } catch (e) {} }, 260);
   }
   const _su = startDuel;
-  window.startDuel = startDuel = function () { swipes = []; bwalls = []; const r = _su.apply(this, arguments);
+  window.startDuel = startDuel = function () { swipes = []; bwalls = []; cones = []; blueDead = []; const r = _su.apply(this, arguments);
     try { ents.forEach(mirror);  } catch (e) {} return r; };
   const _up = update;
   window.update = update = function (dt) {
@@ -105,9 +109,20 @@
     const r = _up.apply(this, arguments);
     try { if (typeof ents !== 'undefined' && ents && ents.length && !ended) {
       for (const p of projs) if (p.blue && p.life > 0) { if (Math.hypot(p.x - p.x0, p.y - p.y0) > p.reach) { p.life = 0; burst(p.x, p.y, 16, ['#e6f6ff', '#3aa0ff', '#fff'], 170, 4, .45); if (typeof steamFx === 'function') steamFx(p.x, p.y, 6);
-            if (p.wallUp) { const gy = p.y + 46 * HS, sp = Math.hypot(p.vx, p.vy) || 1, nx = -p.vy / sp, ny = p.vx / sp; for (let i = -2; i <= 2; i++) decals.push({ k: 'fire', x: clamp(p.x + nx * i * 20, F.x0, F.x1), y: clamp(gy + ny * i * 12, F.y0, F.y1), r: 15, t: 0, life: 3, o: p.o }); text(p.x, p.y - 20 * HS, 'BLUE WALL', '#9fd0ff'); } }
+            blueDead.push({ x: p.x, y: p.y, t: 0 }); }
         else for (let q = 0; q < 2; q++) fireFx.push({ x: p.x + rnd(-4, 4), y: p.y + rnd(-4, 4), vx: -p.vx * .1 + rnd(-12, 12), vy: -p.vy * .1 - rnd(6, 22), t: 0, life: rnd(.2, .34), s: rnd(7, 11), seed: rnd(0, 99), el: 'frost' }); }
       // the fresh orange puffs a blue flame just shed are turned blue
+      // late shots of a Blue Flame cast (Twin, Triple) and anything a blue shot does when it lands stay blue
+      for (const p of projs) if (!p.blue && p.o && p.o.blueT > T && (!p.src || p.src === 'fireball') && p.life > 0 && (p.age || 0) < .12) bluify(p, p.o);
+      for (const p of projs) if (p.blue) { if (p.life > 0) { p._bx = p.x; p._by = p.y; } else if (!p._bd) { p._bd = 1; blueDead.push({ x: p._bx === undefined ? p.x : p._bx, y: p._by === undefined ? p.y : p._by, t: 0 }); } }
+      for (const d of blueDead) d.t += dt; blueDead = blueDead.filter(d => d.t < .5);
+      if (blueDead.length) { for (let i = fireFx.length - 1; i >= 0 && i > fireFx.length - 80; i--) { const f = fireFx[i]; if (f.el || f.smoke || f.steam || f.t > .12) continue; if (blueDead.some(d => Math.hypot(d.x - f.x, d.y - f.y) < 70)) f.el = 'frost'; }
+        if (typeof parts !== 'undefined') for (let i = parts.length - 1; i >= 0 && i > parts.length - 80; i--) { const q = parts[i]; if (typeof q.color === 'string' && /^#ff|^#f[0-9a-f]9|^#e0|^#c93/i.test(q.color) && blueDead.some(d => Math.hypot(d.x - q.x, d.y - q.y) < 70)) q.color = Math.random() < .5 ? '#7fd0ff' : '#e6f6ff'; } }
+      // Blue Wall: a standing cone of blue fire. Enemies inside it burn; it is fed with fresh flame every frame
+      for (const c of cones) { c.t += dt; c.tick -= dt; const k0 = Math.min(1, c.t / .25), L = c.len * k0, inCone = (x0, y0) => { const dx = x0 - c.x, dy = (y0 - c.y) / .8, d = Math.hypot(dx, dy); if (d > L || d < 6) return false; let da = Math.atan2(dy, dx) - c.a; while (da > Math.PI) da -= 6.283; while (da < -Math.PI) da += 6.283; return Math.abs(da) < c.half; };
+        for (let q = 0; q < 3; q++) { const r0 = Math.sqrt(Math.random()) * L, an = c.a + rnd(-c.half, c.half); fireFx.push({ x: c.x + Math.cos(an) * r0, y: c.y + Math.sin(an) * r0 * .8 - rnd(4, 16) * HS, vx: Math.cos(an) * 14, vy: -rnd(20, 60), t: 0, life: rnd(.3, .55), s: rnd(9, 16) * (.6 + r0 / c.len * .7), seed: rnd(0, 99), el: 'frost' }); }
+        if (c.tick <= 0) { c.tick = .25; const keep = SRC; SRC = 'bluefire'; try { const f = c.o.foe; if (f && !f.dead && !(f.ghostT > 0) && inCone(f.x, f.y)) damage(f, 2, 0, 0, '#ff8a3a'); for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined && inCone(e.e.x, e.e.y)) hurtCreature(e.e, e.k, 2.5, 'fire'); } finally { SRC = keep; } } }
+      cones = cones.filter(c => c.t < c.life && !c.o.dead);
       const blues = projs.filter(p => p.blue && p.life > 0); if (blues.length) for (let i = fireFx.length - 1; i >= 0 && i > fireFx.length - 40; i--) { const f = fireFx[i]; if (f.el || f.smoke || f.steam || f.t > .09) continue; if (blues.some(p => Math.hypot(p.x - f.x, p.y - f.y) < 22)) f.el = 'frost'; }
       if (blues.length && typeof parts !== 'undefined') for (let i = parts.length - 1; i >= 0 && i > parts.length - 40; i--) { const q = parts[i]; if ((q.color === COL.fire[0] || q.color === COL.fire[1] || q.color === '#ffb347') && blues.some(p => Math.hypot(p.x - q.x, p.y - q.y) < 20)) q.color = Math.random() < .5 ? '#3aa0ff' : '#cfeaff'; }
       // Starfall Archer: its arrows lift over any wall in the way
@@ -157,7 +172,11 @@
     x.restore(); return r;
   };
 
-  if (typeof drawDecals === 'function') { const _dd = drawDecals; window.drawDecals = drawDecals = function (x) { _dd.apply(this, arguments); if (x !== ctx || !bwalls.length) return;
+  if (typeof drawDecals === 'function') { const _dd = drawDecals; window.drawDecals = drawDecals = function (x) { _dd.apply(this, arguments); if (x !== ctx) return;
+      for (const c of cones) { const k0 = Math.min(1, c.t / .25), fade = Math.min(1, (c.life - c.t) * 2.5), L = c.len * k0; x.save(); x.translate(c.x, c.y); x.scale(1, .8); x.rotate(c.a); x.globalCompositeOperation = 'lighter';
+        const g = x.createRadialGradient(0, 0, 4, 0, 0, L); g.addColorStop(0, `rgba(230,246,255,${.5 * fade})`); g.addColorStop(.5, `rgba(58,160,255,${.34 * fade})`); g.addColorStop(1, 'rgba(30,90,255,0)'); x.fillStyle = g; x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, L, -c.half, c.half); x.closePath(); x.fill();
+        x.strokeStyle = `rgba(160,210,255,${.6 * fade})`; x.lineWidth = 2; x.setLineDash([6, 6]); x.lineDashOffset = -T * 40; x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(-c.half) * L, Math.sin(-c.half) * L); x.moveTo(0, 0); x.lineTo(Math.cos(c.half) * L, Math.sin(c.half) * L); x.stroke(); x.restore(); }
+      if (!bwalls.length) return;
       for (const b of bwalls) { const fade = Math.min(1, (b.life - b.t) * 2); for (const c of b.wl.cr) { if (c.gone) continue; const h = (c.h || 30) * SC * .62, wd = 8 * SC; x.save(); x.translate(c.x, c.y); x.globalAlpha = fade;
             x.fillStyle = 'rgba(10,4,30,.45)'; x.beginPath(); x.ellipse(0, 1, wd * 1.5, wd * .5, 0, 0, 7); x.fill();
             x.beginPath(); x.moveTo(-wd, 0); x.lineTo(-wd * .6, -h * .8); x.lineTo(wd * .1, -h); x.lineTo(wd * .8, -h * .72); x.lineTo(wd, 0); x.closePath(); const g = x.createLinearGradient(0, -h, 0, 0); g.addColorStop(0, '#6a4fd0'); g.addColorStop(.5, '#1c1040'); g.addColorStop(1, '#07030f'); x.fillStyle = g; x.fill(); x.strokeStyle = '#000'; x.lineWidth = 2; x.stroke();

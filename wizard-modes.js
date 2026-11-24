@@ -129,6 +129,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.16', d: '24 Nov 2026', items: ['Blue Flame is blue all the way through: the extra shots from Twin and Triple, and its explosions.', 'Blue Wall is rebuilt: each cast sprays a fountain of blue fire that stands as a cone of flame for 3 seconds and burns enemies inside it.', 'Order screen: drag an ability onto another slot to swap them.'] },
     { v: '1.0.15.1', d: '24 Nov 2026', items: ['On the results screen, Upgrade now upgrades the ability on the spot and shows its cost, without opening the ability page.'] },
     { v: '1.0.15', d: '24 Nov 2026', items: ['A Spell Cannon beam burning into a Titan Shell throws wild rays off it until the shell shatters.'] },
     { v: '1.0.14', d: '24 Nov 2026', items: ['Your own fire thaws your frozen units and does them no harm: a Fireball, Ring of Fire, Meteor or Burning Body near a frozen summon unfreezes it.', 'Ice Breakers is now Breakers: zombies tear through mud walls, pillars, totems, turrets and Titan Shells at the faster rate too.'] },

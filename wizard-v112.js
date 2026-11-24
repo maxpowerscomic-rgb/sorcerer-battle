@@ -65,11 +65,26 @@
           for (const w of ents) { if (w.frzT > 0) { w.frzT -= dt; if (!w.dead && w.stunT > 0 && fireNear(w, w.x, w.y)) { w.stunT = 0; w.frzT = 0; thawFx(w.x, w.y); } } } } } catch (e) {}
       return r; }; }
 
+  /* ---------------- 7. order screen: drag an ability onto another slot to swap them ---------------- */
+  (function () { let d = null;   // { i, el, x0, y0, ghost, on }
+    const tileAt = (x0, y0) => { const el = document.elementFromPoint(x0, y0), t = el && el.closest && el.closest('#ring .tile[data-i]'); return t || null; };
+    document.addEventListener('pointerdown', e => { const t = e.target.closest && e.target.closest('#ring .tile[data-i]'); if (!t || window.ONB_ACTIVE || typeof M === 'undefined' || !M || !M.me) return; d = { i: +t.dataset.i, el: t, x0: e.clientX, y0: e.clientY, ghost: null, on: false }; }, true);
+    document.addEventListener('pointermove', e => { if (!d) return; const dx = e.clientX - d.x0, dy = e.clientY - d.y0;
+      if (!d.on) { if (Math.hypot(dx, dy) < 10) return; d.on = true; const r = d.el.getBoundingClientRect(), g = d.el.cloneNode(true); g.id = 'dragGhost'; g.style.cssText = `position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;z-index:9999;pointer-events:none;opacity:.92;transform:scale(1.12);box-shadow:0 8px 18px #000a;transition:none`; document.body.appendChild(g); d.ghost = g; d.r = r; d.el.classList.add('dragsrc'); }
+      d.ghost.style.left = (d.r.left + dx) + 'px'; d.ghost.style.top = (d.r.top + dy) + 'px';
+      document.querySelectorAll('#ring .tile.dragover').forEach(t => t.classList.remove('dragover')); const over = tileAt(e.clientX, e.clientY); if (over && over !== d.el) over.classList.add('dragover'); e.preventDefault(); }, { capture: true, passive: false });
+    const end = e => { if (!d) return; const cur = d; d = null; if (!cur.on) return; if (cur.ghost) cur.ghost.remove(); cur.el.classList.remove('dragsrc'); document.querySelectorAll('#ring .tile.dragover').forEach(t => t.classList.remove('dragover'));
+      // the tap that would follow a drag must not also select
+      const stop = ev => { ev.stopPropagation(); ev.preventDefault(); document.removeEventListener('click', stop, true); }; document.addEventListener('click', stop, true); setTimeout(() => document.removeEventListener('click', stop, true), 80);
+      try { const over = e.type === 'pointerup' ? tileAt(e.clientX, e.clientY) : null, j = over ? +over.dataset.i : -1, b = M.me.book; if (j >= 0 && j !== cur.i && b[j] !== undefined) { [b[cur.i], b[j]] = [b[j], b[cur.i]]; const p = (M.pz = M.pz || []); [p[cur.i], p[j]] = [p[j], p[cur.i]]; M.swapSel = j; M.moveArm = 0; try { sfx('ui_deal'); } catch (x) {} renderBook(); } } catch (x) {} };
+    document.addEventListener('pointerup', end, true); document.addEventListener('pointercancel', end, true); })();
+
   /* ---------------- 2 and 3: red dots, bigger hand icons ---------------- */
   const css = document.createElement('style');
   css.textContent = `#chBtn,#ldBtn{overflow:visible}#chBtn:has(#chDot.ready)::after,#ldBtn.ready::after,#stkBtn.newcos::after{content:"";position:absolute;top:-5px;right:-5px;width:12px;height:12px;border-radius:50%;background:#ff3b4a;border:2px solid #000;box-shadow:0 0 6px #ff3b4a;animation:ndot 1.1s ease-in-out infinite}
   @keyframes ndot{50%{transform:scale(1.25)}}
   .qi .spn{position:absolute;top:-7px!important;right:-7px;left:auto;bottom:auto;width:16px!important;height:16px!important;box-sizing:border-box;border-radius:50%;background:#2f8dff;color:#fff;border:1.500px solid #000;font:10px/13px 'Lilita One';font-style:normal;text-align:center;z-index:3;box-shadow:0 0 6px #2f8dffaa;pointer-events:none}
+  #ring .tile[data-i]{touch-action:none;-webkit-user-select:none;user-select:none}#ring .tile.dragsrc{opacity:.35}#ring .tile.dragover{box-shadow:0 0 0 3px #ffd45e,0 0 14px #ffd45e!important;transform:scale(1.06)}
   #handBar{flex-wrap:wrap}#handBar .hl{flex:1 1 100%}#handBar .hs{width:100%;justify-content:center;gap:10px;margin-top:8px}#handBar .hsl{width:66px;height:66px;border-radius:16px}#handBar .hsl img{width:58px;height:58px}`;
   document.head.appendChild(css);
 })();
