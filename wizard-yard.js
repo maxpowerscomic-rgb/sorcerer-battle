@@ -48,6 +48,9 @@
     if (Y.puff > 0) Y.puff -= dt;
     const bh = PR.behavior, b = $('battle'); let rec = bh; try { rec = (typeof recDistance === 'function' && recDistance() && recDistance().id) || bh; } catch (e) {}
     const px = fo.x, py = fo.y;
+    // a swipe on the yard picks the range, the same three zones as in a fight; until then the yard uses the recommended one
+    if (Y.zone !== undefined && window.STANCE) { rec = STANCE.Z[Y.zone]; M.zone = Y.zone; if (Y.zoneCd > 0) Y.zoneCd -= dt; } else M.zone = undefined;
+    try { if (window.yardStancePaint) yardStancePaint(); } catch (e) {}
     try { PR.behavior = rec; b.classList.add('on'); T += dt; update(dt); pin();
       // a movable dummy is shoved, pulled and thrown like a fighter, then is walked back to its mark once left alone
       if (mov && !walks) { if (Math.hypot(fo.x - px, fo.y - py) > .4 || fo.drag || fo.pull) Y.idle = 0; else Y.idle = (Y.idle || 0) + dt; if (Y.idle > 2.2) { const k = Math.min(1, dt * 2.2); fo.x += (AX - fo.x) * k; fo.y += (AY - fo.y) * k; } }

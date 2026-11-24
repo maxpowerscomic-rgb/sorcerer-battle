@@ -62,6 +62,14 @@
     const end = e => { if (!s0) return; const dx = e.clientX - s0.x, dy = e.clientY - s0.y, ms = performance.now() - s0.t; s0 = null; if (ms > 600 || Math.abs(dy) < 34 || Math.abs(dy) < Math.abs(dx) * 1.2) return; stanceStep(dy < 0 ? -1 : 1); };
     cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', () => { s0 = null; }); } catch (e) {}
   document.addEventListener('keydown', e => { if (e.key === 'ArrowUp') stanceStep(-1); else if (e.key === 'ArrowDown') stanceStep(1); });
+  /* the training yard takes the same swipes: up to close in a zone, down to fall back */
+  function yardHud() { const st = document.querySelector('#home .stage'); if (!st) return null; let h = $('yStHud'); if (!h) { st.insertAdjacentHTML('beforeend', `<div id="yStHud"><div class="sta" id="yStUp">${ARW(1)}</div><div class="stz" id="yStZ"><i></i><i></i><i></i></div><div class="sta" id="yStDn">${ARW(0)}</div></div>`); h = $('yStHud'); } return h; }
+  window.yardStancePaint = function () { const Y = window.YARD, h = yardHud(); if (!h || !Y) return; const z = Y.zone === undefined ? -1 : Y.zone, cd = Math.max(0, Y.zoneCd || 0), p = 1 - cd / CD;
+    $('yStUp').classList.toggle('off', z === 0); $('yStDn').classList.toggle('off', z === 2); for (const id of ['yStUp', 'yStDn']) { $(id).style.setProperty('--p', p.toFixed(3)); $(id).classList.toggle('cd', cd > 0); } [...$('yStZ').children].forEach((el, i) => el.classList.toggle('on', i === z)); };
+  function yardStance(dir) { const Y = window.YARD; if (!Y || !Y.on) return; let z = Y.zone; if (z === undefined) { try { z = Math.max(0, Z.indexOf((typeof recDistance === 'function' && recDistance() && recDistance().id) || 'default')); } catch (e) { z = 1; } if (z < 0) z = 1; }
+    const nz = Math.max(0, Math.min(2, z + dir)); if (nz === z && Y.zone !== undefined) return; if ((Y.zoneCd || 0) > 0) return; Y.zone = nz; Y.zoneCd = CD; try { sfx('ui_pick'); const me = ents[0]; text(me.x, me.y - 96 * HS, dir < 0 ? 'CLOSE IN' : 'FALL BACK', '#ffd45e'); } catch (e) {} yardStancePaint(); }
+  { let y0 = null; document.addEventListener('pointerdown', e => { if (e.target && e.target.id === 'yardCv') y0 = { x: e.clientX, y: e.clientY, t: performance.now() }; else y0 = null; }, true);
+    document.addEventListener('pointerup', e => { if (!y0) return; const dx = e.clientX - y0.x, dy = e.clientY - y0.y, ms = performance.now() - y0.t; y0 = null; if (ms > 600 || Math.abs(dy) < 34 || Math.abs(dy) < Math.abs(dx) * 1.2) return; yardStance(dy < 0 ? -1 : 1); }, true); }
 
   /* ---------------- 4. ability tiles show their level, and change colour at levels 5, 10 and 15 ---------------- */
   const tier = l => l >= 15 ? 't15' : l >= 10 ? 't10' : l >= 5 ? 't5' : '';
@@ -93,6 +101,7 @@
   #rwTip{position:absolute;z-index:60;display:none;background:#0b0816f7;border:2px solid #ffd45e;border-radius:14px;padding:9px 11px;box-shadow:0 4px 0 #000;color:#f1eaff}#rwTip.on{display:block;animation:pop .18s}
   #rwTip>b{font:15px 'Lilita One';font-weight:400;color:#ffd45e}#rwTip p{margin:3px 0 0;font:800 12px/1.3 Nunito}#rwTip p.ru{color:#c9b8ff}#rwTip .rwtl{font:11px 'Lilita One';color:#b9a6ee;letter-spacing:.4px;text-transform:uppercase;margin:7px 0 3px}#rwTip .hbtn{margin-top:8px;padding:6px;font-size:14px}
   #rwTip .ostats{display:flex;flex-wrap:wrap;gap:5px}#rwTip .ostats span{display:inline-flex;gap:6px;align-items:baseline;background:#0008;border:2px solid #000;border-radius:9px;padding:2px 8px}#rwTip .ostats small{font:800 11px Nunito;color:#cfc3f2}#rwTip .ostats b{font:13px 'Lilita One';font-weight:400;color:#7ee0a0}
+  #yStHud{position:absolute;left:10px;bottom:74px;z-index:2;display:none;flex-direction:column;align-items:center;gap:5px;pointer-events:none;transform:scale(.82);transform-origin:left bottom}.stage.yard #yStHud{display:flex}#yardCv{touch-action:none}
   #stHud{position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:4;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
   .sta{position:relative;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#ffd45e;background:#0009;border:2px solid #000;box-shadow:0 2px 0 #000}.sta svg{width:22px;height:22px}.sta.off{color:#6f6496;opacity:.55}
   .sta::before{content:"";position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(#ffd45e calc(var(--p,1)*360deg),#ffffff22 0);-webkit-mask:radial-gradient(farthest-side,#0000 calc(100% - 4px),#000 calc(100% - 3.500px));mask:radial-gradient(farthest-side,#0000 calc(100% - 4px),#000 calc(100% - 3.500px));opacity:0}.sta.cd::before{opacity:1}.sta.cd{color:#b9a6ee}.sta.no{animation:stNo .25s}
@@ -101,5 +110,5 @@
   document.head.appendChild(css);
   setName();
   // D: the distance each zone holds (close, mid, far). on(): swipe stance is steering the player's range right now.
-  window.STANCE = { Z, CD, D: [48, 150, 300], on: () => typeof M !== 'undefined' && M && !M.practice && M.steer !== 'steer' && M.zone !== undefined && !(window.YARD && YARD.on) };
+  window.STANCE = { Z, CD, D: [48, 150, 300], on: () => typeof M !== 'undefined' && M && M.zone !== undefined && (window.YARD && YARD.on ? YARD.zone !== undefined : (!M.practice && M.steer !== 'steer')) };
 })();

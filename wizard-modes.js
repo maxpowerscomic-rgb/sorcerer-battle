@@ -129,6 +129,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.19.1', d: '25 Nov 2026', items: ['Swipe up or down on the training yard to change your fighter\'s range there too, with the same arrows and cooldown as in a fight.'] },
     { v: '1.0.19', d: '25 Nov 2026', items: ['Training yard: a damage tracker shows the last 30 seconds by ability, with damage and casts. Yours on top, the dummy\'s below.', 'A Spell Cannon fired at a Sanctum from outside now stops on the dome, wears it down and refracts off it. An Open Sanctum still lets the beam through.'] },
     { v: '1.0.18', d: '24 Nov 2026', items: ['An eye button on the draft and order screens opens a legend of what every icon means. The draft timer waits while it is open.'] },
     { v: '1.0.17', d: '24 Nov 2026', items: ['Either-or upgrades now take turns instead of replacing each other. With both Grave Circle and Death March, Raise Dead alternates between them, starting with the one you took first.', 'Blue Flame leaves blue embers, and fighters it burns catch blue fire.', 'Options has a Text size setting: Normal, Large or Extra large.'] },
