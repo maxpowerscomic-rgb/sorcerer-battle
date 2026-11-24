@@ -129,6 +129,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.18', d: '24 Nov 2026', items: ['An eye button on the draft and order screens opens a legend of what every icon means. The draft timer waits while it is open.'] },
     { v: '1.0.17', d: '24 Nov 2026', items: ['Either-or upgrades now take turns instead of replacing each other. With both Grave Circle and Death March, Raise Dead alternates between them, starting with the one you took first.', 'Blue Flame leaves blue embers, and fighters it burns catch blue fire.', 'Options has a Text size setting: Normal, Large or Extra large.'] },
     { v: '1.0.16', d: '24 Nov 2026', items: ['Blue Flame is blue all the way through: the extra shots from Twin and Triple, and its explosions.', 'Blue Wall is rebuilt: each cast sprays a fountain of blue fire that stands as a cone of flame for 3 seconds and burns enemies inside it.', 'Order screen: drag an ability onto another slot to swap them.'] },
     { v: '1.0.15.1', d: '24 Nov 2026', items: ['On the results screen, Upgrade now upgrades the ability on the spot and shows its cost, without opening the ability page.'] },
