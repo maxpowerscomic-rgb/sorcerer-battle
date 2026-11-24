@@ -50,6 +50,21 @@
             let b = el.querySelector('.spn'); if (!c) { if (b) b.remove(); return; } if (!b) { el.insertAdjacentHTML('beforeend', '<em class="spn"></em>'); b = el.querySelector('.spn'); } if (b.textContent !== String(c)) b.textContent = c; }); } } catch (e) {}
       return r; }; }
 
+  /* ---------------- 6. your own fire thaws your frozen units, and does them no harm ---------------- */
+  const isFire = k => { try { return ELEM_OF[baseOf(k)] === 'fire' || ELEM_OF[k] === 'fire'; } catch (e) { return false; } };
+  function fireNear(o, x0, y0) { try {
+      if (o.bodyT > 0 && Math.hypot(o.x - x0, o.y - y0) < 74) return true;                                             // Burning Body
+      if (typeof projs !== 'undefined') for (const p of projs) if (p.o === o && p.life > 0 && isFire(p.src || 'fireball') && Math.hypot(p.x - x0, p.y + 40 * HS - y0) < 30) return true;
+      if (typeof firerings !== 'undefined') for (const f of firerings) if (f.o === o) { const d = Math.hypot((f.x || 0) - x0, (f.y || 0) - y0), r = f.r || 0; if (Math.abs(d - r) < 26 || d < 30) return true; }
+      if (typeof meteors !== 'undefined') for (const m of meteors) if (m.o === o && m.t >= m.fall - .05 && Math.hypot(m.tx - x0, m.ty - y0) < m.r + 8) return true;
+      if (typeof fireFx !== 'undefined') for (const f of fireFx) if (f.o === o && f.x !== undefined && Math.hypot(f.x - x0, f.y - y0) < (f.r || 24) + 10) return true; } catch (e) {} return false; }
+  function thawFx(x0, y0) { try { text(x0, y0 - 64 * HS, 'THAWED', '#ffd9a0'); for (let i = 0; i < 12; i++) P({ x: x0 + rnd(-12, 12), y: y0 - rnd(4, 40) * HS, vx: rnd(-14, 14), vy: -rnd(30, 80), color: i % 2 ? '#ffffff' : '#bfe9ff', size: rnd(3, 6), life: rnd(.4, .8), glow: false, grow: 1.6, fade: .5, shrink: false }); sfx('hit', { x: x0, vol: .3, rate: 1.6 }); } catch (e) {} }
+  if (typeof update === 'function') { const _u = update; window.update = update = function (dt) { const r = _u.apply(this, arguments);
+      try { if (typeof ents !== 'undefined' && ents && ents.length && !ended) {
+          for (const L of [typeof zombies !== 'undefined' ? zombies : [], typeof swarms !== 'undefined' ? swarms : []]) for (const e of L) if (e.frozen > 0 && e.o && fireNear(e.o, e.x, e.y)) { e.frozen = 0; thawFx(e.x, e.y); }
+          for (const w of ents) { if (w.frzT > 0) { w.frzT -= dt; if (!w.dead && w.stunT > 0 && fireNear(w, w.x, w.y)) { w.stunT = 0; w.frzT = 0; thawFx(w.x, w.y); } } } } } catch (e) {}
+      return r; }; }
+
   /* ---------------- 2 and 3: red dots, bigger hand icons ---------------- */
   const css = document.createElement('style');
   css.textContent = `#chBtn,#ldBtn{overflow:visible}#chBtn:has(#chDot.ready)::after,#ldBtn.ready::after,#stkBtn.newcos::after{content:"";position:absolute;top:-5px;right:-5px;width:12px;height:12px;border-radius:50%;background:#ff3b4a;border:2px solid #000;box-shadow:0 0 6px #ff3b4a;animation:ndot 1.1s ease-in-out infinite}
