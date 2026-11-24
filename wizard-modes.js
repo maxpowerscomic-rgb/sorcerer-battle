@@ -129,6 +129,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.20.1', d: '25 Nov 2026', items: ['Tap the training yard damage tracker to fold it down to just the countdown, and tap again to open it.'] },
     { v: '1.0.20', d: '25 Nov 2026', items: ['The top curtain is red on every transition.', 'Hoot no longer drifts out of his portrait on the Abilities page.', 'A stability and smoothness pass: less interface work every frame during fights.'] },
     { v: '1.0.19.2', d: '25 Nov 2026', items: ['The training yard tracker now counts down from 30 seconds. At zero the yard resets and the count starts again.'] },
     { v: '1.0.19.1', d: '25 Nov 2026', items: ['Swipe up or down on the training yard to change your fighter\'s range there too, with the same arrows and cooldown as in a fight.'] },
