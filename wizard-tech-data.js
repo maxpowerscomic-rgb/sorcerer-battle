@@ -167,7 +167,7 @@ function upGate(p, k, u) {
 UPG.icewall.push({ id: 'permafrost', n: 'Permafrost', d: 'Your ice walls no longer thaw over time.' });
 
 /* The rare thirteenth summon: slow, huge, and every hit launches its target. */
-const JUGGERNAUT = { id: 'jugg', n: 'Juggernaut', e: '☸', hp: 7, dmg: 1, spd: .42, sz: 1.55, acd: 1.5, q: 'Marches in, faster the longer it lives. Every hit deals 20 and launches you. Regenerates', boss: 1, path: 'line' };
+const JUGGERNAUT = { id: 'jugg', n: 'Juggernaut', e: '☸', hp: 7, dmg: 1, spd: .42, sz: 1.55, acd: 1.5, q: 'Marches in, faster the longer it lives. Every hit deals 20 and launches you. Regenerates. Once it falls it cannot return for 3 casts', boss: 1, path: 'line' };
 
 /* Aura colours a sorcerer can pick: [light, main]. They tint the idle aura, the Titan Shell and its Spirit Arrow. */
 const AURAS = [{ id: 'crimson', n: 'Crimson Aura', c: ['#ffd6d2', '#ff3b4a'] }, { id: 'azure', n: 'Azure Aura', c: ['#d6ecff', '#3b9bff'] }, { id: 'jade', n: 'Jade Aura', c: ['#d6ffe6', '#22c97a'] }, { id: 'violet', n: 'Violet Aura', c: ['#ecd6ff', '#9a4dff'] },

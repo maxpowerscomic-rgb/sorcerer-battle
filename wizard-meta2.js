@@ -547,9 +547,9 @@
 (function () {
   // (1.0.5) Tracks run much further and pay about half as much per early step, with big chunks at the end.
   const TR = [
-    { id: 'dmg', n: 'Deal damage with it', goals: [300, 1500, 5000, 9000, 14000, 20000, 28000, 40000], pay: [5, 10, 20, 20, 25, 30, 40, 60] },
-    { id: 'games', n: 'Play matches with it', goals: [5, 20, 50, 75, 100, 130, 165, 200], pay: [5, 10, 20, 20, 25, 30, 40, 60] },
-    { id: 'wins', n: 'Win matches with it', goals: [3, 12, 30, 40, 50, 60, 70, 80, 90, 100], pay: [5, 10, 20, 20, 25, 25, 30, 30, 40, 70] },
+    { id: 'dmg', n: 'Deal damage with it', goals: [300, 1500, 5000, 9000, 14000, 20000, 28000, 40000], pay: [3, 5, 10, 10, 13, 15, 20, 30] },
+    { id: 'games', n: 'Play matches with it', goals: [5, 20, 50, 75, 100, 130, 165, 200], pay: [3, 5, 10, 10, 13, 15, 20, 30] },
+    { id: 'wins', n: 'Win matches with it', goals: [3, 12, 30, 40, 50, 60, 70, 80, 90, 100], pay: [3, 5, 10, 10, 13, 13, 15, 15, 20, 35] },
   ];
   const st = k => { PR.trial = PR.trial || {}; return PR.trial[k] = PR.trial[k] || { dmg: 0, games: 0, wins: 0, got: { dmg: 0, games: 0, wins: 0 } }; };
   // damage is counted per round, so add it up before the next round wipes it

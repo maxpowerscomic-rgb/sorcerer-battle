@@ -766,6 +766,9 @@
     if (!w.czNow && !w.zn && U(w, k, 'vanguard') && typeof JUGGERNAUT !== 'undefined' && !zombies.some(q => q.o === w && q.beast && q.beast.boss && q.hp > 0)) b = JUGGERNAUT;
     // (1.0.23) Dome Breaker: summoning while standing inside an enemy Sanctum shatters it
     if (U(w, k, 'domebreak')) for (const od of domes) if (od.o !== w && od.t < od.dur && !od.open && Math.hypot(w.x - od.x, (w.y - od.y) * 1.4) < od.r) { od.hp = 0; text(w.x, w.y - 118 * HS, 'DOME BREAKER', '#ffe08a', true); shake = Math.max(shake, 12); }
+    // (1.0.23.1) a fallen Juggernaut (killed, or spent on Take the Blow) stays down for its caster's next 3 Zodiac casts
+    if (w.jRef && w.jRef.hp <= 0) { w.jRef = null; w.jDown = 3; }
+    if (w.jDown > 0) { w.jDown--; if (b === JUGGERNAUT) b = ZODIAC[Math.random() * ZODIAC.length | 0]; }
     w.zn = (w.zn || 0) + 1;
     if (U(w, k, 'mend')) { const full = U(w, k, 'mend2'); for (const q of zombies) if (q.o === w && q.beast && q.hp > 0 && q.hp < q.mx) { q.hp = full ? q.mx : Math.min(q.mx, q.hp + q.mx * .5); text(q.x, q.y - 50 * HS, full ? 'MENDED' : '+50%', '#7dffa8'); burst(q.x, q.y - 20 * HS, 8, ['#7dffa8', '#fff'], 100, 3, .4); } }
     const dome = domes.find(d => d.o === w && d.t < d.dur);
@@ -773,6 +776,7 @@
     for (let i = 0; i < n; i++) {
       const ra = rnd(0, 6.283), rd = dome ? Math.sqrt(Math.random()) * dome.r * .85 : 0, q = dome ? inArena(dome.x + Math.cos(ra) * rd, dome.y + Math.sin(ra) * rd / 1.4) : inArena(w.x + Math.cos(a) * 34 + rnd(-12, 12), w.y + Math.sin(a) * 34 + rnd(-12, 12)), hp = S(w, k, 'hp') * b.hp * (w.czNow && !b.regent && U(w, 'crimsonzodiac', 'bloodmoon') ? 1.25 : 1);
       const z = { crim: w.czNow ? 1 : 0, o: w, x: q.x, y: q.y, mx: hp, hp, rise: .35, cd: rnd(0, .3), t: rnd(0, 9), flash: 0, lunge: 0, beast: b, spd: b.spd, dmg: b.boss ? 20 : S(w, k, 'dmg') * b.dmg, acd: b.acd, onHit: beastHit };
+      if (b.boss) w.jRef = z;
       zombies.push(z); decals.push({ k: 'hole', x: q.x, y: q.y, t: 0, life: 4 });
       for (let j = 0; j < 14; j++) P({ x: q.x + rnd(-14, 14), y: q.y - rnd(0, 20), vx: rnd(-30, 30), vy: rnd(-90, -30), color: ['#8a6cff', '#140a30', '#3a2a6a'][j % 3], size: rnd(4, 8), life: rnd(.4, .8), glow: false });
     }

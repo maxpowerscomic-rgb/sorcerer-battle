@@ -130,6 +130,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.23.1', d: '24 Nov 2026', items: ['Skill points: a win now gives 5 to every ability in your hand (a loss gives 2), so an Echo Rune on a win makes it 10.', 'Levelling an ability needs 1.5 times as many skill points, and trials pay half as many.', 'A fallen Juggernaut cannot be summoned again for its caster\'s next 3 Zodiac casts.'] },
     { v: '1.0.23', d: '24 Nov 2026', items: ['Target buttons in battle: four buttons on the left choose what you aim at (caster, walls, summons, nearest). Tap the lit one again for auto.',
       'Colourways: four new colours each for Fireball, Arcane Orbs, Bubbles, Ricochet, Fly Swarm, Gravity Well, Thorns, Ice Wall and Zodiac Beasts. Earn them by playing, on the ability page.',
       'New Ladder variant: Crimson Zodiac, with five fused beasts and the Regent. Win it from the 30th rival.',

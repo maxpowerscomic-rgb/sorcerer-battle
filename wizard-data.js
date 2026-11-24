@@ -1,6 +1,6 @@
 /* The version shown at the bottom of Options. Bump the last number with every update pushed live (1.0 -> 1.0.1 -> 1.0.2);
    bump the middle number for a big content drop. */
-const GAME_VERSION = '1.0.23';
+const GAME_VERSION = '1.0.23.1';
 /* =====================================================================
    SPELLBINDER: GAME DATA
    Pure data, no rendering. Port these tables straight into the real build.
@@ -120,7 +120,7 @@ const STAT_LBL_SPELL = {
 };
 /* Leveling cost: skill points and coins needed to go from level i to i+1 */
 /* Spell-point and coin cost to go from level L to L+1 (index = current level). */
-const CARDS = Array.from({ length: MAXL }, (_, l) => l ? Math.round(3 + l * l * 0.9) : 0);
+const CARDS = Array.from({ length: MAXL }, (_, l) => l ? Math.round((3 + l * l * 0.9) * 1.5) : 0);   /* (1.0.23.1) 1.5x: a win now pays 5 points per ability */
 const COST  = Array.from({ length: MAXL }, (_, l) => l ? Math.round(50 * Math.pow(l, 1.7) / 10) * 10 : 0);
 
 /* ---------- In-match upgrades (offered in the Scribe phase) ---------- */

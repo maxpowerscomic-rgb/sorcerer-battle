@@ -1993,8 +1993,7 @@ function challenge(i){const f=FRIENDS[i];toast(f.n+' accepted!');setTimeout(()=>
 const TOP=1800;
 const isRankT=t=>RANKS.some(r=>r.t===t)||EXTRA_UNLOCKS.some(e=>e.t===t);
 function nextMs(){for(let t=MS_STEP;t<=TOP;t+=MS_STEP)if(t>PR.trophies)return t;return 0}
-function givePoints(total){const w=Object.keys(M.casts).length?M.casts:Object.fromEntries(M.me.book.map(k=>[k,1]));const keys=Object.keys(w),sum=keys.reduce((a,k)=>a+w[k],0),got={};
- let left=total;keys.sort((a,b)=>w[b]-w[a]).forEach((k,i)=>{const n=i===keys.length-1?left:Math.max(1,Math.round(total*w[k]/sum));const q=Math.min(n,left);if(q>0){got[k]=q;PR.spells[k].cards+=q;left-=q}});return got}
+function givePoints(n){/* (1.0.23.1) every ability in the hand earns the same: 5 for a win, 2 for a loss */const got={};for(const k of new Set(M.me.book)){if(!PR.spells[k])continue;got[k]=n;PR.spells[k].cards+=n}return got}
 function roadRewards(pre,post){const out=[];for(let t=MS_STEP;t<=Math.min(post,TOP);t+=MS_STEP){if(t<=pre||isRankT(t)||PR.ms[t])continue;
  const keys=unlockedSpells(),k=keys[Math.random()*keys.length|0];PR.ms[t]=k;PR.spells[k].cards+=5;out.push({t,k})}return out}
 function claimable(){const out=[];for(let t=MS_STEP;t<=Math.min(PR.trophies,TOP);t+=MS_STEP)if(!isRankT(t)&&!PR.ms[t])out.push(t);return out}
@@ -2021,7 +2020,7 @@ function renderRoad(){const ri=rankOf(PR.trophies),nm=nextMs();
 function gainXp(n){PR.xp+=n;let up=false;const from=PR.lvl;while(PR.xp>=xpNeed(PR.lvl)){PR.xp-=xpNeed(PR.lvl);PR.lvl++;up=true;}if(up){PR._lvFrom=PR._lvFrom||from;PR._lvPending=1;}return up}
 function count(el,from,to,ms=900,pre=''){const t0=performance.now();const f=now=>{const k=Math.min(1,(now-t0)/ms),e=1-Math.pow(1-k,3);el.textContent=pre+fmt(Math.round(from+(to-from)*e));if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f)}
 function showRewards(){const won=M.score.me>M.score.foe,ranked=M.mode==='ranked';
- const dT=ranked?(won?30:-18):0,coins=(won?60:20)+M.score.me*10,xp=won?45:20,nCards=won?4:2;
+ const dT=ranked?(won?30:-18):0,coins=(won?60:20)+M.score.me*10,xp=won?45:20,nCards=won?5:2;
  const preLvl=PR.lvl,preXp=PR.xp,preRank=rankOf(PR.trophies),preTroph=PR.trophies;
  PR.trophies=Math.max(0,PR.trophies+dT);PR.coins+=coins;setTimeout(()=>sfx('ui_coin'),900);const got=givePoints(nCards);const road=[];
  const newRank=rankOf(PR.trophies);let rankMsg='';if(newRank>preRank&&!PR.claimed.includes(newRank)){PR.claimed.push(newRank);const r=RANKS[newRank].r;PR.coins+=r.coins||0;PR.gems+=r.gems||0;rankMsg=RANKS[newRank].n;}
