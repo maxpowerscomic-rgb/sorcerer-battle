@@ -11,12 +11,12 @@
   // 1. no demo friends: hide the tab and its onboarding stop
   try { FRIENDS.length = 0; } catch (e) {}
   const css = document.createElement('style');
-  css.textContent = `.tab[data-t="friends"]{display:none!important}.pknote{display:none}.notes{display:none!important}
+  css.textContent = `.pknote{display:none}.notes{display:none!important}
   html,body{height:100%;overflow:hidden;overscroll-behavior:none}body{padding:0!important;gap:0!important;background:#0d0a18!important;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   .phone{position:fixed!important;top:env(safe-area-inset-top);bottom:env(safe-area-inset-bottom);left:0;right:0;width:auto!important;aspect-ratio:auto!important;border:0!important;border-radius:0!important;box-shadow:none!important}`;
   const vp = document.querySelector('meta[name=viewport]'); if (vp) vp.content = 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover';
   document.head.appendChild(css);
-  if (typeof ONB_STEPS !== 'undefined') { const i = ONB_STEPS.findIndex(s => s.id === 'friends'); if (i >= 0) ONB_STEPS.splice(i, 1); }
+  /* (1.0.7) the Friends tab is now the Fight Club, which is real content: its tab and tutorial stop stay */
   // 2. matchmaking copy: AI rivals, not other players
   const vs = document.getElementById('vsFind');
   if (vs) new MutationObserver(() => {

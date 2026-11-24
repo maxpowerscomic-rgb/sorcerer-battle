@@ -1437,6 +1437,7 @@
      lightning crawls over it and chips of floor lift off the ground. drawAuraFront adds low flames in front of the feet. */
   function drawInkAura(x, w, inten, l, m, big) {
     if (inten <= .01) return;
+    if (w && (w.me || !w.book) && typeof PR !== 'undefined' && PR.look && PR.look.aura === 'none') return;   // the player switched their aura off (wardrobe: No Aura)
     { const sty = w && (w.auraStyle || (!w.book && typeof PR !== 'undefined' && PR.look && PR.look.aurastyle)); if (sty && sty !== 'flame' && window.AURA_STYLES && AURA_STYLES[sty]) return AURA_STYLES[sty](x, w, inten, l, m, big); }   // other aura styles (wizard-cosmetics.js)
     const S2 = 1.5, CW = 190, CH = 270, ox = CW / 2, oy = 204, mk = () => { const c = document.createElement('canvas'); c.width = CW * S2; c.height = CH * S2; return c; };
     const st = drawInkAura.st || (drawInkAura.st = { m: mk(), t: mk() }), mx = st.m.getContext('2d'), tx = st.t.getContext('2d');

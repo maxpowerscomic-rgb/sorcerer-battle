@@ -83,8 +83,8 @@
     x.lineWidth = 1.4; x.beginPath(); x.moveTo(-4, -56.5); x.lineTo(4, -56.5); for (let i = -3; i <= 3; i += 2) { x.moveTo(i, -58); x.lineTo(i, -55); } x.stroke();                              // stitched mouth
     x.restore(); }
   { const _dw = drawWiz; window.drawWiz = drawWiz = function (w, X0, ava) { if (w && w.isDummy) return drawDummy(w, X0); return _dw.apply(this, arguments); }; }
-  // no sound from the yard (menu clicks still play)
-  { const _s = sfx; window.sfx = sfx = function (id) { if (Y.on && !/^(ui_|j_)/.test(id || '')) return; return _s.apply(this, arguments); }; }
+  // the yard is heard by default; the speaker button under the Wizard button silences it (menu clicks still play)
+  { const _s = sfx; window.sfx = sfx = function (id) { if (Y.on && PR.yardMute === true && !/^(ui_|j_)/.test(id || '')) return; return _s.apply(this, arguments); }; }
 
   // tap the dummy: one icon button appears over it that lets hits move it (or pins it again)
   const ICO = { free: '<svg viewBox="0 0 24 24"><path d="M12 2.5 15.2 6h-2.2v5h5V8.800L21.500 12 18 15.200V13h-5v5h2.200L12 21.500 8.800 18H11v-5H6v2.200L2.500 12 6 8.800V11h5V6H8.800z" fill="currentColor" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/></svg>',
@@ -128,6 +128,10 @@
     Y.on = true; Y.last = performance.now(); const st = document.querySelector('#home .stage'); if (st) st.classList.add('yard'); canvas(); cancelAnimationFrame(Y.raf); Y.raf = requestAnimationFrame(frame); }
   function stop() { if (!Y.on && !document.querySelector('#home .stage.yard')) return; Y.on = false; cancelAnimationFrame(Y.raf); const st = document.querySelector('#home .stage'); if (st) st.classList.remove('yard'); try { ended = true; running = false; } catch (e) {} }
   window.yardStart = start; window.yardStop = stop; window.YARD = Y;
+  const SPK = m => `<svg viewBox="0 0 24 24"><path d="M4 9.500h3.500L12 5.500v13l-4.500-4H4z" fill="currentColor" stroke="#000" stroke-width="1.300" stroke-linejoin="round"/>${m ? '<path d="M15.500 9.500l5 5m0-5l-5 5" fill="none" stroke="#ff8a96" stroke-width="2.400" stroke-linecap="round"/>' : '<path d="M15.200 9a4.200 4.200 0 0 1 0 6M17.600 6.600a7.600 7.600 0 0 1 0 10.800" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'}</svg>`;
+  function muteBtn() { const st = document.querySelector('#home .stage'); if (!st) return; let b = $('ymBtn'); if (!b) { st.insertAdjacentHTML('beforeend', '<button id="ymBtn" aria-label="Training sound"></button>'); b = $('ymBtn'); b.onclick = () => { PR.yardMute = PR.yardMute !== true; try { save(); } catch (e) {} muteBtn(); if (!PR.yardMute) { try { sfx('ui_pick'); } catch (e) {} } }; }
+    b.innerHTML = SPK(PR.yardMute === true); b.classList.toggle('off', PR.yardMute === true); }
+  setTimeout(muteBtn, 900);
 
   // a real match takes the stage: the yard lets go before the match is built
   { const _nm = newMatch; window.newMatch = newMatch = function () { if (!Y.building) stop(); return _nm.apply(this, arguments); }; }
@@ -140,6 +144,7 @@
 
   const css = document.createElement('style');
   css.textContent = `#yardCv{position:absolute;inset:0;width:100%;height:100%;display:none}.stage.yard #yardCv{display:block}.stage.yard #heroCv{visibility:hidden}.stage.yard{background-image:none!important;background:#1a1228}
+  #ymBtn{position:absolute;top:46px;right:10px;z-index:2;width:34px;height:34px;padding:5px;border-radius:11px;border:2px solid #000;background:linear-gradient(#4a3a80,#2b2050);color:#fff;box-shadow:0 3px 0 #000;cursor:pointer;display:none}.stage.yard #ymBtn{display:block}#ymBtn.off{color:#8f80b8}#ymBtn svg{width:100%;height:100%;display:block}
   #yardTip{position:absolute;z-index:3;display:none;gap:8px;transform:translate(-50%,-100%)}#yardTip.on{display:flex;animation:pop .25s}
   #yardTip button{width:42px;height:42px;padding:7px;border-radius:50%;border:2px solid #000;background:linear-gradient(#4a3a80,#2b2050);color:#b9a6ee;box-shadow:0 3px 0 #000;cursor:pointer;-webkit-tap-highlight-color:transparent}#yardTip button.free{background:linear-gradient(#ffd45e,#d99a14);color:#fff}#yardTip svg{width:100%;height:100%;display:block}
   .dmrow{display:flex;justify-content:center;gap:8px;margin:10px 0}.dmrow span{width:66px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}.dmrow img{width:46px;height:46px;border-radius:12px;background:#0007;border:2px solid #ffd45e}.dmrow small{font:800 10px/1.1 Nunito;color:#d9cdfa;text-align:center}.dmrow .em{height:46px;width:46px;margin:0 10px;border-radius:12px;border:2px dashed #ffffff40;cursor:default}

@@ -121,7 +121,7 @@ const ONB_STEPS = [
   { id: 'shop', dot: 6, enter() { nav('shop'); }, target: ['#deals', '#chests'], place: 'pinBottom',
     html: () => `<b class="who">Hoot</b>The <em>Shop</em>. Daily deals and chests stuffed with skill points. Coins come from duels; <em>gems</em> are the rare stuff that buys chests and Echo Runes. Once you own everything, trade spare <em>tokens</em> for skill points here.<div class="row"><button class="go" data-next>Next</button></div>` },
   { id: 'friends', dot: 6, enter() { nav('friends'); }, target: '#flist', place: 'top',
-    html: () => `<b class="who">Hoot</b><em>Friends</em>. See who's online and challenge them to a friendly duel. No trophies on the line.<div class="row"><button class="go" data-next>Next</button></div>` },
+    html: () => `<b class="who">Hoot</b>The <em>Fight Club</em>. Six tough bounties, three wizards and three sorcerers, with new faces every 30 minutes. Beat one for <em>gems</em>.<div class="row"><button class="go" data-next>Next</button></div>` },
   { id: 'ranks', dot: 6, enter() { nav('ranks'); }, target: '.tier.here', place: 'top',
     html: () => `<b class="who">Hoot</b>The <em>Rank Road</em>. This is you! Win ranked duels for trophies to climb it. Checkpoints pay out rewards and unlock tokens of your choice. Your account level also makes you cast faster, and earns <em>titles</em> to show under your name.<div class="row"><button class="go" data-next>Next</button></div>` },
   { id: 'done', dot: -1, enter() { nav('home'); },
