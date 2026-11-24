@@ -83,7 +83,7 @@
       const ab = Math.round(S.abs[k] || 0), soak = ab > 0 ? ` · absorbed <b class="ab">${ab}</b>` : '';
       return `<div class="txr">${ic}<span><em>${esc(nm)}</em><small>${q.c || d > 0 ? line : 'still standing from an earlier cast'}${soak}</small></span></div>`; }).join('');
     const ev = Object.keys(S.ev).sort((a, b) => S.ev[b] - S.ev[a]).slice(0, 6).map(s => `<span>${esc(pretty(s))}${S.ev[s] > 1 ? ' ×' + S.ev[s] : ''}</span>`).join('');
-    return `<div class="txc ${who}"><div class="txh"><b>${who === 'me' ? 'You' : 'Rival'}</b><small>${Math.round(S.dealt)} dealt · ${S.hp} / ${Math.round(S.max)} left</small></div>${rows || '<div class="txn">Nothing cast</div>'}${ev ? `<div class="txe">${ev}</div>` : ''}</div>`; }
+    return `<div class="txc ${who}"><div class="txh"><b>${who === 'me' ? esc(PR.name || 'You') : 'Rival'}</b><small>${Math.round(S.dealt)} dealt · ${S.hp} / ${Math.round(S.max)} left</small></div>${rows || '<div class="txn">Nothing cast</div>'}${ev ? `<div class="txe">${ev}</div>` : ''}</div>`; }
   // two or three plain sentences per side: total damage, where it came from, what was soaked up
   function totals(tx, s, who) { const ab = {}, abs = {}; let dealt = 0, casts = 0; for (const r of tx) { dealt += r[s].dealt; for (const k in r[s].ab) { const q = r[s].ab[k], a = (ab[k] = ab[k] || { c: 0, h: 0, d: 0 }); a.c += q.c; a.h += Math.min(q.h, q.c || q.h); a.d += q.d; casts += q.c; } for (const k in (r[s].abs || {})) abs[k] = (abs[k] || 0) + r[s].abs[k]; }
     const top = Object.keys(ab).filter(k => SP[k] && ab[k].d >= 1).sort((a, b) => ab[b].d - ab[a].d).slice(0, 2), You = who === 'me' ? 'You' : 'They', your = who === 'me' ? 'Your' : 'Their';
@@ -102,7 +102,7 @@
     if (!tx.length) return toast('No rounds were recorded for this match');
     const me = totals(tx, 'me', 'me'), fo = totals(tx, 'foe', 'foe');
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Battle report</div>
-      <div class="txsum"><p><b class="me">You</b>${me}</p><p><b class="foe">${esc(M.foeName || 'Rival')}</b>${fo}</p></div>
+      <div class="txsum"><p><b class="me">${esc(PR.name || 'You')}</b>${me}</p><p><b class="foe">${esc(M.foeName || 'Rival')}</b>${fo}</p></div>
       <div class="txbtns"><button class="hbtn out" onclick="reportTimeline()">⏱ Timeline</button><button class="hbtn out" onclick="reportCopy()">⧉ Copy match log</button></div><pre id="txTl" class="crlog" style="display:none"></pre>
       <div class="txlist">${tx.map(r => `<div class="txrd"><div class="txhd ${r.win || 'draw'}"><b>Round ${r.n}</b><span>${r.win === 'me' ? 'You won' : r.win === 'foe' ? 'Rival won' : 'Draw'} · ${Math.round(r.t || 0)}s</span></div><div class="txs">${colHTML(r.me, 'me')}${colHTML(r.foe, 'foe')}</div></div>`).join('')}</div>`;
     $('sheet').classList.add('on'); };

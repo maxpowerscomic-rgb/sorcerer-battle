@@ -397,6 +397,8 @@
       text(w.x, w.y - 90 * HS, held ? 'STANCE HELD' : 'COUNTER STANCE', '#ffd6d2'); inkRing(w.x, w.y, '#ffd6d2', 1, 40, 14, .5);
     }
     if (k === 'polarity') {
+      // Cornered Force: under half health, every 1% of health missing below 50% adds 2% to Draw and Repel damage
+      const cornered = q => U(q, 'polarity', 'cornered') ? 1 + 2 * Math.max(0, .5 - Math.max(0, q.hp) / (q.maxHp || 1)) : 1;
       w.polN = (w.polN || 0) + 1; const str = U(w, k, 'field') ? 1.4 : 1;
       if (U(w, k, 'collapse') && w.polN % (U(w, k, 'rapid') ? 3 : 5) === 0) {
         const a = Math.atan2(o.y - w.y, o.x - w.x); { let L = 0; for (let q = 0; q < 900; q += 6) { const px = w.x + Math.cos(a) * q, py = w.y + Math.sin(a) * q; if (px < F.x0 - 30 || px > F.x1 + 30 || py < F.y0 - 40 || py > F.y1 + 30) break; L = q; }   // journey to the edge, for Unrestrained Collapse
@@ -404,13 +406,13 @@
         text(w.x, w.y - 90 * HS, 'COLLAPSE', '#c48cff', true); shake = Math.max(shake, 4);
       } else if (w.polN % 2) { // Draw: a blue orb fired at the enemy; the first enemy it touches is hauled back to you
         const a = Math.atan2(o.y - w.y, o.x - w.x), loop = Math.floor(((w.castN || 1) - 1) / Math.max(1, w.book.length)), x0 = w.x + Math.cos(a) * 22, y0 = w.y + Math.sin(a) * 22;
-        orbsC.push({ o: w, draw: 1, out: 1, a, big: U(w, k, 'bigorb') ? 1.3 : 1, x: x0, y: y0, vx: Math.cos(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), vy: Math.sin(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), sp: 250 * str, life: 4.5, t: 0, dmg: S(w, k, 'dmg'), held: [], hitW: new Set(), hit: new Set(), loop,
+        orbsC.push({ o: w, draw: 1, out: 1, a, big: U(w, k, 'bigorb') ? 1.3 : 1, x: x0, y: y0, vx: Math.cos(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), vy: Math.sin(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), sp: 250 * str, life: 4.5, t: 0, dmg: S(w, k, 'dmg') * cornered(w), held: [], hitW: new Set(), hit: new Set(), loop,
           inD: new Set(domes.filter(d => d.o !== w && d.t < d.dur && Math.hypot(x0 - d.x, (y0 - d.y) * 1.4) < d.r)) });   // a dome it starts inside cannot stop it
         inkRing(x0, y0, '#3b9bff', 1, 30, 8, .35); shake = Math.max(shake, 4);
         text(w.x, w.y - 86 * HS, 'DRAW' + colTag(w), '#6fd3ff');
       } else { // Repel: an orb fired straight ahead that shoves back whatever it passes through
         const a = Math.atan2(o.y - w.y, o.x - w.x); w.repelT = 1.3 * str; addFx({ k: 'repel', x: w.x + Math.cos(a) * 16, y: w.y + Math.sin(a) * 16, life: .3, r: 44 }); shake = Math.max(shake, 5); text(w.x, w.y - 86 * HS, 'REPEL' + colTag(w), '#ff5a5a');
-        orbsC.push({ o: w, repel: 1, big: U(w, k, 'bigorb') ? 1.3 : 1, late: U(w, k, 'late'), bounced: 0, str, x: w.x + Math.cos(a) * 22, y: w.y + Math.sin(a) * 22, vx: Math.cos(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), vy: Math.sin(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), life: 4.5, dmg: S(w, k, 'dmg'), hit: new Set(), t: 0, a });
+        orbsC.push({ o: w, repel: 1, big: U(w, k, 'bigorb') ? 1.3 : 1, late: U(w, k, 'late'), bounced: 0, str, x: w.x + Math.cos(a) * 22, y: w.y + Math.sin(a) * 22, vx: Math.cos(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), vy: Math.sin(a) * 330 * (U(w, k, 'fastorb') ? 1.3 : 1), life: 4.5, dmg: S(w, k, 'dmg') * cornered(w), hit: new Set(), t: 0, a });
       }
     }
     if (k === 'zodiac') summonBeast(w);
@@ -1910,7 +1912,7 @@
     if (p.held > 0) {
       p.held -= dt; p.life = Math.max(p.life, 1);
       if (Math.random() < dt * 8) P({ x: p.x + rnd(-14, 14), y: p.y + rnd(-14, 14), vx: rnd(-20, 20), vy: rnd(-20, 20), color: '#bcd2ff', size: 2, life: .3 });
-      if (p.held <= 0) { const fa = rnd(0, 6.283); if (p.bndBy) p.o = p.bndBy;   /* flung off at random, still a live shot */ p.tgt = null; p.vx = Math.cos(fa) * 420; p.vy = Math.sin(fa) * 420; p.life = 1.6; burst(p.x, p.y, 10, ['#e6f0ff', '#7aa6ff'], 150, 3, .3); inkRing(p.x, p.y, '#bcd2ff', 1, 6, 24);
+      if (p.held <= 0) { const tg = p.bndBy && p.bndBy.foe, fa = tg && !tg.dead ? Math.atan2(tg.y - 40 * HS - p.y, tg.x - p.x) : rnd(0, 6.283); if (p.bndBy) p.o = p.bndBy;   /* flung off at random, still a live shot */ p.tgt = null; p.vx = Math.cos(fa) * 420; p.vy = Math.sin(fa) * 420; p.life = 1.6; burst(p.x, p.y, 10, ['#e6f0ff', '#7aa6ff'], 150, 3, .3); inkRing(p.x, p.y, '#bcd2ff', 1, 6, 24);
         if (p.bndBy) { p.held = undefined; p.hitZ = new Set(); try { if (window.bndOut) bndOut(p, 'proj', 36 * HS); } catch (e) {} return false; } }   // sent back: it is a live shot again, now the catcher's
     } else { p.x += p.vx * dt; p.y += p.vy * dt; if (p.x < F.x0 - 60 || p.x > F.x1 + 60 || p.y < F.y0 - 100 || p.y > F.y1 + 60) p.life = 0; }
     const sp2 = Math.hypot(p.vx, p.vy) || 1;

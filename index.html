@@ -753,7 +753,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
       <div class="q" id="qF"></div></div></div>
     <div class="timer" id="timer">40</div>
     <div class="plate me"><canvas class="ava" id="avaM" width="88" height="88"></canvas><div class="mid">
-      <div class="nm">You <span class="hpn" id="hpnM"></span><div class="pips me" id="pipM"></div></div>
+      <div class="nm"><span id="nmMe">You</span> <span class="hpn" id="hpnM"></span><div class="pips me" id="pipM"></div></div>
       <div class="hp"><div class="lag" id="lagM"></div><div class="fill" id="hpM"></div></div>
       <div class="q" id="qM"></div></div></div>
     <button class="pbtn bp" id="bpause" onclick="openPause()"></button>
@@ -828,7 +828,7 @@ function genOffer(p,round){const UN=(p.pool||M.unlocked).filter(k=>!(ONE_COPY.ha
 function apply(p,c){if(c.type==='up'&&c.u.grp)UPG[c.k].forEach(o=>{if(o.grp===c.u.grp&&o.id!==c.u.id)p.up.delete(c.k+'.'+o.id)});if(c.type==='replace'){const old=p.book[c.slot];p.book[c.slot]=c.k;if(!p.book.includes(old))[...p.up].forEach(u=>{if(u.startsWith(old+'.'))p.up.delete(u)});return c.slot}if(c.type==='new'){p.book.push(c.k);return p.book.length-1}p.up.add(c.k+'.'+c.u.id);return -1}
 function scoreHTML(){return `<button class="pbtn" onclick="openPause()">${SVG.pause}</button>`+scoreHTML0()}
 function scoreHTML0(){const pip=(n,cls)=>`<div class="pips ${cls}">${[...Array(WIN).keys()].map(i=>`<i class="${i<n?'w':''}"></i>`).join('')}</div>`;
- return `<div class="side">You ${pip(M.score.me,'me')}</div><span class="rd">${roundLabel()}</span><div class="side">${pip(M.score.foe,'foe')} Rival</div>`}
+ return `<div class="side"><span class="sdn">${String(PR.name||'You').replace(/[<>&]/g,'')}</span> ${pip(M.score.me,'me')}</div><span class="rd">${roundLabel()}</span><div class="side">${pip(M.score.foe,'foe')} Rival</div>`}
 const METAS=['home','spells','shop','friends','ranks','wardrobe'];
 const MATCH_SCREENS=['vs','draft','order','battle'];
 function show(s){if(typeof music==='function'&&s!=='rewards')music(MATCH_SCREENS.includes(s)?'bgm_battle':'bgm_menu');document.querySelectorAll('.screen').forEach(e=>e.classList.toggle('on',e.id===s));if(s!=='battle')running=false;const meta=METAS.includes(s);$('metatop').classList.toggle('on',meta);$('tabbar').classList.toggle('on',meta);heroOn=['home','wardrobe','rewards'].includes(s);if(heroOn)heroLoop();}
@@ -2107,5 +2107,6 @@ nav('home');
 <script src="wizard-v108.js"></script>
 <script src="wizard-v109.js"></script>
 <script src="wizard-v110.js"></script>
+<script src="wizard-v111.js"></script>
 <script src="wizard-release.js"></script>
 </body></html>

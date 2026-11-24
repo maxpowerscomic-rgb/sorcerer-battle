@@ -45,7 +45,7 @@
   function hold(w, o, kind, gy) { const sp = Math.hypot(o.vx || 0, o.vy || 0) || 380; o.bnd = 1; o.vx = 0; o.vy = 0; spend(w, o.x, o.y + (gy || 0)); held.push({ o, kind, by: w, src: o.o, t: Math.max(.05, w.bndWin), sp, gy: gy || 0 }); }
   function release(h) {
     const o = h.o, by = h.by; o.bnd = 0; if (ended) { if (o.life !== undefined) o.life = 0; return; }
-    const a = rnd(0, 6.283); o.o = by; o.vx = Math.cos(a) * h.sp; o.vy = Math.sin(a) * h.sp * .8; if (o.hit) o.hit = new Set(); if (o.hitW) o.hitW = new Set(); if (o.tested) o.tested = new Set();
+    const tg = by.foe, a = tg && !tg.dead ? Math.atan2(tg.y - (o.y + (h.gy || 0)), tg.x - o.x) : rnd(0, 6.283);   /* (1.0.11) sent back at the enemy caster, not off at random */ o.o = by; o.vx = Math.cos(a) * h.sp; o.vy = Math.sin(a) * h.sp; if (o.hit) o.hit = new Set(); if (o.hitW) o.hitW = new Set(); if (o.tested) o.tested = new Set();
     if (o.life !== undefined) o.life = Math.max(o.life, 1.6); if (o.a !== undefined) o.a = a; if (h.kind === 'orb') { o.sx = o.x; o.sy = o.y; o.L = 600; o.inD = new Set(); }
     burst(o.x, o.y + h.gy - 30 * HS, 10, ['#e6f0ff', '#7aa6ff'], 150, 3, .3); inkRing(o.x, o.y + h.gy, '#bcd2ff', 1, 6, 24);
     outs.push({ o, kind: h.kind, gy: h.gy, lx: o.x, ly: o.y, still: 0 });
@@ -81,7 +81,7 @@
       if (typeof meteors !== 'undefined') for (const m of meteors) if (m.o !== w && !m.done && !m.bnd && m.t > m.fall * .72 && near(w, m.tx, m.ty, m.r + 6)) { m.bnd = 1; spend(w, m.tx, m.ty); held.push({ o: m, kind: 'meteor', by: w, src: m.o, t: Math.max(.05, w.bndWin), at: m.t }); }
     }
     for (const h of held) { h.t -= dt; const o = h.o;
-      if (h.kind === 'meteor') { o.t = h.at; if (h.t <= 0) { o.bnd = 0; o.tx = rnd(F.x0 + 30, F.x1 - 30); o.ty = rnd(F.y0 + 30, F.y1 - 30); o.o = h.by; o.t = o.fall * .45; outs.push({ o, kind: 'meteor', gy: 0 }); } continue; }   // it comes down somewhere else
+      if (h.kind === 'meteor') { o.t = h.at; if (h.t <= 0) { o.bnd = 0; { const tg = h.by.foe; if (tg && !tg.dead) { o.tx = tg.x; o.ty = tg.y; } else { o.tx = rnd(F.x0 + 30, F.x1 - 30); o.ty = rnd(F.y0 + 30, F.y1 - 30); } } o.o = h.by; o.t = o.fall * .45; outs.push({ o, kind: 'meteor', gy: 0 }); } continue; }   // it comes down somewhere else
       o.vx = 0; o.vy = 0; if (o.life !== undefined) o.life = Math.max(o.life, .6);
       if (Math.random() < .5) P({ x: o.x + rnd(-10, 10), y: o.y + h.gy - 36 * HS + rnd(-10, 10), vx: rnd(-20, 20), vy: rnd(-30, 10), color: Math.random() < .5 ? '#bcd2ff' : '#ffffff', size: rnd(1.6, 3), life: .3 });
       if (h.t <= 0) release(h); }
@@ -126,7 +126,11 @@
   window.cast = cast = function (w, k) {
     const f = w && w.foe; let keep = null;
     // Blink: while the afterimage is still fading, enemy casts are aimed at it, not at where the caster went
-    if (f && !f.dead && typeof afters !== 'undefined' && !AIM_SKIP.has(k)) { const a = afters.find(q => q.look === f && q.t < q.life * .9); if (a) { keep = { x: f.x, y: f.y }; f.x = a.x; f.y = a.y; } }
+    // (1.0.11) Targets: Structures. The cast is aimed at the nearest enemy wall, pillar, totem, hourglass or turret, if there is one.
+    if (f && !f.dead && w.me && !AIM_SKIP.has(k) && window.tgtPref && tgtPref(w, k) === 'struct') { let best = null, bd = 1e9; const see = (x0, y0) => { const d = Math.hypot(x0 - w.x, y0 - w.y); if (d < bd) { bd = d; best = { x: x0, y: y0 }; } };
+      try { for (const wl of walls) if (wl.o !== w && wl.hp > 0) for (const c of wl.cr) if (!c.gone) see(c.x, c.y); for (const L of [typeof totems !== 'undefined' ? totems : [], typeof hgs !== 'undefined' ? hgs.filter(h => !h.done) : [], typeof archers !== 'undefined' ? archers.filter(a => a.hp > 0) : []]) for (const e of L) if (e.o !== w && e.x !== undefined) see(e.x, e.y); } catch (e) {}
+      if (best) { keep = { x: f.x, y: f.y }; f.x = best.x; f.y = best.y; } }
+    if (!keep && f && !f.dead && typeof afters !== 'undefined' && !AIM_SKIP.has(k)) { const a = afters.find(q => q.look === f && q.t < q.life * .9); if (a) { keep = { x: f.x, y: f.y }; f.x = a.x; f.y = a.y; } }
     let r; try { r = _cast.apply(this, arguments); } finally { if (keep) { f.x = keep.x; f.y = keep.y; } }
     // Sanctum: raising the dome wipes the enemy's hazards standing inside it
     try { if (k === 'sanctum' && w && !X.isCopying()) { const dm = X.domes.filter(d => d.o === w && d.t < .05 && !d.open).pop(); if (dm) eraseHazards(w, dm); } } catch (e) {}

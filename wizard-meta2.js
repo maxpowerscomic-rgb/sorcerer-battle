@@ -528,7 +528,7 @@
       const k = keyOf(), det = document.getElementById('detail'); if (!k || !det || !(window.TGT_ABLE || []).includes(k)) return r;
       const v = (PR.tgt && PR.tgt[k]) || 'auto', mob = v === 'strong' || v === 'weak';
       const b = (id, n, on) => `<button class="${on ? 'on' : ''}" onclick="event.stopPropagation();setTgt('${k}','${id}')">${n}</button>`;
-      det.insertAdjacentHTML('beforeend', `<div class="tgtrow"><span>Targets</span><div class="bseg">${b('auto', k === 'rush' ? 'Nearest' : 'Auto', v === 'auto')}${b('caster', 'Caster', v === 'caster')}${b('mobs', 'Summons', mob)}</div>${mob ? `<div class="bseg sub">${b('strong', 'Strongest first', v === 'strong')}${b('weak', 'Weakest first', v === 'weak')}</div>` : ''}</div>`);
+      det.insertAdjacentHTML('beforeend', `<div class="tgtrow"><span>Targets</span><div class="bseg">${b('auto', k === 'rush' ? 'Nearest' : 'Auto', v === 'auto')}${b('caster', 'Caster', v === 'caster')}${b('mobs', 'Summons', mob)}${b('struct', 'Structures', v === 'struct')}</div>${mob ? `<div class="bseg sub">${b('strong', 'Strongest first', v === 'strong')}${b('weak', 'Weakest first', v === 'weak')}</div>` : ''}</div>`);
     } catch (e) {}
     return r;
   };
