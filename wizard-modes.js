@@ -130,6 +130,12 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.20', d: '25 Nov 2026', items: [
+      'Fight Club: bounties now read as an entry fee and a prize (15 gems in, 25 for a win). Nothing about the rules changed.',
+      'Your first coached duel is a Casual match: it never changes your trophies, even when you replay the tutorial.',
+      'Skipping the tutorial before choosing a path gives 2 Spell Tokens and 2 Technique Tokens, the same 4 unlocks as finishing it.',
+      'Small phones: the training yard\'s range arrows no longer sit on the Challenges, Ladder and Pass buttons.',
+      'Fixed: the Ladder said first wins pay 10 gems; they pay 5.'] },
     { v: '1.0.33.19', d: '25 Nov 2026', items: [
       'New players start with every ability locked and choose their first four with tokens. Hoot suggests one to start with.',
       'Gem packs are bigger: 400 for $0.99, 2,200 for $4.99, 5,000 for $9.99.',
@@ -254,7 +260,7 @@
     { v: '1.0.22', d: '25 Nov 2026', items: ['Ten more Ladder rivals: the base Ladder now has 30.', 'Seven new aura styles: Live Wire, Petal Whirl, Moons, Rune Circle, Shadow Tendrils, Frost Crown and Eclipse.',
       'Eight new trails: Frostbite, Falling Leaves, Bubbles, Voltage, Ink Blots, Coin Shower, Grave Wisps and Prism.', 'Animated emblems: Storm Caller now sparks, and Inferno, Aurora, Void Star, Tempest and Phoenix are new.',
       'New streak rewards: Prism trail at 30 in a row, Eclipse aura at 40, Phoenix emblem at 50.', 'Ability pages have a Works well with row.'] },
-    { v: '1.0.21', d: '25 Nov 2026', items: ['Fight Club is now a wager: stake 15 gems on a bounty and win 25. Bonuses for beating all wizards, all sorcerers, and 250 gems for all six. Re-roll the board for 100 gems. Star a beaten bounty to keep it for rematches.',
+    { v: '1.0.21', d: '25 Nov 2026', items: ['Fight Club bounties: a 15-gem entry, 25 gems for a win. Bonuses for beating all wizards, all sorcerers, and 250 gems for all six. Re-roll the board for 100 gems. Star a beaten bounty to keep it for rematches.',
       'The Rank Road now runs to 5,000 trophies, with five new ranks.', 'Ladder rungs open every 75 trophies.', 'Gem packs give three times as many gems. An Echo Rune costs 50 gems.',
       'Collapse stops on a Sanctum and grinds it down from outside; from inside it shatters the dome on contact. Its wake is violet with afterimages; a rainbow version is a new Attacks cosmetic.',
       'An Open Sanctum now clashes with a regular one, and breaking it costs its caster 7 health.', 'Copy Cast is 35% slower and cannot copy Chosen One.', 'Targeting the caster no longer sees through decoys.', 'Every rival brings at least one attack.',

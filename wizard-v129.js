@@ -42,7 +42,7 @@
       ['#sgrid', 'Tap an ability to see it, level it up, or put it in your hand.']],
     shop: [['#deals', 'Daily deals: skill points for gold. New ones every day.'],
       ['#chests', 'Chests: a pile of skill points spread across your abilities.']],
-    friends: [['#flist', 'The <em>Fight Club</em>: tough bounties. Bet gems, win more.'],
+    friends: [['#flist', 'The <em>Fight Club</em>: tough bounties. Pay an entry, win a gem prize.'],
       ['.sv-tabs', '<em>Survival</em>: hold out against waves, alone or with a partner.']],
     ranks: [['.tier.here', 'This is you. Ranked wins move you up for rewards.']],
     wardrobe: [['#cats', 'Pick a category, then tap an item to wear it. Locked ones show how to earn them.']],

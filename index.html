@@ -1917,7 +1917,7 @@ function nav(t){show(t);document.querySelectorAll('.tab').forEach(b=>b.classList
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>nav(b.dataset.t));
 document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{PR.mode=b.dataset.m;refreshMeta()});
 $('battleBtn').onclick=()=>startMatch({});
-function startMatch(o){fixHand();if(PR.hand.length<4){toast('Fill your battle hand first: '+PR.hand.length+' of 4');nav('spells');return}if(window.ONB_ACTIVE){const lv={};Object.keys(SP).forEach(k=>lv[k]=1);return newMatch(Object.assign({lv,tut:1,name:'Apprentice Pip',profile:PROFILES.find(p=>p.id==='frost')||PROFILES[0]},o));}const un=unlockedSpells(),avg=Math.round(un.reduce((a,k)=>a+PR.spells[k].lvl,0)/un.length);const lv={};Object.keys(SP).forEach(k=>lv[k]=clamp(avg+(Math.random()<.3?1:0)-(Math.random()<.3?1:0),1,MAXL));
+function startMatch(o){fixHand();if(PR.hand.length<4){toast('Fill your battle hand first: '+PR.hand.length+' of 4');nav('spells');return}if(window.ONB_ACTIVE){const lv={};Object.keys(SP).forEach(k=>lv[k]=1);return newMatch(Object.assign({lv,tut:1,name:'Apprentice Pip',profile:PROFILES.find(p=>p.id==='frost')||PROFILES[0]},o,{mode:'casual'}));/* (1.0.33.20) the coached duel never moves trophies */}const un=unlockedSpells(),avg=Math.round(un.reduce((a,k)=>a+PR.spells[k].lvl,0)/un.length);const lv={};Object.keys(SP).forEach(k=>lv[k]=clamp(avg+(Math.random()<.3?1:0)-(Math.random()<.3?1:0),1,MAXL));
  newMatch(Object.assign({lv},o));}
 
 /* spells tab */
@@ -2134,5 +2134,6 @@ nav('home');
 <script src="wizard-v137.js"></script>
 <script src="wizard-v138.js"></script>
 <script src="wizard-v139.js"></script>
+<script src="wizard-v140.js"></script>
 <script src="wizard-release.js"></script>
 </body></html>

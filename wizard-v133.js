@@ -24,7 +24,7 @@
   const TT = window.TIP_TOURS && TIP_TOURS.TOURS;
   if (TT) { delete TT.friends;
     TT.survival = [['.sv-modes', '<em>3 Waves</em> ends after the third wave. <em>Endless</em> runs until you fall once.'], ['.sv-kinds', 'Pick who you fight: zombies, beasts or casters. Each brings its own tricks.'], ['.sv-opts', 'Bring a partner if you like. It drafts its own upgrades and you can revive it.'], ['.sv-go', 'Ready? Tap <em>Survive</em>. Gold is paid for kills.']];
-    TT.fightclub = [['#flist', 'The <em>Fight Club</em>: tough bounties above your level. Wager gems; win and take more back.'], ['#flist > *', 'Beat all of a set for a big gem prize. Star a beaten bounty to rematch it for gold.']]; }
+    TT.fightclub = [['#flist', 'The <em>Fight Club</em>: tough bounties above your level. Pay a gem entry; beat it for a bigger gem prize.'], ['#flist > *', 'Beat all of a set for a big gem prize. Star a beaten bounty to rematch it for gold.']]; }
   const LESSON = { home: ['home', 'the training yard and home'], spells: ['spells', 'your abilities'], shop: ['shop', 'the shop'], ranks: ['ranks', 'ranks'], wardrobe: ['wardrobe', 'the wardrobe'] };
   const cur = () => { const s = document.querySelector('.screen.on'); return s ? s.id : ''; };
   function lessonHere() { const sc = cur(); if (sc === 'friends') { if (!open('sv') && !open('fc')) return null; return PR.clubTab === 'sv' || !open('fc') ? ['survival', 'Survival'] : ['fightclub', 'the Fight Club']; } return LESSON[sc] || null; }
@@ -67,7 +67,7 @@
   /* ---------------- his panel: new things and lessons first ---------------- */
   if (window.openHootGoals) { const _og = openHootGoals; window.openHootGoals = function () { const r = _og.apply(this, arguments);
       try { const list = document.querySelector('#sheetP .hg-list'); if (list) { let h = ''; const L = lessonHere();
-          for (const n of unread()) h += `<button class="hg-row ready hh-row" onclick="hootNewsGo('${n.id}')"><i>✨</i><span><b class="hh-tag">New</b> ${n.id === 'sv' ? '<em>Survival</em> is open in the Club: hold out against waves, alone or with a partner.' : '<em>The Fight Club</em> is open: wager gems on tough bounties.'}</span><em>Go</em></button>`;
+          for (const n of unread()) h += `<button class="hg-row ready hh-row" onclick="hootNewsGo('${n.id}')"><i>✨</i><span><b class="hh-tag">New</b> ${n.id === 'sv' ? '<em>Survival</em> is open in the Club: hold out against waves, alone or with a partner.' : '<em>The Fight Club</em> is open: tough bounties with gem prizes.'}</span><em>Go</em></button>`;
           if (L) h += `<button class="hg-row${seen(L[0]) ? '' : ' ready'} hh-row" onclick="hootLearn('${L[0]}')"><i>🎓</i><span>${seen(L[0]) ? 'Show me' : 'Learn about'} ${L[1]}${seen(L[0]) ? ' again' : ''}</span><em>${seen(L[0]) ? 'Replay' : 'Start'}</em></button>`;
           if (h) list.insertAdjacentHTML('afterbegin', h + '<div class="hh-sep"></div>'); } } catch (e) {}
       return r; }; }

@@ -53,7 +53,7 @@
 
   window.clubFight = function (i) { const b = board()[i], s = st(); if (!b || !handOk()) return;
     if (s.won.includes(b.id)) return toast('Already beaten. Star it to keep it for rematches.');
-    if ((PR.gems || 0) < STAKE) return toast(`The wager is ${STAKE} gems`);
+    if ((PR.gems || 0) < STAKE) return toast(`Entry is ${STAKE} gems`);
     PR.gems -= STAKE; try { save(); if (window.chaChing) chaChing(); } catch (e) {} closeSheet(); newMatch({ bounty: i }); };
   window.clubFavFight = function (j) { const b = favs()[j]; if (!b || !handOk()) return; closeSheet(); newMatch({ bountyObj: b }); };
   window.clubStar = function (i) { const b = board()[i], F = favs(); if (!b) return; const at = F.findIndex(q => q.id === b.id); if (at >= 0) F.splice(at, 1); else { if (F.length >= FAVMAX) return toast(`You can keep ${FAVMAX} favourites. Remove one first.`); F.push(JSON.parse(JSON.stringify(b))); } try { save(); sfx('ui_pick'); } catch (e) {} render(); };
@@ -65,13 +65,13 @@
       <div class="clav"><canvas id="clCv" width="176" height="176"></canvas></div>
       <div class="dml">Hand</div><div class="clhand">${b.hand.map(k => `<span><img src="${ICON[k]}"><small>${esc(SP[k].n)}</small></span>`).join('')}</div>
       <div class="dml">Starts with</div><div class="clups">${b.ups.map(u => { const [k, id] = u.split('.'), up = (UPG[k] || []).find(q => q.id === id); return up ? `<span><b>${esc(up.n)}</b>${esc(up.d)}</span>` : ''; }).join('')}</div>
-      ${fav ? `<button class="upbtn" style="margin-top:10px" onclick="clubFavFight(${i})">Rematch · win ${FAVGOLD} gold</button>` : done ? '<div class="ssub" style="margin:10px 0 0">Beaten. Star it on the board to keep it.</div>' : `<button class="upbtn" style="margin-top:10px" onclick="clubFight(${i})" ${(PR.gems || 0) < STAKE ? 'disabled' : ''}>Wager ${STAKE} 💎 · win ${WIN} 💎</button>`}`;
+      ${fav ? `<button class="upbtn" style="margin-top:10px" onclick="clubFavFight(${i})">Rematch · win ${FAVGOLD} gold</button>` : done ? '<div class="ssub" style="margin:10px 0 0">Beaten. Star it on the board to keep it.</div>' : `<button class="upbtn" style="margin-top:10px" onclick="clubFight(${i})" ${(PR.gems || 0) < STAKE ? 'disabled' : ''}>Enter · ${STAKE} 💎 · prize ${WIN} 💎</button>`}`;
     $('sheet').classList.add('on'); try { drawAva($('clCv'), lookWiz(Object.assign({}, b.look, { aura: b.aura }))); } catch (e) {} };
   function render() { const host = $('friends'); if (!host) return; const mc = host.querySelector('.mc'), L = board(), s = st(), F = favs(), n = L.filter(b => s.won.includes(b.id)).length;
     const row = (b, i, fav) => { const done = !fav && s.won.includes(b.id), star = !fav && F.some(q => q.id === b.id);
       return `<div class="frow clrow ${b.cls} ${done ? 'done' : ''}" onclick="clubOpen(${i}${fav ? ',1' : ''})"><div class="fav"><canvas width="88" height="88" data-b="${fav ? 'f' : ''}${i}"></canvas></div><div class="g"><b>${esc(b.n)}</b><small>${b.cls === 'sorc' ? 'Sorcerer' : 'Wizard'} · ${esc(b.title)}</small><span class="clh">${b.hand.map(k => `<img src="${ICON[k]}">`).join('')}</span></div>
         ${fav ? `<button class="fbtn" onclick="event.stopPropagation();clubFavFight(${i})">Fight</button><button class="clx" onclick="event.stopPropagation();clubUnstar(${i})" aria-label="Remove favourite">✕</button>` : done ? `<button class="clstar ${star ? 'on' : ''}" onclick="event.stopPropagation();clubStar(${i})" aria-label="Favourite">${star ? '★' : '☆'}</button>` : `<button class="fbtn" onclick="event.stopPropagation();clubFight(${i})">${STAKE} 💎</button>`}</div>`; };
-    mc.innerHTML = `<div class="sh">Fight Club</div><div class="ssub">Wager ${STAKE} gems on a bounty; win and take ${WIN}. Tough builds, ${LVL} levels above you.</div>
+    mc.innerHTML = `<div class="sh">Fight Club</div><div class="ssub">Enter a bounty for ${STAKE} gems; beat it to win ${WIN}. Tough builds, ${LVL} levels above you.</div>
       <div class="clbar"><span>New faces in <b id="clT">${left()}</b></span><span>${n} / 6 beaten</span></div>
       <div class="clsets"><span class="${s.setW ? 'ok' : ''}">All wizards <b>+${SET_W} 💎</b></span><span class="${s.setS ? 'ok' : ''}">All sorcerers <b>+${SET_S} 💎</b></span><span class="${s.clear ? 'ok' : ''}">All six <b>+${ALL} 💎</b></span></div>
       <div id="flist" style="display:flex;flex-direction:column;gap:8px">${L.map((b, i) => row(b, i, 0)).join('')}</div>
@@ -95,11 +95,11 @@
       try { const b = M && M.bounty; if (b) { const md = $('rwMode'); if (md) md.textContent = 'Fight Club · vs ' + b.n;
           if (!M._clubDone) { M._clubDone = 1; M._club = null; const s = st(), won = M.score.me > M.score.foe, L = board(), live = L.some(q => q.id === b.id);
             if (M.bountyFav) { if (won) { PR.coins += FAVGOLD; M._club = [`Favourite beaten: +${FAVGOLD} gold`]; } }
-            else if (won && live && !s.won.includes(b.id)) { s.won.push(b.id); let g = WIN; const msgs = [`Wager won: +${WIN} gems`]; const all = cls => L.filter(q => q.cls === cls).every(q => s.won.includes(q.id));
+            else if (won && live && !s.won.includes(b.id)) { s.won.push(b.id); let g = WIN; const msgs = [`Bounty won: +${WIN} gems`]; const all = cls => L.filter(q => q.cls === cls).every(q => s.won.includes(q.id));
               if (!s.setW && all('wiz')) { s.setW = 1; g += SET_W; msgs.push(`All three wizards: +${SET_W} gems`); } if (!s.setS && all('sorc')) { s.setS = 1; g += SET_S; msgs.push(`All three sorcerers: +${SET_S} gems`); }
               if (!s.clear && L.every(q => s.won.includes(q.id))) { s.clear = 1; g += ALL; msgs.push(`Board cleared: +${ALL} gems`); } PR.gems = (PR.gems || 0) + g; M._club = msgs; }
-            else if (won) M._club = [live ? 'Already beaten: no payout' : 'This bounty left the board before you won: stake lost'];
-            else M._club = [`Wager lost: ${STAKE} gems`];
+            else if (won) M._club = [live ? 'Already beaten: no payout' : 'This bounty left the board before you won: entry spent'];
+            else M._club = [`Bounty lost: the ${STAKE}-gem entry is spent`];
             try { save(); } catch (e) {} }
           let box = $('rwClub'); if (box) box.remove(); if (M._club) { const at = document.querySelector('#rewards #rwCards') || $('rwBtn'); if (at) at.insertAdjacentHTML('beforebegin', `<div id="rwClub"><b>Fight Club</b>${M._club.map(m => `<span>${m}</span>`).join('')}</div>`); } }
         else { const box = $('rwClub'); if (box) box.remove(); } } catch (e) {}
