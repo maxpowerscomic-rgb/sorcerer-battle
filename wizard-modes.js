@@ -130,6 +130,16 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.13', d: '24 Nov 2026', items: [
+      'Hoot is your help button: he sits bottom-right on every menu screen. A red dot means he has something new for you, like a lesson about the screen you are on or a mode that just opened. Screens no longer start tutorials on their own.',
+      'The Club opens as you level: Survival at player level 2, the Fight Club at level 4. If you have already played them, they stay open.',
+      'Training yard: pick its map. Tap the dummy and choose from all six arenas.',
+      'Randomize your battle hand: a new button beside Saved hands deals a random 4 from everything, spells only, or techniques only.',
+      'The loading curtains now keep their angle as they open.',
+      'Survival: the opening now searches for your partner, not a rival. Choose how a partner looks: like a Fight Club fighter, a random stranger, or a clone of you. Solo runs show the horde.'] },
+    { v: '1.0.33.12', d: '24 Nov 2026', items: [
+      'Blood colours: a new Blood tab in the wardrobe. Crimson, Sapphire, Ichor, Toxic, Void and Spectral, unlocked by player level. Your fighter and your summons bleed your colour; everyone else bleeds red.',
+      'Smoother big fights: zombies draw about 30% faster, and a crowd caught in one blast no longer floods the screen with blood.'] },
     { v: '1.0.33.11', d: '24 Nov 2026', items: ['Fixed: fighters without Bloodcraft (the training dummy included) no longer soak up the blood on the floor. Only Bloodcraft gathers it.'] },
     { v: '1.0.33.10', d: '24 Nov 2026', items: [
       'Fixed: the tabs at the bottom of the home screen could stop working and leave you stuck on Battle.',

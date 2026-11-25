@@ -25,7 +25,7 @@
   function build() {
     const sv = showVs; Y.building = true;
     try { window.showVs = showVs = function () {};       // a match object, none of the match screens
-      newMatch({ name: 'Training Dummy', arena: 'bog', yard: 1, lv: Object.fromEntries(Object.keys(SP).map(k => [k, 1])) }); }
+      newMatch({ name: 'Training Dummy', arena: (ARENAS.includes(PR.yardArena) ? PR.yardArena : 'bog') /* (1.0.33.13) you pick the yard's map */, yard: 1, lv: Object.fromEntries(Object.keys(SP).map(k => [k, 1])) }); }
     finally { window.showVs = showVs = sv; Y.building = false; }
     M.practice = 1; M.rival = null; M.mode = 'casual'; M.me.book = PR.hand.slice(); M.foe.book = cfg().book.length ? cfg().book.slice() : ['fireball']; M.foe.up = new Set(); M.round = 1; M.pz = [];
     startDuel(); running = false; introT = 0;
@@ -109,11 +109,14 @@
       <div class="dmrow">${[0, 1, 2, 3].map(i => C.book[i] ? `<span onclick="dummyPick('${C.book[i]}')"><img src="${ICON[C.book[i]]}"><small>${SP[C.book[i]].n}</small></span>` : '<span class="em"></span>').join('')}</div>
       <div class="dmopt"><label class="opt"><span>It walks and keeps its distance like a rival</span><input type="checkbox" ${C.walk ? 'checked' : ''} ${C.book.length ? '' : 'disabled'} onchange="dummySet('walk',this.checked)"><i></i></label>
       <label class="opt"><span>My hits move it</span><input type="checkbox" ${PR.yardMove === true || (C.walk && C.book.length) ? 'checked' : ''} ${C.walk && C.book.length ? 'disabled' : ''} onchange="dummySet('move',this.checked)"><i></i></label></div>
+      <div class="dml">Map</div><div class="ym-row">${ARENAS.map(a => `<button class="ym-b${(PR.yardArena || 'bog') === a ? ' on' : ''}" onclick="yardMap('${a}')" style="background-image:url(art/arena-${a}.png)"><span>${(typeof ARENA_NAMES !== 'undefined' && ARENA_NAMES[a]) || a}</span></button>`).join('')}</div>
       <div class="dml">Spells</div><div class="dmgrid">${grid('wiz')}</div><div class="dml">Techniques</div><div class="dmgrid">${grid('sorc')}</div>
       <button class="upbtn" style="margin-top:10px" onclick="dummyReset()">↺ Reset the scene</button>
       ${C.book.length ? '<button class="upbtn dk2" onclick="dummyClear()">Back to a plain dummy</button>' : ''}`;
     $('sheet').classList.add('on'); }
   window.openDummy = openDummy;
+  window.yardMap = function (a) { if (!ARENAS.includes(a)) return; PR.yardArena = a; try { save(); sfx('ui_click'); } catch (e) {} Y.dirty = 1; openDummy(); };
+  { const st = document.createElement('style'); st.textContent = '.ym-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 6px}.ym-b{position:relative;height:62px;border-radius:12px;border:2.5px solid #000;background-size:cover;background-position:center;padding:0;overflow:hidden;box-shadow:0 2px 0 #000}.ym-b span{position:absolute;left:0;right:0;bottom:0;padding:3px 4px;background:#0b0718d9;color:#fff;font:800 11px/1.15 Nunito,sans-serif;text-align:center}.ym-b.on{outline:3px solid #ffd45e;outline-offset:1px}.ym-b.on span{color:#ffd45e}'; document.head.appendChild(st); }
   const apply = () => { try { save(); } catch (e) {} Y.dirty = 1; openDummy(); };
   window.dummyPick = function (k) { const C = cfg(), i = C.book.indexOf(k); if (i >= 0) C.book.splice(i, 1); else if (C.book.length >= 4) return toast('The dummy holds 4 abilities. Tap one to take it out.'); else C.book.push(k); try { sfx('ui_pick'); } catch (e) {} apply(); };
   window.dummySet = function (what, v) { if (what === 'walk') cfg().walk = !!v; else PR.yardMove = !!v; apply(); };

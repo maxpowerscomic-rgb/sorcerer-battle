@@ -449,7 +449,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
 .curtain .ct{position:absolute;left:0;right:0;height:56%;background:linear-gradient(160deg,#4a2a8a,#1a1036);border:0 solid #000}
 .curtain .ct::after{content:"";position:absolute;inset:0;opacity:.08;background-image:radial-gradient(#fff 1px,transparent 1.5px);background-size:22px 22px}
 .curtain .top{top:0;z-index:2;clip-path:polygon(0 0,100% 0,100% 86%,0 100%);transform:translateY(-102%);filter:drop-shadow(0 4px 0 #000);background:linear-gradient(160deg,#a8243a,#4a0f1c)}
-.curtain .bot{bottom:0;z-index:1;clip-path:none;transform:translateY(102%);background:linear-gradient(160deg,#2a1a5a,#0f0924)}
+.curtain .bot{bottom:0;z-index:1;clip-path:polygon(0 21.4%,100% 7.5%,100% 100%,0 100%);/* (1.0.33.13) cut to the top curtain's angle, so the two stay angled as they part */transform:translateY(102%);background:linear-gradient(160deg,#2a1a5a,#0f0924)}
 .curtain.closing .top,.curtain.closing .bot{animation:ctIn .42s cubic-bezier(.3,1.25,.5,1) forwards}
 .curtain.opening .top{transform:none;animation:ctOutT .5s cubic-bezier(.6,0,.8,.4) forwards}.curtain.opening .bot{transform:none;animation:ctOutB .5s cubic-bezier(.6,0,.8,.4) forwards}
 @keyframes ctIn{to{transform:translateY(0)}}@keyframes ctOutT{to{transform:translateY(-102%)}}@keyframes ctOutB{to{transform:translateY(102%)}}
@@ -2126,5 +2126,7 @@ nav('home');
 <script src="wizard-v129.js"></script>
 <script src="wizard-v130.js"></script>
 <script src="wizard-v131.js"></script>
+<script src="wizard-v132.js"></script>
+<script src="wizard-v133.js"></script>
 <script src="wizard-release.js"></script>
 </body></html>

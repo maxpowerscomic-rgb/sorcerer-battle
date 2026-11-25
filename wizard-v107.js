@@ -79,6 +79,7 @@
       ${F.length ? `<div class="lbl" style="margin-top:14px">★ Favourites <small style="opacity:.7">rematch any time · ${FAVGOLD} gold a win</small></div><div style="display:flex;flex-direction:column;gap:8px">${F.map((b, i) => row(b, i, 1)).join('')}</div>` : '<div class="ssub" style="margin-top:10px">Beat a bounty, then star it to keep it for rematches after the board changes.</div>'}`;
     mc.querySelectorAll('canvas[data-b]').forEach(c => { try { const v = c.dataset.b, b = v[0] === 'f' ? F[+v.slice(1)] : L[+v]; drawAva(c, lookWiz(Object.assign({}, b.look, { aura: b.aura }))); } catch (e) {} }); }
   window.renderFriends = renderFriends = render;
+  window.clubBoard = () => { try { return board(); } catch (e) { return []; } };   /* (1.0.33.13) Survival borrows a bounty's look for your partner */
   setInterval(() => { try { const h = $('friends'); if (!h || !h.classList.contains('on')) return; const t = $('clT'); if (cache && cache.key.split(':')[0] !== String(slotNow())) return render(); if (t) t.textContent = left(); } catch (e) {} }, 1000);
   if (typeof nav === 'function') { const _n = nav; window.nav = nav = function (t) { const r = _n.apply(this, arguments); if (t === 'friends') { try { render(); } catch (e) {} } return r; }; }
 

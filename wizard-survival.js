@@ -38,14 +38,20 @@
   const usable = h => (h || []).filter(k => SP[k] && !SELF.has(k));
 
   /* ---------------- starting a run ---------------- */
+  // (1.0.33.13) how a random or saved-hand partner looks: like a Fight Club fighter, a random stranger, or a clone of you
+  function lookFor(c, fallback) { const m = c.look || 'random';
+    if (m === 'clone') return { look: Object.assign({}, PR.look), n: (PR.name || 'You') + '\'s Echo' };
+    if (m === 'club') { const L = (window.clubBoard && clubBoard()) || []; const b = L.length ? L[Math.random() * L.length | 0] : null; if (b && b.look) return { look: Object.assign({}, b.look, { aura: b.aura }), n: b.n }; }
+    return { look: typeof randomLook === 'function' ? randomLook() : fallback, n: null }; }
   function partnerOf(c) { const un = typeof unlockedSpells === 'function' ? unlockedSpells() : PR.hand;
-    if (c.pt === 'random') { const pool = usable(un.filter(k => !(window.VARIANTS && VARIANTS[k]))).sort(() => Math.random() - .5); return { n: 'Hoot\'s Friend', hand: pool.slice(0, 4), look: typeof randomLook === 'function' ? randomLook() : PR.look }; }
-    if (c.pt === 'deck') { const d = decks()[c.pi]; if (d) return { n: d.n, hand: usable(d.h).slice(0, 4), look: Object.assign({}, PR.look, { robe: PR.look.robe === 'frost' ? 'ember' : 'frost' }) }; }
+    if (c.pt === 'random') { const pool = usable(un.filter(k => !(window.VARIANTS && VARIANTS[k]))).sort(() => Math.random() - .5); const lk = lookFor(c, PR.look); return { n: lk.n || (typeof CAR_NAMES !== 'undefined' ? CAR_NAMES[Math.random() * CAR_NAMES.length | 0] : 'Hoot\'s Friend'), hand: pool.slice(0, 4), look: lk.look }; }
+    if (c.pt === 'deck') { const d = decks()[c.pi]; if (d) { const lk = lookFor(c, PR.look); return { n: d.n, hand: usable(d.h).slice(0, 4), look: lk.look }; } }
     if (c.pt === 'fav') { const b = favs()[c.pi]; if (b) return { n: b.n, hand: usable(b.hand).slice(0, 4), look: Object.assign({}, b.look, { aura: b.aura }) }; }
     return null; }
   window.svStart = function () { const c = cfg(); if (typeof fixHand === 'function') fixHand(); if (PR.hand.length < 4) { toast('Fill your battle hand first: ' + PR.hand.length + ' of 4'); return nav('spells'); }
     const pt = partnerOf(c); if (pt && !pt.hand.length) pt.hand = ['fireball'];
     const un = typeof unlockedSpells === 'function' ? unlockedSpells() : PR.hand, avg = Math.max(1, Math.round(un.reduce((a, k) => a + ((PR.spells[k] && PR.spells[k].lvl) || 1), 0) / Math.max(1, un.length)));
+    window.SV_VS = { pt, kind: c.kind };   /* read by the vs screen, which newMatch opens straight away */
     newMatch({ mode: 'casual', name: 'The Horde', survival: 1, lv: Object.fromEntries(Object.keys(SP).map(k => [k, avg])) }); if (typeof M === 'undefined' || !M) return;
     if (pt) { pt.up = new Set(); pt.log = []; pt.hand = pt.hand.slice(0, 4); }
     M.sv = { kind: c.kind, endless: c.mode === 'endless', total: 0, t: 0, kills: 0, pt, group: 0, hand0: PR.hand.slice() }; M.rival = null; M.foeName = pt ? pt.n : 'The Horde'; if (pt && pt.look) M.foeLook = pt.look; try { WIN = M.sv.endless ? 1 : 3; /* (1.0.33.10) Endless ends at the first fall */ } catch (e) {} };
@@ -291,6 +297,7 @@
       <div class="lbl" style="margin-top:12px">Partner</div>
       <div class="sv-opts">${opt('none', 0, 'Solo', 'No partner')}${opt('random', 0, 'Random ally', 'An AI with a random hand')}
         ${D.map((d, i) => opt('deck', i, esc(d.n), 'Your saved hand ' + hand(usable(d.h)))).join('')}${Fv.map((b, i) => opt('fav', i, esc(b.n), 'Club favourite ' + hand(usable(b.hand)))).join('')}</div>
+      ${c.pt === 'random' || c.pt === 'deck' ? `<div class="lbl" style="margin-top:10px">Partner's look</div><div class="sv-kinds sv-look">${[['club', 'Fight Club'], ['random', 'Random'], ['clone', 'Clone of me']].map(([v, n]) => `<button class="${(c.look || 'random') === v ? 'on' : ''}" onclick="svSet('look','${v}')">${n}</button>`).join('')}</div>` : ''}
       <div class="ssub" style="margin:6px 0 0">A partner has its own health and drafts for itself. If it falls you can still win the wave for both of you. It uses only shots, summons and area abilities.</div>
       <button class="battle sv-go" onclick="svStart()"><span>SURVIVE</span><small>${KINDS[c.kind][0]} · ${c.mode === 'endless' ? 'Endless' : '3 waves'} · ${c.pt === 'none' ? 'solo' : 'with a partner'}</small></button>
       <div class="lbl" style="margin-top:14px">Best runs: 3 Waves</div>${rows('waves')}<div class="lbl" style="margin-top:12px">Best runs: Endless</div>${rows('endless')}<div style="height:30px"></div>`; }

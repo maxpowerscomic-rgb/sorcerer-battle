@@ -46,11 +46,14 @@
   /* ---------------- 3. every hit draws blood ----------------
      Any damage to any unit (casters, summons, zombies) sprays a few drops, more for bigger hits.
      Damage over time (a held beam, a burn) drips steadily instead: at most one spray per unit every 0.08 s, carrying what it took since. */
-  const BLOOD = ['#ff5a6e', '#c8102e', '#7a0a18'];
+  const BLOOD = ['#ff5a6e', '#c8102e', '#7a0a18']; let bBud = 28, bBudT = -1;
   function bleed(u, lost, yOff) { if (!u || !(lost > 0) || u.x === undefined || u.svAnchor || u.isDecoy) return; u._bAcc = (u._bAcc || 0) + lost;
     if (u._bT !== undefined && T - u._bT < .08 && T >= u._bT) return; const amt = u._bAcc; u._bAcc = 0; u._bT = T;
-    const n = Math.min(7, 2 + Math.floor(amt / 3)), y = u.y - yOff;
-    try { for (let i = 0; i < n; i++) P({ x: u.x + rnd(-6, 6), y: y + rnd(-8, 8), vx: rnd(-90, 90), vy: rnd(-150, -30), color: BLOOD[i % 3], size: rnd(1.8, 3.4), life: rnd(.35, .6), grav: 520, glow: false }); } catch (e) {} }
+    // (1.0.33.12) a budget per frame, so a crowd caught in one blast doesn't flood the particles: casters always get theirs, others share 28 a frame
+    if (bBudT !== T) { bBudT = T; bBud = 28; } const caster = !!(u.book && u.maxHp); let n = Math.min(7, 2 + Math.floor(amt / 3)); if (!caster) { n = Math.min(n, bBud); if (n <= 0) return; bBud -= n; }
+    const y = u.y - yOff;
+    const pl = window.bloodPal ? bloodPal(u.o && !u.me ? u.o : u) : null, cols = pl ? pl.drops : BLOOD, gl = !!(pl && pl.glow);
+    try { for (let i = 0; i < n; i++) P({ x: u.x + rnd(-6, 6), y: y + rnd(-8, 8), vx: rnd(-90, 90), vy: rnd(-150, -30), color: cols[i % 3], size: rnd(1.8, 3.4), life: rnd(.35, .6), grav: 520, glow: gl && i % 2 === 0 }); } catch (e) {} }
   // casters: watched frame to frame, since some damage (the Spell Cannon's burn) takes health directly rather than through damage()
   if (typeof update === 'function') { const _ub = update; window.update = update = function () { const r = _ub.apply(this, arguments);
       try { const L = (typeof ents !== 'undefined' && ents) ? ents.slice() : []; try { if (M && M.sv && M.sv.P) L.push(M.sv.P); } catch (e) {}

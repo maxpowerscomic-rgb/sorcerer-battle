@@ -17,9 +17,14 @@
   const P = d => typeof d === 'string' ? path(d) : d;
   function fs(x, d, fill, lw, stroke) { const p = P(d); if (fill) { x.fillStyle = fill; x.fill(p); } if (lw) { x.lineWidth = LW * (lw); x.strokeStyle = stroke || '#000'; x.stroke(p); } return p; }
   function within(x, d, fn) { x.save(); x.clip(P(d)); fn(); x.restore(); }
-  function vgrad(x, y0, y1, a, b) { const g = x.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, a); g.addColorStop(1, b); return g; }
+  // (1.0.33.12) gradients are kept and reused: a canvas gradient is placed by the transform in force when it fills, so one made once serves every frame.
+  // While a colourway recolours a drawing (it puts its own createLinearGradient on the context) a fresh one is made, so the colours still turn.
+  const VG = new Map();
+  function vgrad(x, y0, y1, a, b) { const hue = Object.prototype.hasOwnProperty.call(x, 'createLinearGradient'), k = y0 + '|' + y1 + '|' + a + '|' + b; let g = hue ? null : VG.get(k);
+    if (!g) { g = x.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, a); g.addColorStop(1, b); if (!hue) { if (VG.size > 600) VG.clear(); VG.set(k, g); } } return g; }
   function rgb(hex) { if (hex[0] !== '#') return [128, 128, 128]; let h = hex.slice(1); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h.slice(0, 6), 16); return [n >> 16, n >> 8 & 255, n & 255]; }
-  function mul(hex, f) { const [r, g, b] = rgb(hex), c = v => Math.max(0, Math.min(255, Math.round(v * f))); return `rgb(${c(r)},${c(g)},${c(b)})`; }
+  const MC = new Map();
+  function mul(hex, f) { const k = hex + '*' + f; let v = MC.get(k); if (v) return v; const [r, g, b] = rgb(hex), c = q => Math.max(0, Math.min(255, Math.round(q * f))); v = `rgb(${c(r)},${c(g)},${c(b)})`; if (MC.size > 2000) MC.clear(); MC.set(k, v); return v; }
   function mix(hex, to, f) { const a = rgb(hex), b = rgb(to), c = i => Math.round(a[i] + (b[i] - a[i]) * f); return `rgb(${c(0)},${c(1)},${c(2)})`; }
   function elOf(w) { try { return COL[SP[w.book[w.i]].el]; } catch (e) { return ['#ffe6a8', '#ffb347', '#7a3a00']; } }
   function poseOf(w) {

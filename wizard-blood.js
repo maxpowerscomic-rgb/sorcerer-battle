@@ -259,8 +259,10 @@
     _dd.apply(this, arguments); if (x !== ctx || !pools.length) return;
     x.save();
     for (const p of pools) { const g = Math.min(1, p.t * 6); x.save(); x.translate(p.x, p.y); x.rotate(p.rot * .15); x.scale(1, p.sq); x.globalAlpha = .9;
-      x.fillStyle = '#3a0008'; x.beginPath(); x.arc(0, 0, p.r * g + 1.2, 0, 7); x.fill(); x.fillStyle = '#a00d22'; x.beginPath(); x.arc(0, 0, p.r * g, 0, 7); x.fill();
-      x.fillStyle = 'rgba(255,150,160,.55)'; x.beginPath(); x.ellipse(-p.r * .3, -p.r * .3, p.r * .32, p.r * .18, -.5, 0, 7); x.fill(); x.restore(); }
+      const pl = window.bloodPal ? bloodPal(p.o) : null, pc = pl ? pl.pool : ['#3a0008', '#a00d22', 'rgba(255,150,160,.55)'];   /* (1.0.33.12) your blood colour */
+      if (pl && pl.glow) { x.save(); x.globalCompositeOperation = 'lighter'; x.globalAlpha = .22 + .08 * Math.sin(T * 3 + p.rot * 5); x.fillStyle = pl.glow; x.beginPath(); x.arc(0, 0, p.r * g * 1.9 + 3, 0, 7); x.fill(); x.restore(); x.globalAlpha = .9; }
+      x.fillStyle = pc[0]; x.beginPath(); x.arc(0, 0, p.r * g + 1.2, 0, 7); x.fill(); x.fillStyle = pc[1]; x.beginPath(); x.arc(0, 0, p.r * g, 0, 7); x.fill();
+      x.fillStyle = pc[2]; x.beginPath(); x.ellipse(-p.r * .3, -p.r * .3, p.r * .32, p.r * .18, -.5, 0, 7); x.fill(); x.restore(); }
     x.restore();
   };
   function drawSword(x, w) {   // a short curved blade: on the hip at rest, in hand through the string

@@ -67,9 +67,9 @@
     const bh = bub.offsetHeight || 130; bub.style.bottom = ''; bub.style.top = !r ? Math.max(20, (P.height - bh) / 2) + 'px' : (r.y + r.h / 2 > P.height / 2 ? Math.max(10, r.y - bh - 14) : Math.min(P.height - bh - 10, r.y + r.h + 14)) + 'px'; }
   function end() { T0 = null; if (el) { el.classList.add('hide'); el.style.display = 'none'; } }
   window.TIP_TOURS = { start: startTour, end, TOURS };
-  if (typeof nav === 'function') { const _n = nav; window.nav = nav = function (t) { const r = _n.apply(this, arguments); try { if (T0 && T0.id !== t) end(); [1100, 1600, 2400].forEach(ms => setTimeout(() => { try { if ($(t) && $(t).classList.contains('on') && !document.querySelector('#sheet.on') && !T0) startTour(t); } catch (e) {} }, ms)); } catch (e) {} return r; }; }
+  if (typeof nav === 'function') { const _n = nav; window.nav = nav = function (t) { const r = _n.apply(this, arguments); try { if (T0 && T0.id !== t) end(); /* (1.0.33.13) screens no longer start their tips on their own: Hoot offers them (wizard-v133.js) */ } catch (e) {} return r; }; }
   // the home tour also starts when you come back home after the core tutorial
-  setInterval(() => { try { if (!T0 && $('home') && $('home').classList.contains('on') && !document.querySelector('#sheet.on') && !window.ONB_ACTIVE && PR.onb && PR.onb.done && !tours().home) startTour('home'); else if (T0) place((steps()[T0.i] || [])[0]); } catch (e) {} }, 700);
+  setInterval(() => { try { if (T0) place((steps()[T0.i] || [])[0]); } catch (e) {} }, 700);
   // replaying the tutorial resets the tips too
   if (typeof replayTutorial === 'function') { const _rt = replayTutorial; window.replayTutorial = replayTutorial = function () { PR.tours = {}; try { save(); } catch (e) {} return _rt.apply(this, arguments); }; }
 
