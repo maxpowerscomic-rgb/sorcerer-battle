@@ -130,6 +130,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.11', d: '24 Nov 2026', items: ['Fixed: fighters without Bloodcraft (the training dummy included) no longer soak up the blood on the floor. Only Bloodcraft gathers it.'] },
     { v: '1.0.33.10', d: '24 Nov 2026', items: [
       'Fixed: the tabs at the bottom of the home screen could stop working and leave you stuck on Battle.',
       'Endless is now one life: fall once and the run is over. Hearts drop for you too, and you can grab one when hurt for 20% of your health.',

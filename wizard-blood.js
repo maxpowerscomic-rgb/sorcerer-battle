@@ -193,7 +193,7 @@
   // each new loop of a Bloodcraft caster calls their blood home
   const _cast = cast;
   window.cast = cast = function (w, k) {
-    if (w && w.book && w.castN > 0 && w.castN % Math.max(1, w.book.length) === 0 && (inBook(w, 'bloodcraft') || pools.some(p => p.o === w))) recall(w); else if (w && w.bloodBuff && w.castN > 0 && w.castN % Math.max(1, w.book.length) === 0) w.bloodBuff = 0;
+    if (w && w.book && w.castN > 0 && w.castN % Math.max(1, w.book.length) === 0 && inBook(w, 'bloodcraft')) recall(w);   /* (1.0.33.11) only Bloodcraft gathers: since every hit spills a pool owned by whoever bled, owning a pool no longer means anything */ else if (w && w.bloodBuff && w.castN > 0 && w.castN % Math.max(1, w.book.length) === 0) w.bloodBuff = 0;
     return _cast.apply(this, arguments);
   };
 
