@@ -130,6 +130,11 @@
     const mx = sw > 356 ? (me.x + fo.x) / 2 : 195, cy = (me.y + fo.y) / 2 - 30; Y.camY += (cy - Y.camY) * .08; Y.camX = (Y.camX === undefined ? mx : Y.camX) + (mx - (Y.camX === undefined ? mx : Y.camX)) * .08;
     const sx = Y.camX - sw / 2, sy = Math.max(0, Math.min(H - sh, Y.camY - sh / 2));
     Y.cam = { sx, sy, sc }; g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#1a1228'; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingEnabled = true;
+    // (1.0.33.9) the ground repeats around the arena, mirrored so the edges meet, so a wide view never shows a void
+    try { if (typeof bgImg !== 'undefined' && bgImg.complete && bgImg.naturalWidth) { const oy = (h - sh * sc) / 2 * d2, tw = W * sc * d2, th = H * sc * d2;
+        for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { if (!i && !j) continue; const dx = (i * W - sx) * sc * d2, dy = (j * H - sy) * sc * d2 + oy; if (dx > c.width || dy > c.height || dx + tw < 0 || dy + th < 0) continue;
+          g.save(); g.translate(dx + (i % 2 ? tw : 0), dy + (j % 2 ? th : 0)); g.scale(i % 2 ? -1 : 1, j % 2 ? -1 : 1); g.drawImage(bgImg, 0, 0, tw, th); g.restore(); }
+        g.fillStyle = 'rgba(10,6,20,.28)'; for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { if (!i && !j) continue; g.fillRect((i * W - sx) * sc * d2, (j * H - sy) * sc * d2 + oy, tw, th); } } } catch (e) {}   /* a slight shade keeps the real arena the focus */
     g.drawImage(cv, 0, sy * dpr, W * dpr, sh * dpr, -sx * sc * d2, (h - sh * sc) / 2 * d2, W * sc * d2, sh * sc * d2); }
   function frame(now) { if (!Y.on) return; Y.raf = requestAnimationFrame(frame); const dt = Math.min(.033, (now - Y.last) / 1000); Y.last = now; if (document.hidden || sheetOn() || !homeOn() || dt <= 0) return;
     try { if (Y.dirty || typeof M === 'undefined' || !M || !M.practice || typeof ents === 'undefined' || !ents || !ents[1] || !ents[1].isDummy) { Y.dirty = 0; build(); } step(dt); blit(); }

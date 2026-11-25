@@ -26,6 +26,13 @@
       return r; }; }
   if (typeof startDuel === 'function') { const _sd = startDuel; window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); try { for (const w of ents) { w.holdT = 0; w.holdCd = 0; } hud(); } catch (e) {} return r; }; }
 
+  /* ---------------- (1.0.33.8) Spell Cannon ramps up ----------------
+     Every quarter second the beam stays on a caster without a break, it hits 0.5 harder (2 more damage a second).
+     Any break (a wall, a summon, a shell, a dodge) resets it. */
+  if (typeof update === 'function') { const _u2 = update; window.update = update = function (dt) { const r = _u2.apply(this, arguments);
+      try { if (typeof cannons !== 'undefined') for (const c of cannons) { const onCaster = c.bdT === T && !(c.sumE && c.sumE.T === T) && c.t < c.dur; if (onCaster) { c.rampT = (c.rampT || 0) + dt; c.ramp = 2 * Math.floor(c.rampT / .25); } else { c.rampT = 0; c.ramp = 0; } } } catch (e) {}
+      return r; }; }
+
   /* ---------------- the button and the visible tell ---------------- */
   function hud() { const b = $('battle'); if (!b) return; let h = $('holdBtn');
     if (!h) { b.insertAdjacentHTML('beforeend', '<button id="holdBtn" aria-label="Halt your next cast"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.200" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1.200" fill="currentColor"/></svg><i></i></button>'); h = $('holdBtn');
