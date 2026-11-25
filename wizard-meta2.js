@@ -100,6 +100,10 @@
   const TITLES = [
     { id: 'novice', n: 'Novice Duelist', d: 'Where everyone starts.', ok: () => 1 },
     ...RANKS.slice(1).map((r, i) => ({ id: 'rank' + (i + 1), n: r.n, d: 'Reach ' + r.n + ' rank.', ok: () => bestRank() >= i + 1 })),
+    { id: 'ch_e', n: 'Errand Runner', d: 'Complete 10 Easy challenges.', ok: () => ((PR.chDone || [])[0] || 0) >= 10, p: () => [(PR.chDone || [])[0] || 0, 10] },
+    { id: 'ch_m', n: 'Taskmaster', d: 'Complete 10 Medium challenges.', ok: () => ((PR.chDone || [])[1] || 0) >= 10, p: () => [(PR.chDone || [])[1] || 0, 10] },
+    { id: 'ch_h', n: 'Trial Breaker', d: 'Complete 10 Hard challenges.', ok: () => ((PR.chDone || [])[2] || 0) >= 10, p: () => [(PR.chDone || [])[2] || 0, 10] },
+    { id: 'ch_all', n: 'Never Idle', d: 'Complete 50 challenges of any kind.', ok: () => (PR.chDone || []).reduce((a, b) => a + (b || 0), 0) >= 50, p: () => [(PR.chDone || []).reduce((a, b) => a + (b || 0), 0), 50] },
     { id: 'g3', n: 'Novice Sorcerer', d: 'Win 5 matches as a sorcerer.', ok: s => s.sorcW >= 5, p: s => [s.sorcW, 5] },
     { id: 'g1', n: 'Enlightened Fighter', d: 'Win 10 matches as a sorcerer.', ok: s => s.sorcW >= 10, p: s => [s.sorcW, 10] },
     { id: 'special', n: 'Force of Nature', d: 'Win 20 matches as a sorcerer.', ok: s => s.sorcW >= 20, p: s => [s.sorcW, 20] },
@@ -366,26 +370,34 @@
 
   /* ---------------- daily challenges ----------------
      Five a day from a pool. Finishing one pays gold; a finished one can be swapped for coins. */
+  // (1.0.28) tiers: t 0 easy (50 gold), 1 medium (100), 2 hard (150). A day's five and every swap are drawn at random across all tiers.
   const CH_POOL = [
-    { id: 'deal', n: 'Deal 300 damage', key: 'dealt', need: 300 }, { id: 'take', n: 'Take 250 damage', key: 'taken', need: 250 }, { id: 'win2', n: 'Win 2 matches', key: 'wins', need: 2 },
-    { id: 'flawless', n: 'Win a match without losing a round', key: 'flawless', need: 1 }, { id: 'play3', n: 'Play 3 matches', key: 'matches', need: 3 }, { id: 'rounds', n: 'Win 6 rounds', key: 'rounds', need: 6 },
-    { id: 'sorc', n: 'Win with a mostly technique book', key: 'sorcW', need: 1 }, { id: 'wiz', n: 'Win with a mostly spell book', key: 'wizW', need: 1 }, { id: 'tech', n: 'Use techniques 25 times', key: 'techCasts', need: 25 },
-    { id: 'spell', n: 'Cast spells 25 times', key: 'spellCasts', need: 25 }, { id: 'ups', n: 'Take 6 upgrades in drafts', key: 'ups', need: 6 }, { id: 'big', n: 'Deal 150 damage in one match', key: 'dealtMax', need: 150, max: 1 },
-    { id: 'tank', n: 'Win a match after taking 100 damage', key: 'tankWin', need: 1 }, { id: 'streak', n: 'Win 2 matches in a row', key: 'streakNow', need: 2, max: 1 },
+    { id: 'deal', n: 'Deal 300 damage', key: 'dealt', need: 300, t: 0 }, { id: 'take', n: 'Take 250 damage', key: 'taken', need: 250, t: 0 }, { id: 'play3', n: 'Play 3 matches', key: 'matches', need: 3, t: 0 },
+    { id: 'tech', n: 'Use techniques 25 times', key: 'techCasts', need: 25, t: 0 }, { id: 'spell', n: 'Cast spells 25 times', key: 'spellCasts', need: 25, t: 0 }, { id: 'rounds', n: 'Win 6 rounds', key: 'rounds', need: 6, t: 0 },
+    { id: 'win2', n: 'Win 2 matches', key: 'wins', need: 2, t: 1 }, { id: 'flawless', n: 'Win a match without losing a round', key: 'flawless', need: 1, t: 1 }, { id: 'sorc', n: 'Win with a mostly technique book', key: 'sorcW', need: 1, t: 1 },
+    { id: 'wiz', n: 'Win with a mostly spell book', key: 'wizW', need: 1, t: 1 }, { id: 'ups', n: 'Take 6 upgrades in drafts', key: 'ups', need: 6, t: 1 }, { id: 'big', n: 'Deal 150 damage in one match', key: 'dealtMax', need: 150, max: 1, t: 1 },
+    { id: 'tank', n: 'Win a match after taking 100 damage', key: 'tankWin', need: 1, t: 1 }, { id: 'streak', n: 'Win 2 matches in a row', key: 'streakNow', need: 2, max: 1, t: 1 },
+    { id: 'spell100', n: 'Cast spells 100 times', key: 'spellCasts', need: 100, t: 1 }, { id: 'tech100', n: 'Use techniques 100 times', key: 'techCasts', need: 100, t: 1 }, { id: 'deal1k', n: 'Deal 1,000 damage', key: 'dealt', need: 1000, t: 1 },
+    { id: 'spell250', n: 'Cast spells 250 times', key: 'spellCasts', need: 250, t: 2 }, { id: 'tech250', n: 'Use techniques 250 times', key: 'techCasts', need: 250, t: 2 }, { id: 'deal2k', n: 'Deal 2,500 damage', key: 'dealt', need: 2500, t: 2 },
+    { id: 'win5', n: 'Win 5 matches', key: 'wins', need: 5, t: 2 }, { id: 'streak3', n: 'Win 3 matches in a row', key: 'streakNow', need: 3, max: 1, t: 2 }, { id: 'rounds15', n: 'Win 15 rounds', key: 'rounds', need: 15, t: 2 }, { id: 'big300', n: 'Deal 300 damage in one match', key: 'dealtMax', need: 300, max: 1, t: 2 },
   ];
+  const CH_TIER = [['Easy', 50, '#7dffa8'], ['Medium', 100, '#ffd45e'], ['Hard', 150, '#ff8a96']], chGold = def => CH_TIER[(def && def.t) || 0][1];
+  const chLeft = () => { const n = new Date(), nx = Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1), ms = Math.max(0, nx - n.getTime()), h = Math.floor(ms / 3600000), m = Math.floor(ms % 3600000 / 60000), sc = Math.floor(ms % 60000 / 1000); return h + 'h ' + String(m).padStart(2, '0') + 'm ' + String(sc).padStart(2, '0') + 's'; };
+  setInterval(() => { try { const el = document.getElementById('chT'); if (el) el.textContent = chLeft(); } catch (e) {} }, 1000);
   const CH_COST = 10, CH_GOLD = 50, today = () => new Date().toISOString().slice(0, 10);
   window.ECON = Object.assign(window.ECON || {}, { challengeGold: CH_GOLD, challengeSwap: CH_COST });
   function chState() { if (!PR.ch || PR.ch.day !== today()) { PR.ch = { day: today(), list: CH_POOL.slice().sort(() => Math.random() - .5).slice(0, 5).map(c => ({ id: c.id, p: 0, done: 0 })) }; try { save(); } catch (e) {} } return PR.ch; }
   function chProgress(d) { const st = chState(), got = [];
     for (const c of st.list) { if (c.done) continue; const def = CH_POOL.find(q => q.id === c.id); if (!def) continue; const v = d[def.key] || 0; c.p = def.max ? Math.max(c.p, v) : c.p + v;
-      if (c.p >= def.need) { c.done = 1; c.gold = CH_GOLD; c.claimed = 0; got.push(def.n); } }
+      if (c.p >= def.need) { c.done = 1; c.gold = chGold(def); c.claimed = 0; got.push(def.n); PR.chDone = PR.chDone || [0, 0, 0]; PR.chDone[def.t || 0]++; } }
     try { save(); } catch (e) {} if (got.length) setTimeout(() => toast('Challenge done: ' + got[0] + (got.length > 1 ? ' (+' + (got.length - 1) + ' more)' : '') + '. Collect it in Challenges.'), 4200); chDot(); }
   function chDot() { const st = chState(), el = document.getElementById('chDot'), ready = st.list.filter(c => c.done && c.claimed === 0).length; if (el) { el.textContent = st.list.filter(c => c.done).length + '/5'; el.classList.toggle('ready', ready > 0); } }
   window.collectChallenge = function (i) { const st = chState(), c = st.list[i]; if (!c || !c.done || c.claimed !== 0) return; c.claimed = 1; const g = c.gold || CH_GOLD; PR.coins = (PR.coins || 0) + g; try { save(); sfx('ui_coin'); } catch (e) {} refreshMeta(); toast(`+${g} gold`); openChallenges(); };
   window.swapChallenge = function (i) { const st = chState(), c = st.list[i]; if (!c || !c.done || PR.coins < CH_COST) return; const free = CH_POOL.filter(q => !st.list.some(l => l.id === q.id)); if (!free.length) return; PR.coins -= CH_COST; try { sfx('ui_deal'); setTimeout(() => { try { sfx('ui_pick'); } catch (e) {} }, 140); } catch (e) {} st.list[i] = { id: free[Math.random() * free.length | 0].id, p: 0, done: 0 }; try { save(); } catch (e) {} refreshMeta(); openChallenges(); };
   window.openChallenges = function () { const st = chState();
-    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Daily Challenges</div><div class="ssub" style="margin:0">New set every day. Each one pays ${CH_GOLD} gold.</div><div class="chl">${st.list.map((c, i) => { const def = CH_POOL.find(q => q.id === c.id) || { n: c.id, need: 1 };
-      return `<div class="chrow ${c.done ? 'done' : ''}"><div class="cg"><b>${def.n}</b><div class="chbar"><i style="width:${Math.min(100, c.p / def.need * 100)}%"></i><span>${c.done ? 'Done' : Math.floor(Math.min(c.p, def.need)) + ' / ' + def.need}</span></div>${c.done && c.claimed !== 0 ? `<small>+${c.gold || CH_GOLD} gold collected</small>` : ''}</div>${c.done && c.claimed === 0 ? `<button class="chcol" onclick="collectChallenge(${i})">Collect<small><span class="ci coin-i"></span>${c.gold || CH_GOLD}</small></button>` : c.done ? `<button onclick="swapChallenge(${i})" ${PR.coins < CH_COST ? 'disabled' : ''}>New<small><span class="ci coin-i"></span>${CH_COST}</small></button>` : ''}</div>`; }).join('')}</div>`;
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Daily Challenges</div><div class="ssub" style="margin:0">A free new set in <b id="chT" style="color:#ffd45e">${chLeft()}</b>. Easy pays 50 gold, Medium 100, Hard 150.</div><div class="chl">${st.list.map((c, i) => { const def = CH_POOL.find(q => q.id === c.id) || { n: c.id, need: 1 };
+      const tr = CH_TIER[def.t || 0];
+      return `<div class="chrow ${c.done ? 'done' : ''}"><div class="cg"><b>${def.n} <em style="font:800 10px Nunito;font-style:normal;letter-spacing:.5px;text-transform:uppercase;color:#17131f;background:${tr[2]};border:1.5px solid #000;border-radius:6px;padding:1px 5px;margin-left:4px;vertical-align:middle">${tr[0]} · ${tr[1]}</em></b><div class="chbar"><i style="width:${Math.min(100, c.p / def.need * 100)}%"></i><span>${c.done ? 'Done' : Math.floor(Math.min(c.p, def.need)) + ' / ' + def.need}</span></div>${c.done && c.claimed !== 0 ? `<small>+${c.gold || CH_GOLD} gold collected</small>` : ''}</div>${c.done && c.claimed === 0 ? `<button class="chcol" onclick="collectChallenge(${i})">Collect<small><span class="ci coin-i"></span>${c.gold || CH_GOLD}</small></button>` : c.done ? `<button onclick="swapChallenge(${i})" ${PR.coins < CH_COST ? 'disabled' : ''}>New<small><span class="ci coin-i"></span>${CH_COST}</small></button>` : ''}</div>`; }).join('')}</div>`;
     $('sheet').classList.add('on'); };
   window.CH_DEBUG = { chProgress, chState };
   const _rmC = refreshMeta; window.refreshMeta = refreshMeta = function () { const r = _rmC.apply(this, arguments); try { chDot(); } catch (e) {} return r; };
@@ -474,7 +486,7 @@
       for (const g of golems) if (g.o === w && g.hp > 0) mine.push(g);
       for (const a of archers) if (a.o === w && a.hp > 0) mine.push(a);
       for (const e of mine) if (!e._born) e._born = ++seq;
-      if (mine.length <= 10) continue;
+      if (mine.length <= 10 || w.svAnchor) continue;   /* Survival's horde keeps its own limit of 25 */
       mine.sort((p, q) => p._born - q._born);
       for (const e of mine.slice(0, mine.length - 10)) {
         e.hp = 0; e.crumbled = 1;

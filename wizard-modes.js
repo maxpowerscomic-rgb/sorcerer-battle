@@ -130,6 +130,13 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.28', d: '24 Nov 2026', items: ['Ability and upgrade text is colour coded: health in light blue, damage in orange, cast and timing numbers in green, status effects in purple, movement in a warmer orange, and rules to keep in mind in yellow.',
+      'Daily Challenges now come in Easy (50 gold), Medium (100) and Hard (150), drawn at random, with a countdown to the next free set and four new titles for completing them.',
+      'Survival: enemies walk in from off screen. Casters open a wave as a group of 2, 4 or 6, with a fresh group every 30 seconds. Zombies pour from spawn points (2, 3, then 4; one more every 8 seconds in Endless), up to 25 on the field.',
+      'Survival: your partner drafts as many picks as you do.',
+      'A Sanctum going up dispels enemy storm clouds already inside it.',
+      'New Collapse upgrade: Amped Output, 30% larger.',
+      'Live Wire now takes your aura colour. The shop lists the ways to earn gems by playing. Hoot always suggests an ability to try.'] },
     { v: '1.0.27', d: '24 Nov 2026', items: ['The pause menu now scrolls when it is taller than the screen.', 'Survival: you and your partner aim at the nearest enemy by default, and the enemy caster target button is hidden there.', 'Survival: removed the grey outline that appeared behind some enemies.'] },
     { v: '1.0.26', d: '24 Nov 2026', items: ['Survival enemies now improve too: every wave you clear gives them one upgrade (Swift, Tough, Vicious or Swarming), shown on your draft screen. In Endless they gain one every 45 seconds.',
       'Zombie hordes also pick up Frenzy, then Grave Grip. Enemy casters get an upgrade for their own abilities per wave cleared.',

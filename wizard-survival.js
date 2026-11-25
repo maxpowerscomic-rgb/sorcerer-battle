@@ -13,7 +13,7 @@
   // each mob borrows a shadow-beast drawing and is tinted (hue turn in degrees)
   const MOBS = {
     walker: { id: 'goat', n: 'Shambler', e: '🐐', sz: .85, spd: .85, hp: 16, dmg: 5, acd: .8, path: 'line', hue: 200 },
-    runner: { id: 'rabbit', n: 'Skitter', e: '🐇', sz: .6, spd: 2.1, hp: 8, dmg: 3, acd: .45, path: 'zig', hue: 290 },
+    runner: { id: 'rabbit', n: 'Skitter', e: '🐇', sz: .6, spd: 2.1, hp: 8, dmg: 3, acd: .45, path: 'line', hue: 290 },
     brute: { id: 'ox', n: 'Hulk', e: '🐂', sz: 1.45, spd: .55, hp: 130, dmg: 12, acd: 1.1, path: 'line', hue: 105 },
     bomber: { id: 'rooster', n: 'Burster', e: '🐓', sz: .8, spd: 1.5, hp: 10, dmg: 0, acd: .2, path: 'line', hue: 130, boom: 16 },
   };
@@ -51,25 +51,26 @@
     M.sv = { kind: c.kind, endless: c.mode === 'endless', total: 0, t: 0, kills: 0, pt, group: 0, hand0: PR.hand.slice() }; M.rival = null; M.foeName = pt ? pt.n : 'The Horde'; if (pt && pt.look) M.foeLook = pt.look; try { WIN = 3; } catch (e) {} };
 
   /* ---------------- the round ---------------- */
-  const spot = me => { const a = rnd(0, 6.283), d = rnd(150, 230); return (window.TECHX && TECHX.inArena) ? TECHX.inArena(me.x + Math.cos(a) * d, me.y + Math.sin(a) * d * .8) : { x: clamp(me.x + Math.cos(a) * d, F.x0, F.x1), y: clamp(me.y + Math.sin(a) * d * .8, F.y0, F.y1) }; };
-  function spawnZombie(s, fo, me) { const wave = s.endless ? 0 : Math.min(2, M.score.me), q = spot(me); if (Math.hypot(q.x - me.x, q.y - me.y) < 90) return;
+  // (1.0.28) enemies come in from off screen: a point just outside one of the four edges
+  const edge = () => { const sd = Math.random() * 4 | 0, m = 46; return sd === 0 ? { x: rnd(F.x0, F.x1), y: F.y0 - m - 30 } : sd === 1 ? { x: rnd(F.x0, F.x1), y: F.y1 + m } : sd === 2 ? { x: F.x0 - m - 20, y: rnd(F.y0, F.y1) } : { x: F.x1 + m + 20, y: rnd(F.y0, F.y1) }; };
+  const spot = () => edge();
+  function spawnZombie(s, fo, me, at) { const wave = s.endless ? 0 : Math.min(2, M.score.me), q = at ? { x: at.x + rnd(-14, 14), y: at.y + rnd(-14, 14) } : spot(me);
     const hm = s.endless ? 1 + s.t / 70 : WAVE_MUL[wave], dm = (s.endless ? 1 : WAVE_MUL[wave]) * ramp(s.t), hp = 18 * hm;
-    const hp2 = hp * hmul(s, 'tough', .35); zombies.push({ o: fo, x: q.x, y: q.y, mx: hp2, hp: hp2, rise: 0, cd: rnd(0, .5), t: rnd(0, 9), flash: 0, lunge: 0, svMob: 1, dmg: 6 * dm * hmul(s, 'vicious', .3), spd: rnd(1.05, 1.6) * hmul(s, 'swift', .25) }); }
-  function spawnCaster(s, fo, me) { const wave = s.endless ? Math.min(2, Math.floor(s.t / 45)) : Math.min(2, M.score.me), q = spot(me); if (Math.hypot(q.x - me.x, q.y - me.y) < 120) return;
+    const hp2 = hp * hmul(s, 'tough', .35); zombies.push({ o: fo, x: q.x, y: q.y, mx: hp2, hp: hp2, rise: 1, cd: rnd(0, .5), t: rnd(0, 9), flash: 0, lunge: 0, svMob: 1, dmg: 6 * dm * hmul(s, 'vicious', .3), spd: rnd(1.05, 1.6) * hmul(s, 'swift', .25) }); }
+  function spawnCaster(s, fo, me) { const wave = s.endless ? Math.min(2, Math.floor(s.t / 45)) : Math.min(2, M.score.me), q = spot(me);
     const cls = s.kind === 'mixed' ? (Math.random() < .5 ? 'wiz' : 'sorc') : s.kind, pool = Object.keys(SP).filter(k => !SELF.has(k) && !(window.VARIANTS && VARIANTS[k]) && typeof SCHOOL_OF === 'function' && SCHOOL_OF(k) === cls && TYPE_OF[k] && ICON[k]).sort(() => Math.random() - .5), book = pool.slice(0, wave + 1); if (!book.length) return;
     const look = Object.assign(typeof randomLook === 'function' ? randomLook() : {}, { cls, pet: 'none' }), keep = M.foeLook; let wz; M.foeLook = look; try { wz = mkWiz('foe'); } finally { M.foeLook = keep; } Object.assign(wz, { petId: 'none', svSprite: 1, t: rnd(0, 9) });
     const hp = 25 * (s.endless ? 1 + s.t / 90 : 1) * hmul(s, 'tough', .35);
     const cup = new Set(); { const opts = []; for (const k of book) for (const u of (UPG[k] || [])) if (!u.sig && !u.req) opts.push(k + '.' + u.id); opts.sort(() => Math.random() - .5); for (const u of opts.slice(0, (s.hu || []).length)) cup.add(u); }   // one upgrade for its abilities per wave cleared
     zombies.push({ o: fo, x: q.x, y: q.y, mx: hp, hp, rise: 1, cd: 9, t: rnd(0, 9), flash: 0, lunge: 0, svMob: 1, svCaster: { wz, book, up: cup, i: 0, c: rnd(.4, 1.6), hx: q.x, hy: q.y, sp: hmul(s, 'swift', .25), dm: (s.endless ? 1 : WAVE_MUL[wave]) * ramp(s.t) * hmul(s, 'vicious', .3) }, dmg: .01, spd: .01, noFx: 1 });
-    try { burst(q.x, q.y - 30 * HS, 16, ['#c9b8ff', '#ffffff', '#8a6cff'], 160, 4, .45); inkRing(q.x, q.y, '#c9b8ff', 2, 6, 44, .45); } catch (e) {} }
+  }
   function spawn(s, fo, me) { if (s.kind === 'zombie') return spawnZombie(s, fo, me); if (isCast(s.kind)) return spawnCaster(s, fo, me); const wave = s.endless ? 0 : Math.min(2, M.score.me), t = s.t, r = Math.random();
     let kind = 'walker'; const late = s.endless ? t > 20 : (wave > 0 || t > 18);
     if (r < .22 && t > 6) kind = 'runner'; else if (r < .38 && late) kind = 'bomber'; else if (r < .47 && (s.endless ? t > 35 : (wave > 0 || t > 24))) kind = 'brute';
-    const b = MOBS[kind], a = rnd(0, 6.283), d = rnd(150, 230), q = (window.TECHX && TECHX.inArena) ? TECHX.inArena(me.x + Math.cos(a) * d, me.y + Math.sin(a) * d * .8) : { x: clamp(me.x + Math.cos(a) * d, F.x0, F.x1), y: clamp(me.y + Math.sin(a) * d * .8, F.y0, F.y1) };
-    if (Math.hypot(q.x - me.x, q.y - me.y) < 90) return;   // the corner pushed it too close: skip this one
+    const b = MOBS[kind], q = spot(me);
     const hm = (s.endless ? 1 + t / 70 : WAVE_MUL[wave]) * hmul(s, 'tough', .35), dm = (s.endless ? 1 : WAVE_MUL[wave]) * ramp(t) * hmul(s, 'vicious', .3), hp = b.hp * hm;
-    zombies.push({ o: fo, x: q.x, y: q.y, mx: hp, hp, rise: .3, cd: rnd(.1, .4), t: rnd(0, 9), flash: 0, lunge: 0, beast: b, hue: b.hue, spd: b.spd * hmul(s, 'swift', .25), dmg: Math.max(.01, b.dmg * dm), acd: b.acd, svMob: 1, boomD: b.boom ? b.boom * dm : 0, onHit: b.boom ? boom : null });
-    try { decals.push({ k: 'hole', x: q.x, y: q.y, t: 0, life: 3 }); } catch (e) {} }
+    zombies.push({ o: fo, x: q.x, y: q.y, mx: hp, hp, rise: 1, cd: rnd(.1, .4), t: rnd(0, 9), flash: 0, lunge: 0, beast: b, hue: b.hue, spd: b.spd * hmul(s, 'swift', .25), dmg: Math.max(.01, b.dmg * dm), acd: b.acd, svMob: 1, boomD: b.boom ? b.boom * dm : 0, onHit: b.boom ? boom : null });
+  }
   function boom(z, tgt, kind) { if (z.hp <= 0) return; const R = 46; try { inkRing(z.x, z.y, '#ff7a2a', 3, 10, R * 1.3, .5); burst(z.x, z.y - 20 * HS, 26, ['#ffb347', '#ff5a1f', '#fff'], 240, 6, .5); shake = Math.max(shake, 9); sfx('boom', { x: z.x, vol: .7 }); } catch (e) {}
     const me = ents[0]; if (!me.dead && me.ghostT <= 0 && Math.hypot(me.x - z.x, me.y - z.y) < R + 10) { const sv0 = SRC; SRC = 'horde'; try { damage(me, z.boomD, (me.x - z.x) * 4, (me.y - z.y) * 4, '#ffb347'); } finally { SRC = sv0; } }
     try { for (const c of enemyCreatures(z.o)) if (c.e.x !== undefined && Math.hypot(c.e.x - z.x, c.e.y - z.y) < R) hurtCreature(c.e, c.k, z.boomD, 'fire'); } catch (e) {}
@@ -77,7 +78,7 @@
   if (typeof startDuel === 'function') { const _sd = startDuel; window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments);
       try { const s = sv(); if (s) { const me = ents[0], fo = ents[1]; fo.svAnchor = 1; fo.petId = 'none'; fo.x = CX; fo.y = F.y0 - 300; me.x = CX; me.y = CY; me.petX = me.x - 30; me.petY = me.y + 8;
           if (M.tgtNow === undefined || M.tgtNow === 'caster') M.tgtNow = 'near'; try { V123.tgHud(); } catch (e) {}   /* in Survival you aim at whatever is nearest by default, and there is no enemy caster to pick */
-          s.t = 0; s.spT = 1.2; s.over = 0; s.seen = new Set(); s.huE = 0;
+          s.t = 0; s.spT = 1.2; s.over = 0; s.seen = new Set(); s.huE = 0; s.grpT = undefined; s.pts = null;
           s.hu = s.hu || []; if (!s.endless) { while (s.hu.length < M.score.me) hGain(s); }
           if (s.kind === 'zombie') fo.up = new Set(ZUPS.slice(0, s.endless ? 0 : M.score.me).map(u => 'zombies.' + u));
           if (s.hu.length) setTimeout(() => { try { if (!ended) text(W / 2, H / 2 - 60, 'ENEMY: ' + [...new Set(s.hu)].map(id => HUPS[id][0] + (hn(s, id) > 1 ? ' x' + hn(s, id) : '')).join(', ').toUpperCase(), '#ff9aa6', true); } catch (e) {} }, 1700); s.pc = 0; s.pi = 0; s.P = null;
@@ -92,9 +93,17 @@
           // the anchor rides the nearest mob, so every ability aims at it; with nothing alive it waits off the field
           let near = null, nd = 1e9; for (const z of mobs) { if (z.rise < 1) continue; const d = Math.hypot(z.x - me.x, z.y - me.y); if (d < nd) { nd = d; near = z; } }
           if (near) { fo.x = near.x; fo.y = near.y; } else { fo.x = me.x; fo.y = me.y - 150 < F.y0 ? me.y + 150 : me.y - 150; } fo.vx = fo.vy = 0; fo.stunT = .5; fo._immSaid = T; fo.p = 0; fo.ghostT = 0; fo.svNear = near;
-          if (s.P) { fo.maxHp = s.P.maxHp; fo.hp = Math.max(.01, s.P.hp); } else fo.hp = fo.maxHp;   /* the top bar is the partner's health; solo, it is hidden */ try { clock = s.endless ? 99 : Math.max(.5, dur - s.t); } catch (e) {}
+          fo.hp = fo.maxHp; fo.lag = fo.hp;   /* the top bar is the partner's health; solo, it is hidden */ try { clock = s.endless ? 99 : Math.max(.5, dur - s.t); } catch (e) {}
           s.spT -= dt * (s.endless ? 1 : WAVE_MUL[wave]) * ramp(s.t) * hmul(s, 'swarm', .25);
-          if (s.endless && s.t > 45 * ((s.huE || 0) + 1)) { s.huE = (s.huE || 0) + 1; const id = hGain(s); text(W / 2, H / 2 - 40, 'THE ENEMY GROWS: ' + HUPS[id][0].toUpperCase(), '#ff9aa6', true); } if (s.spT <= 0) { const cst = isCast(s.kind), zb = s.kind === 'zombie'; s.spT = (cst ? 3.4 : zb ? .62 : 1.45) * rnd(.7, 1.3); if (mobs.length < (cst ? 5 + wave : zb ? 44 : CAP)) { spawn(s, fo, me); if (!cst && s.t > (zb ? 20 : 40) && Math.random() < (zb ? .5 : .35)) spawn(s, fo, me); } }
+          if (s.endless && s.t > 45 * ((s.huE || 0) + 1)) { s.huE = (s.huE || 0) + 1; const id = hGain(s); text(W / 2, H / 2 - 40, 'THE ENEMY GROWS: ' + HUPS[id][0].toUpperCase(), '#ff9aa6', true); } if (isCast(s.kind)) {   // casters arrive in groups: 2, 4 or 6 to open the wave, then a fresh group every 30 seconds (or sooner if none are left)
+            const size = s.endless ? 2 + Math.floor(s.t / 30) : [2, 4, 6][wave], again = s.endless ? Math.min(6, 2 + Math.floor(s.t / 30)) : [2, 3, 4][wave];
+            if (s.grpT === undefined) { s.grpT = 30; for (let i = 0; i < Math.min(8, size); i++) spawnCaster(s, fo, me); }
+            s.grpT -= dt * hmul(s, 'swarm', .25); if (!mobs.length && s.grpT > 3) s.grpT = 3;
+            if (s.grpT <= 0) { s.grpT = 30; for (let i = 0; i < again && mobs.length + i < 9; i++) spawnCaster(s, fo, me); } }
+          else if (s.kind === 'zombie') {   // zombies pour in from spawn points at the edges: more points each wave, and one more every 8 seconds in Endless. Never more than 25 on the field.
+            s.pts = s.pts || []; const want = s.endless ? Math.min(12, 2 + Math.floor(s.t / 8)) : 2 + wave;   /* 2, 3 then 4 spawn points */ while (s.pts.length < want) { const e = edge(); e.c = rnd(.2, 1.6); s.pts.push(e); }
+            for (const pt of s.pts) { pt.c -= dt * ramp(s.t) * hmul(s, 'swarm', .25); if (pt.c <= 0) { pt.c = rnd(1.3, 2.1); if (mobs.length < 25) { spawnZombie(s, fo, me, pt); mobs.push(0); } } } }
+          else if (s.spT <= 0) { s.spT = 1.45 * rnd(.7, 1.3); if (mobs.length < 25) { spawn(s, fo, me); if (s.t > 40 && Math.random() < .35) spawn(s, fo, me); } }
           casters(s, fo, me, dt);
           if (!s.over && s.t >= dur && !me.dead) { s.over = 1; text(W / 2, H / 2, 'WAVE CLEARED', '#7dffa8', true); for (const z of mobs) hurtZ(z, 1e6, null, 'crush'); endRound('me', 900); }
         } catch (e) { try { window.logCrash && logCrash(e, 'svTick'); } catch (e2) {} } }
@@ -105,14 +114,17 @@
   // a hit aimed at the anchor lands on the mob it is riding
   if (typeof damage === 'function') { const _d = damage; window.damage = damage = function (t, d) { { const s0 = sv(); if (s0 && s0.castAtP && t && t.me && d > 0) { phurt(s0, d); return; } } if (t && t.svAnchor) { try { const z = t.svNear; if (z && z.hp > 0 && d > 0) hurtZ(z, d, null, 'hit'); } catch (e) {} return; } return _d.apply(this, arguments); }; }
   if (typeof drawWiz === 'function') { const _dw = drawWiz; window.drawWiz = drawWiz = function (w) { if (w && w.svAnchor) return; return _dw.apply(this, arguments); }; }
+  if (typeof kill === 'function') { const _k = kill; window.kill = kill = function (w) { if (w && w.svAnchor) { w.hp = w.maxHp; return; } return _k.apply(this, arguments); }; }   // nothing can end a wave by "killing" the anchor
 
   /* ---------------- enemy casters ---------------- */
   // each one stands off at range and casts its own small hand; the cast goes out through the anchor from where the caster stands
   function casters(s, fo, me, dt) { for (const z of zombies) { const c = z.svCaster; if (!c || z.hp <= 0) continue; const wz = c.wz;
       const dx = me.x - c.hx, dy = me.y - c.hy, d = Math.hypot(dx, dy) || 1, want = 150, mv = (d > want + 25 ? 1 : d < want - 35 ? -1 : 0) * 34 * (c.sp || 1) * dt;
-      if (mv && !(z.frozen > 0) && !(z.stun > 0)) { const q = (window.TECHX && TECHX.inArena) ? TECHX.inArena(c.hx + dx / d * mv, c.hy + dy / d * mv) : { x: c.hx + dx / d * mv, y: c.hy + dy / d * mv }; c.hx = q.x; c.hy = q.y; }
+      const out = c.hx < F.x0 + 6 || c.hx > F.x1 - 6 || c.hy < F.y0 + 6 || c.hy > F.y1 - 6;
+      if (out && !(z.frozen > 0) && !(z.stun > 0)) { const ix = CX - c.hx, iy = CY - c.hy, id = Math.hypot(ix, iy) || 1, st = 46 * (c.sp || 1) * dt; c.hx += ix / id * st; c.hy += iy / id * st; }   // still walking in from off screen
+      else if (mv && !(z.frozen > 0) && !(z.stun > 0)) { const q = (window.TECHX && TECHX.inArena) ? TECHX.inArena(c.hx + dx / d * mv, c.hy + dy / d * mv) : { x: c.hx + dx / d * mv, y: c.hy + dy / d * mv }; c.hx = q.x; c.hy = q.y; }
       z.x = c.hx; z.y = c.hy; z.cd = 9; wz.x = z.x; wz.y = z.y; wz.vx = mv ? dx / d * 30 * Math.sign(mv) : 0; wz.vy = 0; wz.t += dt; wz.face = me.x > z.x ? 1 : -1; wz.flash = z.flash; wz.recoil = Math.max(0, (wz.recoil || 0) - dt);
-      if (z.frozen > 0 || z.stun > 0 || me.dead) continue; const k = c.book[c.i % c.book.length]; c.c -= dt; wz.book = c.book; wz.i = c.i % c.book.length; wz.p = Math.max(0, 1 - c.c);
+      if (z.frozen > 0 || z.stun > 0 || me.dead || out) continue; const k = c.book[c.i % c.book.length]; c.c -= dt; wz.book = c.book; wz.i = c.i % c.book.length; wz.p = Math.max(0, 1 - c.c);
       if (c.c <= 0) { c.c = (SP[k].t || 1.5) * 1.7 + rnd(.3, 1.2); c.i++; const keep = { x: fo.x, y: fo.y, face: fo.face, lv: fo.lv, up: fo.up, i: fo.i, p: fo.p, castN: fo.castN, lastK: fo.lastK }, sc = window.CLONE_SCALE;
         // it picks you or your partner at random; aimed at the partner, the cast is thrown at where it stands and what would have struck you strikes it
         const Pw = s.P && !s.P.dead ? s.P : null, atP = Pw && Math.random() < .5, mk = { x: me.x, y: me.y };
@@ -149,12 +161,12 @@
     if (pt.hand.length < 5 && extra.length && (Math.random() < .35 || !ups.length)) { const k = extra[Math.random() * extra.length | 0]; pt.hand.push(k); pick = { k, n: SP[k].n, t: 'New ability' }; }
     else if (ups.length) { const [k, u] = ups[Math.random() * ups.length | 0]; pt.up.add(k + '.' + u.id); pick = { k, n: u.n, t: SP[k].n + ' upgrade' }; }
     if (pick) pt.log.push(pick); return pick; }
-  function pStrip() { const s = sv(), host = $('draft'); if (!host) return; let el = $('svPd'); if (!s) { if (el) el.remove(); return; } const pt = s.pt, last = pt && pt.log[pt.log.length - 1];
+  function pStrip() { const s = sv(), host = $('draft'); if (!host) return; let el = $('svPd'); if (!s) { if (el) el.remove(); return; } const pt = s.pt, last = pt && pt.log[pt.log.length - 1], npk = (() => { try { return Math.max(1, myPicks()); } catch (e) { return 1; } })(), lastN = pt ? pt.log.slice(-npk).map(q => q.n).join(', ') : '';
     const foeN = (s.endless ? 0 : M.score.me), will = s.kind === 'zombie' && !s.endless ? ZUPS.slice(0, foeN).map(u => ((UPG.zombies || []).find(q => q.id === u) || { n: u }).n) : [];
     const eh = `<em>Enemy</em><small>${(s.hu || []).length || will.length ? [...new Set(s.hu || [])].map(id => HUPS[id][0] + (hn(s, id) > 1 ? ' x' + hn(s, id) : '') + ': ' + HUPS[id][1]).concat(will).join(' · ') : 'no upgrades yet: it gains one for every wave you clear'}</small>`;
-    const h = (!pt ? '' : `<b>${esc(pt.n)}</b><span class="sv-h">${pt.hand.map(k => `<img src="${ICON[k]}">`).join('')}</span><small>${last ? 'drafted ' + esc(last.n) + ' (' + esc(last.t) + ')' : 'is choosing for itself'} · ${pt.up.size} upgrade${pt.up.size === 1 ? '' : 's'}</small>`) + eh;
+    const h = (!pt ? '' : `<b>${esc(pt.n)}</b><span class="sv-h">${pt.hand.map(k => `<img src="${ICON[k]}">`).join('')}</span><small>${last ? 'drafted ' + esc(lastN) : 'is choosing for itself'} · ${pt.up.size} upgrade${pt.up.size === 1 ? '' : 's'}</small>`) + eh;
     if (!el) { (host.querySelector('.content') || host).insertAdjacentHTML('afterbegin', '<div id="svPd"></div>'); el = $('svPd'); } el.innerHTML = h; }
-  if (typeof show === 'function') { const _sh = show; window.show = show = function (id) { const r = _sh.apply(this, arguments); try { const s = sv(); if (id === 'draft' && s && s.pt && s.draftRd !== M.round) { s.draftRd = M.round; const pk = pDraft(s); if (pk) toast(`${s.pt.n} drafted ${pk.n}`); } if (id === 'draft' && s && !s.endless) { s.hu = s.hu || []; while (s.hu.length < M.score.me) hGain(s); } if (id === 'draft') pStrip(); } catch (e) {} return r; }; }
+  if (typeof show === 'function') { const _sh = show; window.show = show = function (id) { const r = _sh.apply(this, arguments); try { const s = sv(); if (id === 'draft' && s && s.pt && s.draftRd !== M.round) { s.draftRd = M.round; let n = 1; try { n = Math.max(1, myPicks()); } catch (e) {} const got = []; for (let i = 0; i < n; i++) { const pk = pDraft(s); if (pk) got.push(pk.n); } if (got.length) toast(`${s.pt.n} drafted ${got.join(', ')}`); } if (id === 'draft' && s && !s.endless) { s.hu = s.hu || []; while (s.hu.length < M.score.me) hGain(s); } if (id === 'draft') pStrip(); } catch (e) {} return r; }; }
   window.svGroup = function () { const s = sv(); if (!s) return; s.group = s.group ? 0 : 1; groupBtn(); try { sfx('ui_click'); const me = ents[0]; text(me.x, me.y - 100 * HS, s.group ? 'REGROUP' : 'SPLIT UP', '#ffe08a'); } catch (e) {} };
   function groupBtn() { const s = sv(), b = $('battle'); if (!b) return; let g = $('svGroup'); if (!s || !s.pt) { if (g) g.style.display = 'none'; return; }
     if (!g) { b.insertAdjacentHTML('beforeend', '<button id="svGroup"></button>'); g = $('svGroup'); g.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); svGroup(); }); } g.style.display = ''; g.textContent = s.group ? 'Split up' : 'Regroup'; g.classList.toggle('on', !!s.group); }
@@ -167,6 +179,8 @@
 
   /* ---------------- battle HUD chip ---------------- */
   function hud() { const s = sv(), b = $('battle'); if (!b) return; let h = $('svHud'); if (!s) { if (h) h.style.display = 'none'; return; }
+    // the top bar is the partner's health (the anchor itself can never be hurt or killed)
+    try { if (s.P) { const f = Math.max(0, s.P.hp / s.P.maxHp) * 100 + '%', a = $('hpF'), l = $('lagF'), n = $('hpnF'); if (a && a.style.width !== f) a.style.width = f; if (l && l.style.width !== f) l.style.width = f; const tx = String(Math.ceil(Math.max(0, s.P.hp))); if (n && n.textContent !== tx) n.textContent = tx; } } catch (e) {}
     if (!h) { b.insertAdjacentHTML('beforeend', '<div id="svHud"></div>'); h = $('svHud'); } const lives = Math.max(0, 3 - M.score.foe), wave = Math.min(2, M.score.me);
     const txt = `<b>${s.endless ? 'ENDLESS' : 'WAVE ' + (wave + 1) + ' / 3'}</b><span>${s.endless ? fmt(s.total) : fmt(Math.max(0, DUR[wave] - s.t))}</span><i>${'♥'.repeat(lives)}<u>${'♥'.repeat(3 - lives)}</u></i><em>+${Math.round((ramp(s.t) - 1) * 100)}%</em>`;
     if (h._t !== txt) { h._t = txt; h.innerHTML = txt; } h.style.display = ''; }

@@ -83,6 +83,37 @@
       const H = window.V123 && V123.ok() ? V123 : null; if (H) H.hueOn(x, p.hue); try { _dp.call(this, x, p.base, t, face); } finally { if (H) H.hueOff(x); } try { petFx(x, p, performance.now() / 1000); } catch (e) {} }; }
   window.PREMIUM_PETS = PP;
 
+  /* ---------------- (1.0.28) shop: how gems are earned, and the small print ---------------- */
+  if (typeof renderShop === 'function') { const _rs2 = renderShop; window.renderShop = renderShop = function () { const r = _rs2.apply(this, arguments);
+      try { if (!$('shGemInfo')) { const at = $('mtkShop') || $('gemPacks'); if (at) at.insertAdjacentHTML('afterend', `<div id="shGemInfo"><b>Earning gems by playing</b><ul><li><em>Level up</em>: every player level pays gems.</li><li><em>Ranks</em>: reaching a new rank pays its reward once.</li><li><em>The Ladder</em>: 10 gems the first time you beat a rival, 100 for each advanced rival.</li><li><em>Fight Club</em>: win a bounty to turn 15 gems into 25, with bonus gems for beating all wizards, all sorcerers, or all six.</li><li><em>Tutorial</em>: 100 gems for finishing it.</li></ul><small>Gem packs are optional purchases made with real money through your app store account. Gems have no cash value and cannot be exchanged, transferred or refunded except where the law requires. Everything that affects a battle can be earned by playing.</small></div>`); } } catch (e) {}
+      return r; }; }
+
+  /* ---------------- (1.0.28) colour-coded ability text ----------------
+     Health is light blue, damage light orange, cast and timing numbers light green, status effects light purple,
+     movement words a warmer orange, and a sentence that states a rule to keep in mind is light yellow.
+     It only touches text that is exactly an ability or upgrade description, wherever the game shows one. */
+  const DC = [
+    ['dc-hp', /\b\d+(?:\.\d+)?%?\s+(?:more\s+|extra\s+|bonus\s+)?(?:health|durability|HP)\b|\b(?:heals?|restores?|regenerates?|mends?)(?:\s+\d+(?:\.\d+)?%?)?\b|\bfull health\b|\bhalf (?:the )?health\b/gi],
+    ['dc-dmg', /\b\d+(?:\.\d+)?%?\s+(?:more\s+|extra\s+|bonus\s+|of (?:its|the) )?damage\b|\bdeals?\s+\d+(?:\.\d+)?%?(?:\s+back)?|\b\d+(?:\.\d+)?%\s+harder\b|\bhits?\s+(?:them\s+)?\d+x\b|\b(?:double|triple) damage\b/gi],
+    ['dc-cast', /\b\d+(?:\.\d+)?%?\s+(?:faster|quicker|sooner|longer|shorter|larger|wider|further)\b|\b(?:half a|\d+(?:\.\d+)?)\s+seconds?(?:\s+(?:longer|shorter|faster))?\b|\bcast(?:s|ing)?\s+(?:time|speed)\b|\bevery (?:second|third|fourth|fifth) (?:cast|summon)\b|\b(?:twice|two|three|four|five|six) (?:shots?|bolts?|arrows?|casts?|copies|beasts?|slashes)\b/gi],
+    ['dc-st', /\b(?:stun(?:s|ned)?|slow(?:s|ed|er)?|root(?:s|ed)?|trap(?:s|ped)?|frozen|freezes?|froze|daze[sd]?|burn(?:s|ing|ed)?|poison(?:s|ed)?|bleed(?:s|ing)?|venom|grab(?:s|bed)?|silence[sd]?|alight|knock(?:s|ed|ing)?(?:\s+(?:the enemy|them|you))?\s+back|launch(?:es|ed)?|phased?|immune)\b/gi],
+    ['dc-mv', /\b(?:dash(?:es|ing)?|blinks?|teleports?|leaps?|rush(?:es)?|charges?|gallops?|pounces?|marches|flanks?|jumps?)\b/gi],
+  ];
+  const RULE = /^(?:Once |Only |One copy|Cannot|Can't|Does not|Doesn't|Not |Never|You are rooted|Leave |No repeats|It takes|While )|once per (?:loop|round)|\bcannot\b|\bcrumbles\b|\binstead of\b|\bonly (?:works|while|one)\b|\bno longer\b/i;
+  const escH = t => t.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  function tintSentence(t) { let parts = [[t, null]]; for (const [cls, re] of DC) { const next = []; for (const [txt, c] of parts) { if (c) { next.push([txt, c]); continue; } let last = 0, m; re.lastIndex = 0; while ((m = re.exec(txt))) { if (m.index > last) next.push([txt.slice(last, m.index), null]); next.push([m[0], cls]); last = m.index + m[0].length; if (!m[0].length) re.lastIndex++; } if (last < txt.length) next.push([txt.slice(last), null]); } parts = next; }
+    return parts.map(([txt, c]) => c ? `<span class="dc ${c}">${escH(txt)}</span>` : escH(txt)).join(''); }
+  function tint(t) { return (t.match(/[^.!?]+(?:[.!?]+|$)\s*/g) || [t]).map(sn => { const body = sn.replace(/\s+$/, ''), tail = sn.slice(body.length); return (RULE.test(body) ? `<span class="dc-rule">${tintSentence(body)}</span>` : tintSentence(body)) + tail; }).join(''); }   /* no lookbehind: older Safari cannot parse it */
+  let DMAP = null, DN = 0;
+  function dmap() { const n = Object.keys(SP).length; if (DMAP && DN === n) return DMAP; DMAP = new Map(); DN = n; const add = d => { if (typeof d === 'string' && d.length > 12 && !DMAP.has(d)) { try { DMAP.set(d, tint(d)); } catch (e) {} } };
+    for (const k in SP) add(SP[k].d); try { for (const k in UPG) for (const u of (UPG[k] || [])) add(u.d); } catch (e) {} try { for (const b of (typeof ZODIAC !== 'undefined' ? ZODIAC : [])) add(b.q); } catch (e) {} return DMAP; }
+  function paintText(root) { if (!root) return; const mp = dmap(), w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), hits = []; let n; while ((n = w.nextNode())) { const v = n.nodeValue; if (!v || v.length < 13) continue; const p = n.parentNode; if (!p || (p.classList && p.classList.contains('dc')) || p.nodeName === 'SCRIPT' || p.nodeName === 'STYLE') continue; const t = v.trim(); if (mp.has(t)) hits.push([n, t]); }
+    for (const [nd, t] of hits) { const sp = document.createElement('span'); sp.className = 'dc-wrap'; sp.innerHTML = mp.get(t); nd.parentNode.replaceChild(sp, nd); } }
+  try { let queued = new Set(), raf = 0; const flush = () => { raf = 0; const L = [...queued]; queued = new Set(); for (const el of L) { try { if (el.isConnected) paintText(el); } catch (e) {} } };
+    const ob = new MutationObserver(ms => { for (const m of ms) { for (const nd of m.addedNodes) { if (nd.nodeType === 1) { if (!(nd.classList && nd.classList.contains('dc-wrap'))) queued.add(nd); } else if (nd.nodeType === 3 && nd.parentNode && nd.parentNode.nodeType === 1 && !(nd.parentNode.classList && (nd.parentNode.classList.contains('dc') || nd.parentNode.classList.contains('dc-wrap')))) queued.add(nd.parentNode); } } if (queued.size && !raf) raf = setTimeout(flush, 30); });
+    for (const id of ['sheetP', 'draft', 'order', 'spells', 'repBody', 'upDesc']) { const el = $(id); if (el) ob.observe(el, { childList: true, subtree: true }); } } catch (e) {}
+  window.DESC_TINT = tint;
+
   const css = document.createElement('style');
   css.textContent = `
   /* (1.0.27) the pause menu scrolls when it is taller than the screen */
@@ -95,6 +126,8 @@
   #bellBtn.hm-due::after{content:"";position:absolute;top:-4px;right:-4px;width:11px;height:11px;border-radius:50%;background:#ff4a5a;border:2px solid #000}
   .hm-login{display:flex;align-items:center;gap:8px;width:100%;margin:8px 0 10px;padding:10px 12px;border-radius:14px;border:2px solid #000;background:linear-gradient(#8a6bff,#5b3bd1);color:#fff;box-shadow:0 3px 0 #000;text-align:left}
   .hm-login b{font:15px 'Lilita One';font-weight:400;letter-spacing:.3px}.hm-login small{flex:1;font:800 11.5px Nunito;color:#e6defc}.hm-login i{font:20px 'Lilita One';font-style:normal}.hm-login.due{background:linear-gradient(#ffe27a,#f0a830);color:#2a1600}.hm-login.due small{color:#5a3a00}
+  #shGemInfo{margin:10px 0 4px;padding:10px 12px;border-radius:14px;border:2px solid #000;background:#171029}#shGemInfo b{font:14px 'Lilita One';font-weight:400;letter-spacing:.4px;color:#f3ecff}#shGemInfo ul{margin:6px 0 8px;padding-left:18px}#shGemInfo li{font:800 12px/1.4 Nunito;color:#d6cbf5}#shGemInfo li em{font-style:normal;color:#ffd45e}#shGemInfo small{display:block;font:700 10.5px/1.4 Nunito;color:#9a8cc0}
+  .dc-hp{color:#9fd8ff}.dc-dmg{color:#ffc27a}.dc-cast{color:#a8f0b0}.dc-st{color:#d9b8ff}.dc-mv{color:#ffa98a}.dc-rule{color:#fff0a0}.dc{font-weight:900}.dc-rule{font-weight:inherit}
   .atk-h{grid-column:1/-1;font:15px 'Lilita One';letter-spacing:.6px;text-transform:uppercase;color:#f3ecff;margin:6px 2px 0;text-shadow:0 2px 0 #000}.atk-foot{grid-column:1/-1;font:800 11.5px Nunito;color:#b9a9e6;text-align:center;margin:4px 0 30px}
   .item.atk-t.lock canvas{filter:none!important;opacity:1!important}.item.atk-t .lk{left:8px!important;top:8px!important;right:auto!important;bottom:auto!important;width:22px!important;height:22px!important;transform:none!important}
   .item.atk-t .atk-n{display:block;font:800 11px Nunito;color:#ffd45e;margin-top:-2px}`;

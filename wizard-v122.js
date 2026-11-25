@@ -36,7 +36,7 @@
   /* ---------------- aura styles ---------------- */
   const AS = window.AURA_STYLES || (window.AURA_STYLES = {});
   // crackling arcs leaping around the body
-  AS.arcs = function (x, w, inten, l, m) { const L = rgb(l), t = T; x.save(); x.translate(w.x, w.y - 40 * HS); x.globalCompositeOperation = 'lighter'; x.lineCap = 'round'; x.lineJoin = 'round';
+  AS.arcs = function (x, w, inten, l, m) { const L = rgb(m) /* (1.0.28) the saturated aura colour, so the arcs read as violet, gold, etc. and not near-white */, t = T; x.save(); x.translate(w.x, w.y - 40 * HS); x.globalCompositeOperation = 'lighter'; x.lineCap = 'round'; x.lineJoin = 'round';
     for (let i = 0; i < 5; i++) { const seed = Math.floor(t * 9 + i * 3.7), rr = k => { const s = Math.sin((seed + k) * 91.7) * 43758.5; return s - Math.floor(s); }, a0 = rr(1) * 6.283, a1 = a0 + 1 + rr(2) * 1.6, R = 30 * SC;
       x.beginPath(); for (let j = 0; j <= 5; j++) { const u = j / 5, a = a0 + (a1 - a0) * u, r0 = R * (.8 + rr(10 + j) * .5); x.lineTo(Math.cos(a) * r0, Math.sin(a) * r0 * 1.5); }
       x.strokeStyle = `rgba(${L},${.5 * inten})`; x.lineWidth = 5; x.stroke(); x.strokeStyle = `rgba(255,255,255,${.95 * inten})`; x.lineWidth = 1.6; x.stroke(); }
