@@ -78,7 +78,7 @@
   if (typeof startDuel === 'function') { const _sd = startDuel; window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments);
       try { const s = sv(); if (s) { const me = ents[0], fo = ents[1]; fo.svAnchor = 1; fo.petId = 'none'; fo.x = CX; fo.y = F.y0 - 300; me.x = CX; me.y = CY; me.petX = me.x - 30; me.petY = me.y + 8;
           if (M.tgtNow === undefined || M.tgtNow === 'caster') M.tgtNow = 'near'; try { V123.tgHud(); } catch (e) {}   /* in Survival you aim at whatever is nearest by default, and there is no enemy caster to pick */
-          s.t = 0; s.spT = 1.2; s.over = 0; s.seen = new Set(); s.huE = 0; s.grpT = undefined; s.pts = null;
+          s.t = 0; s.spT = 1.2; s.over = 0; s.seen = new Set(); s.drops = []; s.huE = 0; s.grpT = undefined; s.pts = null;
           s.hu = s.hu || []; if (!s.endless) { while (s.hu.length < M.score.me) hGain(s); }
           if (s.kind === 'zombie') fo.up = new Set(ZUPS.slice(0, s.endless ? 0 : M.score.me).map(u => 'zombies.' + u));
           if (s.hu.length) setTimeout(() => { try { if (!ended) text(W / 2, H / 2 - 60, 'ENEMY: ' + [...new Set(s.hu)].map(id => HUPS[id][0] + (hn(s, id) > 1 ? ' x' + hn(s, id) : '')).join(', ').toUpperCase(), '#ff9aa6', true); } catch (e) {} }, 1700); s.pc = 0; s.pi = 0; s.P = null;
@@ -91,7 +91,8 @@
   if (typeof update === 'function') { const _u = update; window.update = update = function (dt) { const s = sv();
       if (s && typeof ents !== 'undefined' && ents && ents[1] && !ended && !(introT > 0)) { try { const me = ents[0], fo = ents[1], wave = Math.min(2, M.score.me), dur = s.endless ? Infinity : DUR[wave];
           s.t += dt; s.total += dt; const mobs = zombies.filter(z => z.svMob && z.hp > 0);
-          s.seen = s.seen || new Set(); for (const z of s.seen) if (z.hp <= 0) { s.seen.delete(z); s.kills++; } for (const z of mobs) s.seen.add(z);
+          s.seen = s.seen || new Set(); for (const z of s.seen) if (z.hp <= 0) { s.seen.delete(z); s.kills++; if (s.endless) dropRoll(s, z); }
+          dropTick(s, me, dt); for (const z of mobs) s.seen.add(z);
           // the anchor rides the nearest mob, so every ability aims at it; with nothing alive it waits off the field
           let near = null, nd = 1e9; for (const z of mobs) { if (z.rise < 1) continue; const d = Math.hypot(z.x - me.x, z.y - me.y); if (d < nd) { nd = d; near = z; } }
           if (near) { fo.x = near.x; fo.y = near.y; } else { fo.x = me.x; fo.y = me.y - 150 < F.y0 ? me.y + 150 : me.y - 150; } fo.vx = fo.vy = 0; fo.stunT = .5; fo._immSaid = T; fo.p = 0; fo.ghostT = 0; fo.svNear = near;
@@ -117,6 +118,29 @@
   if (typeof damage === 'function') { const _d = damage; window.damage = damage = function (t, d) { { const s0 = sv(); if (s0 && s0.castAtP && t && t.me && d > 0) { phurt(s0, d); return; } } if (t && t.svAnchor) { try { const z = t.svNear; if (z && z.hp > 0 && d > 0) hurtZ(z, d, null, 'hit'); } catch (e) {} return; } return _d.apply(this, arguments); }; }
   if (typeof drawWiz === 'function') { const _dw = drawWiz; window.drawWiz = drawWiz = function (w) { if (w && w.svAnchor) return; return _dw.apply(this, arguments); }; }
   if (typeof kill === 'function') { const _k = kill; window.kill = kill = function (w) { if (w && w.svAnchor) { w.hp = w.maxHp; return; } return _k.apply(this, arguments); }; }   // nothing can end a wave by "killing" the anchor
+
+  /* ---------------- (1.0.32.2) Endless: upgrade drops ----------------
+     A defeated enemy may drop an upgrade crystal: 15% a basic upgrade, 10% a tier 2 upgrade, 5% a signature (tier 3) upgrade.
+     It floats to you; touching it pauses the run and offers three upgrades of that tier for abilities in your hand. Your partner takes one of the same tier.
+     So the run is not one long menu: one crystal at a time, and none for 12 seconds after a pick. */
+  const DTIER = [null, ['Upgrade', '#bfe6ff', '#3b9bff'], ['Tier 2 upgrade', '#ffc27a', '#e0661a'], ['Signature upgrade', '#ffe27a', '#c9861a']];
+  function dropRoll(s, z) { s.drops = s.drops || []; if (s.drops.length || T - (s.lastDraft || -99) < 12) return; const r = Math.random(), tier = r < .05 ? 3 : r < .15 ? 2 : r < .30 ? 1 : 0; if (!tier) return;
+    s.drops.push({ x: clamp(z.x, F.x0 + 10, F.x1 - 10), y: clamp(z.y, F.y0 + 10, F.y1 - 10), t: 0, tier }); try { burst(z.x, z.y - 20 * HS, 14, [DTIER[tier][1], '#ffffff'], 160, 4, .45); sfx('ui_deal', { x: z.x, rate: 1.4 }); } catch (e) {} }
+  function dropTick(s, me, dt) { for (const d of (s.drops || [])) { d.t += dt; if (d.t > .7) { const dx = me.x - d.x, dy = me.y - d.y, dd = Math.hypot(dx, dy) || 1, sp = Math.min(420, 140 + d.t * 220); d.x += dx / dd * Math.min(dd, sp * dt); d.y += dy / dd * Math.min(dd, sp * dt); if (dd < 18 && !paused) { s.drops = s.drops.filter(q => q !== d); openDrop(s, d.tier); return; } } } }
+  const tierFits = (u, k, have, tier) => { if (have.has(k + '.' + u.id)) return false; const reqOk = !u.req || have.has(k + '.' + u.req); if (!reqOk) return false; return tier === 3 ? !!u.sig : tier === 2 ? !u.sig && (!!u.req || !!u.rare) : !u.sig && !u.req && !u.rare; };
+  function optionsFor(hand, have, tier) { for (let t = tier; t >= 1; t--) { const L = []; for (const k of new Set(hand)) for (const u of (UPG[k] || [])) if (tierFits(u, k, have, t)) L.push({ k, u, t }); if (L.length) return L.sort(() => Math.random() - .5); } return []; }
+  function openDrop(s, tier) { const ops = optionsFor(M.me.book, M.me.up, tier).slice(0, 3);
+    if (!ops.length) { PR.coins = (PR.coins || 0) + 25; try { save(); text(ents[0].x, ents[0].y - 100 * HS, '+25 GOLD', '#ffd45e', true); sfx('ui_coin'); } catch (e) {} s.lastDraft = T; return; }
+    paused = true; s.dropOps = ops; const b = $('battle'); let el = $('svDrop'); if (!el) { b.insertAdjacentHTML('beforeend', '<div id="svDrop"></div>'); el = $('svDrop'); } const t0 = ops[0].t, tt = DTIER[t0];
+    el.innerHTML = `<div class="svd-box"><div class="svd-h" style="--a:${tt[1]};--b:${tt[2]}">${tt[0]}</div><div class="svd-l">${ops.map((o, i) => `<button onclick="svDropPick(${i})"><img src="${ICON[o.k]}"><span><b>${esc(o.u.n)}</b><small>${esc(SP[o.k].n)}</small><em>${esc(o.u.d)}</em></span></button>`).join('')}</div></div>`;
+    el.style.display = 'grid'; try { sfx('ui_unlock'); } catch (e) {} }
+  window.svDropPick = function (i) { const s = sv(); if (!s || !s.dropOps) return; const o = s.dropOps[i]; if (!o) return; M.me.up.add(o.k + '.' + o.u.id); s.dropOps = null; s.lastDraft = T; const el = $('svDrop'); if (el) el.style.display = 'none'; paused = false; try { last = performance.now(); } catch (e) {}
+    try { text(ents[0].x, ents[0].y - 100 * HS, o.u.n.toUpperCase(), DTIER[o.t][1], true); sfx('ui_pick'); } catch (e) {}
+    if (s.pt) { const po = optionsFor(s.pt.hand, s.pt.up, o.t); if (po.length) { const q = po[0]; s.pt.up.add(q.k + '.' + q.u.id); s.pt.log.push({ k: q.k, n: q.u.n, t: SP[q.k].n + ' upgrade' }); try { toast(`${s.pt.n} took ${q.u.n}`); } catch (e) {} } } };
+  function drawDrops() { const s = sv(); if (!s || !s.drops || !s.drops.length) return; const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (const d of s.drops) { const tt = DTIER[d.tier], bob = Math.sin(d.t * 6) * 3, y = d.y - 24 * HS + bob; x.globalCompositeOperation = 'lighter'; const g = x.createRadialGradient(d.x, y, 2, d.x, y, 22); g.addColorStop(0, tt[1]); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.beginPath(); x.arc(d.x, y, 22, 0, 7); x.fill();
+      x.globalCompositeOperation = 'source-over'; x.fillStyle = tt[1]; x.strokeStyle = '#000'; x.lineWidth = 2; x.beginPath(); x.moveTo(d.x, y - 10); x.lineTo(d.x + 7, y); x.lineTo(d.x, y + 10); x.lineTo(d.x - 7, y); x.closePath(); x.fill(); x.stroke(); x.fillStyle = '#ffffff'; x.globalAlpha = .7; x.beginPath(); x.moveTo(d.x - 2, y - 6); x.lineTo(d.x + 2, y - 1); x.lineTo(d.x - 3, y + 1); x.closePath(); x.fill(); x.globalAlpha = 1; }
+    x.restore(); }
 
   /* ---------------- enemy casters ---------------- */
   // each one stands off at range and casts its own small hand; the cast goes out through the anchor from where the caster stands
@@ -176,6 +200,7 @@
       // (1.0.27) the unseen anchor is moved off the field while the frame is drawn, so nothing that follows a caster around (aura, stun stars, glow) shows up on the mob it is riding
       let hid = null; try { const s0 = sv(), fo = s0 && typeof ents !== 'undefined' && ents && ents[1]; if (fo && fo.svAnchor) { hid = { fo, x: fo.x, y: fo.y, st: fo.stunT }; fo.x = -4000; fo.y = -4000; fo.stunT = 0; } } catch (e) {}
       let r; try { r = _r.apply(this, arguments); } finally { if (hid) { hid.fo.x = hid.x; hid.fo.y = hid.y; hid.fo.stunT = hid.st; } }
+      try { if ($('battle').classList.contains('on')) drawDrops(); } catch (e) {}
       try { const s1 = sv(), q = $('qF'); if (s1 && s1.pt && q) { const n = s1.pt.hand.length, cur = s1.pi % n, k = s1.pt.hand[cur], need = (SP[k].t || 1.5) * 1.25; if (q.children.length !== n) q.innerHTML = s1.pt.hand.map(k2 => `<div class="qi rev" onclick="tipFromQueue(this,'${k2}','foe')"><img src="${ICON[k2]}"></div>`).join(''); for (let i = 0; i < q.children.length; i++) { q.children[i].style.opacity = s1.P && s1.P.dead ? '.35' : i === cur ? '1' : '.85'; q.children[i].classList.toggle('now', i === cur && !(s1.P && s1.P.dead)); if (i === cur) q.children[i].style.setProperty('--p', Math.min(1, s1.pc / need)); } } } catch (e) {}
       try { const s = sv(); if (s && s.P && $('battle').classList.contains('on') && !(s.P.dead > 1.2)) { const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0); drawWiz(s.P); x.restore(); } } catch (e) {}
       return r; }; }
@@ -233,6 +258,10 @@
   css.textContent = `
   #svHud{position:absolute;left:50%;top:152px;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:9px;padding:5px 12px;border-radius:14px;border:2px solid #000;background:#171029;box-shadow:0 3px 0 #000;pointer-events:none;white-space:nowrap}
   #svGroup{position:absolute;right:6px;top:calc(50% + 78px);z-index:4;font:12px 'Lilita One';letter-spacing:.3px;padding:7px 8px;border-radius:11px;border:2px solid #000;background:#1a1236;color:#d6cbf5;box-shadow:0 2px 0 #000;touch-action:none}#svGroup.on{background:linear-gradient(#ffe27a,#f0a830);color:#2a1600}
+  #svDrop{position:absolute;inset:0;z-index:30;display:none;place-items:center;background:#0009;padding:16px;box-sizing:border-box}.svd-box{width:100%;max-width:360px;background:linear-gradient(#2c2150,#150f27);border:3px solid #000;border-radius:20px;padding:14px;box-shadow:0 8px 0 #000}
+  .svd-h{font:20px 'Lilita One';text-align:center;letter-spacing:.5px;color:#1a0f00;background:linear-gradient(var(--a),var(--b));border:2px solid #000;border-radius:12px;padding:6px 0;margin-bottom:10px}
+  .svd-l{display:flex;flex-direction:column;gap:8px}.svd-l button{display:flex;gap:10px;align-items:center;text-align:left;padding:9px 10px;border-radius:14px;border:2px solid #000;background:#1a1236;color:#f3ecff;box-shadow:0 3px 0 #000;cursor:pointer}.svd-l img{width:44px;height:44px;border-radius:12px;border:2px solid #000;flex:none}
+  .svd-l span{display:flex;flex-direction:column;gap:2px;min-width:0}.svd-l b{font:16px 'Lilita One';font-weight:400}.svd-l small{font:800 11px Nunito;color:#b9a9e6}.svd-l em{font:700 12px/1.35 Nunito;font-style:normal;color:#e6defc}
   #svPd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 10px 0;padding:7px 10px;border-radius:12px;border:2px solid #000;background:#171029;position:relative;z-index:3}#svPd b{font:14px 'Lilita One';font-weight:400;color:#ffd45e}#svPd small{font:800 11.5px Nunito;color:#d6cbf5;flex:1 1 100%}#svPd em{font:14px 'Lilita One';font-style:normal;color:#ff9aa6}
   #svHud b{font:13px 'Lilita One';font-weight:400;letter-spacing:.6px;color:#ffd45e}#svHud span{font:15px 'Lilita One';color:#fff;min-width:38px;text-align:center}#svHud i{font-style:normal;color:#ff5a6e;font-size:14px;letter-spacing:1px}#svHud i u{text-decoration:none;color:#ffffff2e}#svHud em{font:800 11px Nunito;font-style:normal;color:#ff9aa6}
   .sv-tabs{display:flex;gap:6px;background:#0007;border:2px solid #000;border-radius:14px;padding:4px;margin:6px 0 10px}.sv-tabs button{flex:1;font:15px 'Lilita One';letter-spacing:.3px;padding:8px 0;border-radius:10px;border:0;background:transparent;color:#b9a9e6}.sv-tabs button.on{background:linear-gradient(#4a3a80,#2b2050);color:#fff;box-shadow:0 2px 0 #000}

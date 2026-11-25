@@ -74,6 +74,8 @@
       try { if (typeof ents !== 'undefined' && ents && ents.length && !ended && !(introT > 0)) bodyBlock(); } catch (e) { try { window.logCrash && logCrash(e, 'bodyBlock'); } catch (e2) {} }
       const r = _u.apply(this, arguments);
       try { if (typeof ents !== 'undefined' && ents && ents.length && !ended) { collapseTick(dt); drawTick(); hopTick(dt); guardTick(dt); } else if (ended) caught.clear(); } catch (e) { try { window.logCrash && logCrash(e, 'v126'); } catch (e2) {} }
+      // a beam stopped on a big summon burns it even when its centre sits a little off the beam's line
+      try { if (typeof cannons !== 'undefined' && !ended) for (const c of cannons) { const h = c.sumE; if (!h || h.T !== T || c.t >= c.dur || !(h.d >= (c.wide ? 30 : 20))) continue; const s0 = SRC; SRC = 'beam'; try { hurtCreature(h.e, h.k, 60 * dt * (U(c.o, 'beam', 'overload') ? 1.5 : 1), 'shock'); } finally { SRC = s0; } } } catch (e) {}
       return r; }; }
   if (typeof startDuel === 'function') { const _sd = startDuel; window.startDuel = startDuel = function () { caught.clear(); return _sd.apply(this, arguments); }; }
 

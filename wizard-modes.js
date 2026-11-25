@@ -130,6 +130,9 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.32.2', d: '24 Nov 2026', items: ['Endless Survival: defeated enemies can drop an upgrade crystal (15% an upgrade, 10% a tier 2 upgrade, 5% a signature upgrade). It floats to you and lets you pick one of three for your hand; your partner takes one of the same kind.',
+      'Spell Cannon beams now stop and refract on the first thing they hit, summons included, so a Juggernaut or zombie in the way takes the beam instead of you.',
+      'A beam that burns you always refracts off you, including inside a Sanctum.'] },
     { v: '1.0.32.1', d: '24 Nov 2026', items: ['The Juggernaut\'s body now blocks shots: arrows, fireballs and other bolts, ricochet runes, blood lances and Dissection slashes stop on it instead of passing through to its caster.'] },
     { v: '1.0.32', d: '24 Nov 2026', items: ['Take the Blow now throws you well clear of the attack, and nothing can hurt you for a moment afterwards.', 'Bodyguard: your Juggernaut leaps in front of a Collapse or a tier 3 technique (Repel, Dissection, Blood lance, Rushdown) aimed at you and takes it instead, once every 4 seconds.'] },
     { v: '1.0.31', d: '24 Nov 2026', items: ['Collapse (and Unrestrained Collapse) catches every summon it touches, the Juggernaut included, drags them along, and destroys them all when it ends.',
