@@ -18,6 +18,7 @@
   function land(w, s) { const z = s.z, f = w.foe, d = Math.hypot(f.x - w.x, f.y - w.y) || 1, ux = (f.x - w.x) / d, uy = (f.y - w.y) / d, mx = w.x + ux * 22, my = w.y + uy * 22;
     w.jSave = null; try { z.stun = 0; hurtZ(z, 1e6, null, 'crush'); } catch (e) {}
     w.vx -= ux * 700; w.vy -= uy * 700; if (!f.dead) { f.vx += ux * 700; f.vy += uy * 700; } w.recoil = Math.max(w.recoil || 0, .2);
+    w.jHop = { dx: -ux * 140, dy: -uy * 140, t: 0, x0: w.x, y0: w.y }; w.safeT = .9;   // (1.0.32) the Juggernaut throws its caster well clear, and nothing touches them for a moment
     try { X.addFx && X.addFx({ k: 'clash', x: mx, y: my - 40 * HS, life: 1.1, a: Math.atan2(uy, ux) }); } catch (e) {}
     for (let i = 0; i < 22; i++) { const an = rnd(0, 6.283), v = rnd(40, 170); P({ x: mx + Math.cos(an) * 8, y: my - rnd(0, 26) * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v * .5 - rnd(0, 30), color: ['#d9d3e6', '#b9b2c8', '#8f88a3', '#ffffff'][i % 4], size: rnd(7, 13), life: rnd(.7, 1.3), glow: false, grow: 2.4, drag: .9, fade: .5 }); }
     for (let i = 0; i < 18; i++) { const an = rnd(0, 6.283), v = rnd(260, 520); P({ x: mx, y: my - 40 * HS, vx: Math.cos(an) * v, vy: Math.sin(an) * v, color: i % 2 ? '#ffffff' : '#ffe08a', size: rnd(2, 3.5), life: rnd(.2, .4) }); }

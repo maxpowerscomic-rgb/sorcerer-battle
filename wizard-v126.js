@@ -29,8 +29,36 @@
       for (const q of list) { const e = q.e; if (!e || e.x === undefined || held.has(e) || c.swept.has(e)) continue; if (Math.hypot(e.x - c.x, e.y - c.y) < 30) { c.swept.add(e); const s0 = SRC; SRC = 'polarity'; try { if (q.k === 'z' && typeof hurtZ === 'function') hurtZ(e, 2, null, 'crush'); else hurtCreature(e, q.k, 2, 'crush'); } catch (e2) {} finally { SRC = s0; } try { text(e.x, e.y - 50 * HS, '2', '#bfe6ff'); } catch (e2) {} } }
       const f = c.o.foe; if (f && !f.dead && !held.has(f) && !c.swept.has(f) && Math.hypot(f.x - c.x, f.y - c.y) < 30) { c.swept.add(f); const s0 = SRC; SRC = 'polarity'; try { damage(f, 2, 0, 0, '#bfe6ff'); } finally { SRC = s0; } } } }
 
+  /* ---------------- (1.0.32) the Juggernaut as a bodyguard ----------------
+     Take the Blow throws its caster back out of harm's way: a short hop away from the threat, and 0.9 s in which nothing can hurt them.
+     With Bodyguard, the Juggernaut also leaps into the path of a big incoming technique aimed at its caster and takes it instead:
+     Collapse, or a tier 3 Repel orb, Dissection slash, Blood lance or Rushdown. Once every 4 seconds. */
+  function hopTick(dt) { for (const w of ents) { if (w.safeT > 0) w.safeT -= dt; const h = w.jHop; if (!h) continue; h.t += dt; const k = Math.min(1, h.t / .35), e = 1 - (1 - k) * (1 - k);
+      w.x = clamp(h.x0 + h.dx * e, F.x0 + 8, F.x1 - 8); w.y = clamp(h.y0 + h.dy * e, F.y0 + 8, F.y1 - 8); w.vx = w.vy = 0; if (k >= 1) w.jHop = null; } }
+  if (typeof damage === 'function') { const _dS = damage; window.damage = damage = function (t, d) { if (t && t.safeT > 0 && d > 0) return; return _dS.apply(this, arguments); }; }
+  const tierAt = (w, k) => { try { return tierOf(w, k); } catch (e) { return 1; } };
+  function threats(w) { const out = [], f = w.foe; const toward = (x, y, vx, vy) => { const dx = w.x - x, dy = w.y - y, d = Math.hypot(dx, dy) || 1; return d < 170 && (vx * dx + vy * dy) / d > 40; };
+    for (const c of orbs()) { if (c.o === w || c.life <= 0 || c.draw) continue; const col = isCollapse(c); if (col && c.wind && !c.launched) continue; if ((col || (c.repel && tierAt(c.o, 'polarity') >= 3)) && toward(c.x, c.y, c.vx || 0, c.vy || 0)) out.push({ kind: col ? 'collapse' : 'repel', o: c, x: c.x, y: c.y }); }
+    try { for (const s of TECHX.slashes || []) if (s.o !== w && s.life > 0 && tierAt(s.o, 'dissect') >= 3 && toward(s.x, s.y, s.vx, s.vy)) out.push({ kind: 'slash', o: s, x: s.x, y: s.y }); } catch (e) {}
+    try { for (const b of (window.BLOOD_DEBUG ? BLOOD_DEBUG.bloods : [])) if (b.o !== w && b.k === 'lance' && b.life > 0 && tierAt(b.o, 'bloodcraft') >= 3 && toward(b.x, b.y, b.vx, b.vy)) out.push({ kind: 'lance', o: b, x: b.x, y: b.y }); } catch (e) {}
+    if (f && f.rush && f.rush.ph === 'dash' && (f.rush.tier || 1) >= 3 && f.rush.tg && f.rush.tg.e === w && Math.hypot(f.x - w.x, f.y - w.y) < 170) out.push({ kind: 'rush', o: f, x: f.x, y: f.y });
+    return out; }
+  function guardTick(dt) { for (const w of ents) { if (w.dead) continue; const j = zombies.find(z => z.o === w && z.beast && z.beast.boss && z.hp > 0 && z.rise >= 1); if (!j) continue;
+      if (j.leap) { const L = j.leap; L.t += dt; const k = Math.min(1, L.t / .2); j.x = L.x0 + (L.tx - L.x0) * k; j.y = L.y0 + (L.ty - L.y0) * k - Math.sin(k * Math.PI) * 26; j.stun = .1;
+        if (Math.random() < .8) P({ x: j.x + rnd(-14, 14), y: j.y - rnd(10, 60) * HS, vx: rnd(-20, 20), vy: -rnd(10, 40), color: Math.random() < .5 ? '#ffd75e' : '#ffffff', size: rnd(2, 3.5), life: .3 });
+        if (k >= 1) { j.leap = null; j.y = L.ty; const q = L.q, o = q.o; let took = 0;
+          if (q.kind === 'collapse') { if (o.life > 0) { o.life = 0; took = 1e6; } }
+          else if (q.kind === 'repel' || q.kind === 'slash' || q.kind === 'lance') { if (o.life > 0) { o.life = 0; took = (o.dmg || 15) * 1.5; } }
+          else if (q.kind === 'rush') { if (o.rush) { const rd = (typeof S === 'function' ? S(o, 'rush', 'dmg') : 12) * 2; o.rush = null; o.jump = 0; const d = Math.hypot(o.x - j.x, o.y - j.y) || 1; o.vx += (o.x - j.x) / d * 520; o.vy += (o.y - j.y) / d * 520; took = rd; } }
+          if (took) { const s0 = SRC; SRC = 'polarity'; try { hurtZ(j, took, null, 'crush'); } finally { SRC = s0; } text(j.x, j.y - 110 * HS, 'INTERCEPTED', '#ffd75e', true); shake = Math.max(shake, 12); try { burst(j.x, j.y - 40 * HS, 26, ['#ffd75e', '#ffffff', '#c48cff'], 260, 6, .5); sfx('c_rush', { x: j.x }); } catch (e) {} } }
+        continue; }
+      if (!U(w, 'zodiac', 'guard') || (j.icd || 0) > T || j.stun > .3 || j.frozen > 0) continue;
+      const th = threats(w); if (!th.length) continue; th.sort((a, b) => Math.hypot(a.x - w.x, a.y - w.y) - Math.hypot(b.x - w.x, b.y - w.y)); const q = th[0];
+      const tx = clamp(w.x + (q.x - w.x) * .4, F.x0 + 8, F.x1 - 8), ty = clamp(w.y + (q.y - w.y) * .4, F.y0 + 8, F.y1 - 8); if (Math.hypot(tx - j.x, ty - j.y) > 280) continue;
+      j.icd = T + 4; j.leap = { t: 0, x0: j.x, y0: j.y, tx, ty, q }; text(j.x, j.y - 100 * HS, 'GUARD!', '#ffe08a'); slow = Math.min(slow, .5); setTimeout(() => { if (!ended) slow = 1; }, 180); } }
+
   if (typeof update === 'function') { const _u = update; window.update = update = function (dt) { const r = _u.apply(this, arguments);
-      try { if (typeof ents !== 'undefined' && ents && ents.length && !ended) { collapseTick(dt); drawTick(); } else if (ended) caught.clear(); } catch (e) { try { window.logCrash && logCrash(e, 'v126'); } catch (e2) {} }
+      try { if (typeof ents !== 'undefined' && ents && ents.length && !ended) { collapseTick(dt); drawTick(); hopTick(dt); guardTick(dt); } else if (ended) caught.clear(); } catch (e) { try { window.logCrash && logCrash(e, 'v126'); } catch (e2) {} }
       return r; }; }
   if (typeof startDuel === 'function') { const _sd = startDuel; window.startDuel = startDuel = function () { caught.clear(); return _sd.apply(this, arguments); }; }
 
