@@ -130,6 +130,10 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.31', d: '24 Nov 2026', items: ['Collapse (and Unrestrained Collapse) catches every summon it touches, the Juggernaut included, drags them along, and destroys them all when it ends.',
+      'Polarity\'s Draw: whatever its catch is dragged past takes 2 damage.',
+      'The order screen lists the Zodiac upgrades you have taken.',
+      'Survival round curtain: the horde, wave number and enemies defeated on top; you and your partner with your hands below.'] },
     { v: '1.0.30', d: '24 Nov 2026', items: ['Zodiac Beasts: the Rabbit comes as a litter of 4 (Warren upgrade: 7), the Snake\'s bite poisons over 3 seconds (Snake Pit upgrade: three snakes), and you ride your Horse across the arena, trampling the enemy caster if it runs through them.',
       'The Juggernaut gets up to a walking caster\'s pace within 7 seconds.',
       'Lightning and fire leave a fighter smouldering for 3 seconds, trailing embers as they move. A Sanctum going up scatters enemy fly swarms inside it.',
