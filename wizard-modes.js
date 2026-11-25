@@ -130,6 +130,16 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.17', d: '25 Nov 2026', items: [
+      'Season Pass premium is far bigger: 500 gold every tier, 10 Echo Runes every third tier, and five premium-only cosmetics in the first tiers (Starforged robe, Comet trail, Starfire cannon, Starfall aura, Void Crown), on top of the three season bloods.',
+      'Spell Cannon colours: Gold, Jade, Violet and Aurora, earned on its ability page, plus the Starfire season skin.',
+      'When two Spell Cannons collide, the clash point throws 8 wild lasers in both beams\' colours, instead of refracting off the casters.',
+      'Abilities: your Battle Hand shows each ability\'s level.',
+      'Hoot\'s panel ends with music controls: volume, sound, next song.'] },
+    { v: '1.0.33.16', d: '25 Nov 2026', items: [
+      'Season Pass: 30 tiers each season, filled by the XP you already earn. A free track for everyone with gold, skill points and gems.',
+      'Premium track ($4.99 for the season, iOS app): about 740 gems, 9 Echo Runes, and three season blood colours: Molten, Inkwell and Prismatic. Tap Pass on the home screen.'] },
+    { v: '1.0.33.15', d: '25 Nov 2026', items: ['Drafts give 3 picks every round, and 4 after you lose a round, so builds come together sooner now that matches are first to 3.', 'Free gems are bigger: 5 every hour, 20 a day, 50 a week, and 100 every 3 weeks.'] },
     { v: '1.0.33.14', d: '25 Nov 2026', items: [
       'Free gems in the Shop: 1 every hour, 5 a day, 20 a week and 60 a month. Come back to claim each one.',
       'Reminders (iOS app, next update): choose what Hoot reminds you about in Options, Notifications. Free gems, daily rewards, new rivals, the season ending.',

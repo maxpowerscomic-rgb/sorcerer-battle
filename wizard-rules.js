@@ -134,14 +134,14 @@
                 g.E = { x: hx + ux * 5, y: hy + uy * 5 }; g.blk = null; g.dmP = c.dmP = { x: hx, y: hy }; c.dmT = T;   /* kept on the cannon: this geometry object is rebuilt every frame */
                 if (!rays.some(r => r.c === c && r.sd)) for (let i = 0; i < 4; i++) rays.push({ c, sd: 1, off: (i - 1.5) * 1.2 + rnd(-.2, .2) || .6, va: rnd(-4, 4), sc: rnd(0, .16), live: 1 }); } } } } catch (e) {} }
       // (1.0.32.2) the rule for every beam: it stops and refracts on the first thing it hits. Summons (the Juggernaut above all) take it before their caster.
-      c.sumE = null;
-      if (!ended && !g.bnd && !g.shl) { try { let best = null; for (const ce of enemyCreatures(c.o)) { const e = ce.e; if (!e || e.x === undefined || (ce.k === 'd' && e.gone)) continue;
+      c.sumE = null; const clash = c.cpT !== undefined && T - c.cpT < .08;   /* (1.0.33.17) */
+      if (!ended && !g.bnd && !g.shl && !clash) { try { let best = null; for (const ce of enemyCreatures(c.o)) { const e = ce.e; if (!e || e.x === undefined || (ce.k === 'd' && e.gone)) continue;
             const R = (c.wide ? 30 : 20) + 4 + (e.beast ? 8 * ((e.beast.sz || 1) - 1) + (e.beast.boss ? 8 : 0) : ce.k === 'g' ? 6 : 0),   /* never narrower than the beam's own burn */ q = closestOn(g.O, g.E, e.x, e.y), d = Math.hypot(e.x - q.x, e.y - q.y), along = Math.hypot(q.x - g.O.x, q.y - g.O.y);
             if (d < R && along > 44 && (!best || along < best.along)) best = { q, along, e, k: ce.k, d }; }
           if (best) { const { q, along } = best, ux = (q.x - g.O.x) / along, uy = (q.y - g.O.y) / along; g.E = { x: q.x, y: q.y }; g.blk = null; g.dmP = null; c.bdP = { x: q.x - ux * 12, y: q.y - uy * 12 }; c.bdT = T; g.sum = 1; c.sumE = { e: best.e, k: best.k, d: best.d, T };
             if (!rays.some(r => r.c === c && r.sb)) for (let i = 0; i < 4; i++) rays.push({ c, sb: 1, off: (i - 1.5) * 1.2 + rnd(-.2, .2) || .6, va: rnd(-4, 4), sc: rnd(0, .16), live: 1 }); } } catch (e) {} }
       // (1.0.22.1) a beam that reaches the enemy caster stops on them and refracts: it burns them, but does not carry on through
-      if (f && !f.dead && !ended && !g.bnd && !g.shl && !g.dmP && !g.sum && !(f.ghostT > 0)) { const q = closestOn(g.O, g.E, f.x, f.y), d = Math.hypot(f.x - q.x, f.y - q.y), along = Math.hypot(q.x - g.O.x, q.y - g.O.y);
+      if (f && !f.dead && !ended && !g.bnd && !g.shl && !g.dmP && !g.sum && !(f.ghostT > 0) && !clash) { const q = closestOn(g.O, g.E, f.x, f.y), d = Math.hypot(f.x - q.x, f.y - q.y), along = Math.hypot(q.x - g.O.x, q.y - g.O.y);
         if (d < (c.wide ? 30 : 20) + 4 && along > 44) { const ux = (q.x - g.O.x) / along, uy = (q.y - g.O.y) / along; g.E = { x: q.x, y: q.y }; g.blk = null; c.bdP = { x: q.x - ux * 12, y: q.y - uy * 12 }; c.bdT = T;
           if (!rays.some(r => r.c === c && r.sb)) for (let i = 0; i < 4; i++) rays.push({ c, sb: 1, off: (i - 1.5) * 1.2 + rnd(-.2, .2) || .6, va: rnd(-4, 4), sc: rnd(0, .16), live: 1 }); } }
       return g; }; }
@@ -244,7 +244,7 @@
     // a beam breaking on Boundary: a hard blue wall of light where it stops, and the wild rays whipping off it
     for (const r0 of rays) { if (!r0.live || r0.x0 === undefined) continue; x.save(); x.globalCompositeOperation = 'lighter'; x.lineCap = 'round';
       const n = 7, pts = []; for (let i = 0; i <= n; i++) { const u = i / n, jx = i && i < n ? rnd(-7, 7) : 0, jy = i && i < n ? rnd(-5, 5) : 0; pts.push([r0.x0 + (r0.x1 - r0.x0) * u + jx, r0.y0 + (r0.y1 - r0.y0) * u + jy]); }
-      for (const [lw, col] of [[9, r0.c.o && !r0.c.o.me ? 'rgba(255,122,134,.42)' : 'rgba(79,227,255,.42)'], [2.6, 'rgba(255,255,255,.95)']])   /* (1.0.33.10) rays take the beam's own colour */ { x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.stroke(); }
+      for (const [lw, col] of [[9, window.beamRGBA ? beamRGBA(r0.c, .42) : r0.c.o && !r0.c.o.me ? 'rgba(255,122,134,.42)' : 'rgba(79,227,255,.42)'], [2.6, 'rgba(255,255,255,.95)']])   /* (1.0.33.10) rays take the beam's own colour */ { x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.stroke(); }
       x.restore(); }
     const seen = new Set(); for (const r0 of rays) { if (!r0.live || seen.has(r0.c) || r0.x0 === undefined) continue; seen.add(r0.c); const f = r0.c.g && r0.c.g.bnd; if (!f) continue; x.save(); x.globalCompositeOperation = 'lighter'; x.translate(r0.x0, r0.y0);
       const g = x.createRadialGradient(0, 0, 2, 0, 0, 34); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(.4, 'rgba(120,200,255,.6)'); g.addColorStop(1, 'rgba(79,227,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, 34 + Math.sin(T * 40) * 4, 0, 7); x.fill();

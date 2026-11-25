@@ -128,7 +128,7 @@
     crown: 'M-9.6,2.4 L-11.8,-9.6 L-5.8,-4.6 L0,-13 L5.8,-4.6 L11.8,-9.6 L9.6,2.4 Q0,-.6 -9.6,2.4 Z',
   };
   function drawHatHD(x, w, pass, fl, sway) {
-    const id = w.hatId || 'pointy', c = w.robe, trim = w.trim;
+    let id = w.hatId || 'pointy'; const c = w.robe, trim = w.trim, VC = id === 'voidcrown'; if (VC) id = 'crown';   /* (1.0.33.17) Void Crown: the crown in violet and black, a Season Pass reward */
     if (id === 'hood') {
       // head-local shapes (head centre 0,0)
       if (pass === 'back') { const hood = 'M-11.8,9.6 C-15.4,-2 -13.4,-11.8 -3.6,-13.8 C-9,-15.4 -13,-19.6 -16,-18.2 C-13.6,-22.6 -5.4,-23 1.8,-15.4 C9.4,-14.4 13.8,-7.2 13.4,1 C13.2,5 12.2,7.6 10.6,9.8 Z';
@@ -140,10 +140,10 @@
     x.save(); x.translate(0, -7.4);                          // head-local -> brim-local
     x.rotate(sway * .02);
     if (id === 'crown') {
-      fs(x, HAT.crown, fl ? '#fff' : vgrad(x, -13, 3, '#fff3b0', '#e39a14'), 2.4);
-      if (!fl) { within(x, HAT.crown, () => { x.fillStyle = '#b8760e'; x.globalAlpha = .5; x.fillRect(3, -14, 12, 20); x.globalAlpha = 1; x.fillStyle = '#b8760e'; x.fillRect(-12, -1.6, 24, 1.2); x.strokeStyle = '#fff8'; x.lineWidth = LW * (1.2); x.beginPath(); x.moveTo(-9.6, -6.4); x.lineTo(-8.6, .4); x.stroke(); });
+      fs(x, HAT.crown, fl ? '#fff' : VC ? vgrad(x, -13, 3, '#d9c2ff', '#4a1a9a') : vgrad(x, -13, 3, '#fff3b0', '#e39a14'), 2.4);
+      if (!fl) { within(x, HAT.crown, () => { x.fillStyle = VC ? '#1e0a40' : '#b8760e'; x.globalAlpha = .5; x.fillRect(3, -14, 12, 20); x.globalAlpha = 1; x.fillStyle = VC ? '#1e0a40' : '#b8760e'; x.fillRect(-12, -1.6, 24, 1.2); x.strokeStyle = '#fff8'; x.lineWidth = LW * (1.2); x.beginPath(); x.moveTo(-9.6, -6.4); x.lineTo(-8.6, .4); x.stroke(); });
         const gem = (gx, gy, r, col) => { x.fillStyle = col; x.strokeStyle = '#000'; x.lineWidth = LW * (1.2); x.beginPath(); x.arc(gx, gy, r, 0, 7); x.fill(); x.stroke(); x.fillStyle = '#fff'; x.beginPath(); x.arc(gx - r * .3, gy - r * .35, r * .32, 0, 7); x.fill(); };
-        gem(0, -4.6, 2.5, '#ff4a5a'); gem(-6.2, -1.4, 1.6, '#5cc8ff'); gem(6.2, -1.4, 1.6, '#5cc8ff'); gem(-11.8, -10.4, 1.7, '#fff3d0'); gem(0, -13.8, 1.9, '#fff3d0'); gem(11.8, -10.4, 1.7, '#fff3d0'); }
+        const g1 = VC ? '#ffd45e' : '#ff4a5a', g2 = VC ? '#6fffe0' : '#5cc8ff', g3 = VC ? '#c48cff' : '#fff3d0'; gem(0, -4.6, 2.5, g1); gem(-6.2, -1.4, 1.6, g2); gem(6.2, -1.4, 1.6, g2); gem(-11.8, -10.4, 1.7, g3); gem(0, -13.8, 1.9, g3); gem(11.8, -10.4, 1.7, g3); }
       x.restore(); return;
     }
     if (id === 'mushroom') {
@@ -335,7 +335,7 @@
       x.strokeStyle = 'rgba(0,0,0,.75)'; x.lineWidth = .8; x.beginPath(); for (const kq of [-1.5, 0, 1.5]) { const bx = H[0] + ux * 1.3 - uy * kq, by = H[1] + uy * 1.3 + ux * kq; x.moveTo(bx, by); x.lineTo(bx + ux * 1.5, by + uy * 1.5); } x.stroke(); }
   }
   function sorcHead(x, w, pose, fl, t) {
-    const gear = w.hatId || 'pointy', c = w.robe, trim = w.trim, hair = fl ? '#fff' : (w.beardStyle === 'none' || !w.beardC ? '#221a16' : w.beardC), hairD = mul(hair === '#fff' ? '#dddddd' : hair, .68);
+    let gear = w.hatId || 'pointy'; const GVC = gear === 'voidcrown'; if (GVC) gear = 'crown'; const c = w.robe, trim = w.trim, hair = fl ? '#fff' : (w.beardStyle === 'none' || !w.beardC ? '#221a16' : w.beardC), hairD = mul(hair === '#fff' ? '#dddddd' : hair, .68);
     const flut = Math.sin(t * 6) * .12;
     if (gear === 'hood') drawHatHD(x, w, 'back', fl, 0);
     if (gear === 'feathered') { // topknot bun sits behind the head
@@ -364,7 +364,7 @@
       return;
     }
     if (masked || gear === 'feathered') return;
-    if (gear === 'crown') { fs(x, BAND, fl ? '#fff' : vgrad(x, -7, 0, '#fff3b0', '#e39a14'), 1.7); if (!fl) { x.fillStyle = '#ff4a5a'; x.strokeStyle = '#000'; x.lineWidth = LW * (1.1); x.beginPath(); x.moveTo(3.4, -8.4); x.lineTo(5.6, -5.2); x.lineTo(3.4, -2.4); x.lineTo(1.2, -5.2); x.closePath(); x.fill(); x.stroke(); } return; }
+    if (gear === 'crown') { fs(x, BAND, fl ? '#fff' : GVC ? vgrad(x, -7, 0, '#d9c2ff', '#4a1a9a') : vgrad(x, -7, 0, '#fff3b0', '#e39a14'), 1.7); if (!fl) { x.fillStyle = GVC ? '#ffd45e' : '#ff4a5a'; x.strokeStyle = '#000'; x.lineWidth = LW * (1.1); x.beginPath(); x.moveTo(3.4, -8.4); x.lineTo(5.6, -5.2); x.lineTo(3.4, -2.4); x.lineTo(1.2, -5.2); x.closePath(); x.fill(); x.stroke(); } return; }
     // headband with fluttering tails
     for (const [dy, r] of [[0, flut], [2.6, -flut * .8 + .16]]) { x.save(); x.translate(-8.6, -2); x.rotate(r); fs(x, `M0,${-1.4 + dy * .2} C-5,-3.4 -8.6,.6 -13.4,-1.8 L-12.6,1.6 C-8.6,3.6 -4.6,.4 0,${1.6 + dy * .2} Z`, F2(fl, dy ? mul(trim, .8) : trim), 1.6); x.restore(); }
     fs(x, BAND, F2(fl, trim), 1.8); if (!fl) { x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = LW * (.9); x.beginPath(); x.moveTo(-8.4, -1.6); x.bezierCurveTo(-4, -5, 5, -5.4, 9.6, -2); x.stroke(); }

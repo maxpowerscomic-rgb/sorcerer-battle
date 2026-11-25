@@ -801,7 +801,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
 <script src="wizard-tech-data.js"></script>
 <script>
 /* ================= GAME ================= */
-const ROUNDS=99;let WIN=4;const PICKS=r=>r===1?3:2;
+const ROUNDS=99;let WIN=4;const PICKS=r=>3;/* (1.0.33.15) 3 picks every round, 4 after losing one (first to 3 means fewer rounds) */
 const decider=()=>M&&M.score.me===WIN-1&&M.score.foe===WIN-1;const roundLabel=()=>M.sv?(M.sv.endless?'ENDLESS':'WAVE '+(Math.min(2,M.score.me)+1)+' / 3'):'ROUND '+M.round+(decider()?' · DECIDER':'');
 
 const ICON={};const ART_ICONS=['fireball','icewall','zombies','lightning','meteor','flies','ghost','mirror','gravity','orbs','bubbles','ricochet','archer','beam','shield'];Object.keys(SP).forEach(k=>ICON[k]=ART_ICONS.includes(k)?'art/icons/'+k+'.png':icon(k));
@@ -1311,7 +1311,7 @@ function bakeTrail(b){if(!scx)resetScars();const c=scx,L=Math.hypot(b.E.x-b.O.x,
 function drawBeamTrails(x){if(!beamTrails.length&&!cannons.length)return;x.save();x.lineCap='round';
  for(const b of beamTrails){const f=b.t/1.4;x.globalAlpha=.22*(1-f*.3);x.strokeStyle='#120a06';x.lineWidth=8*b.w;x.beginPath();x.moveTo(b.O.x,b.O.y);x.lineTo(b.E.x,b.E.y);x.stroke();}
  x.globalCompositeOperation='lighter';
- for(const b of beamTrails){const f=b.t/1.4;x.globalAlpha=Math.max(0,1-f)*.55;x.strokeStyle=f<.2?'#ffffff':b.foe?(f<.5?'#ffd0d5':'#ff7a86'):(f<.5?'#bff6ff':'#4fe3ff');x.lineWidth=(3.2-f*2)*b.w;x.beginPath();x.moveTo(b.O.x,b.O.y);x.lineTo(b.E.x,b.E.y);x.stroke();}
+ for(const b of beamTrails){const f=b.t/1.4;x.globalAlpha=Math.max(0,1-f)*.55;x.strokeStyle=f<.2?'#ffffff':b.col?b.col:b.foe?(f<.5?'#ffd0d5':'#ff7a86'):(f<.5?'#bff6ff':'#4fe3ff');x.lineWidth=(3.2-f*2)*b.w;x.beginPath();x.moveTo(b.O.x,b.O.y);x.lineTo(b.E.x,b.E.y);x.stroke();}
  // live trench right under the beam, this frame
  for(const c of cannons)if(c.g&&c.t<c.dur&&!c.clashT){const E=clipToField(c.g.O,c.g.E),w=c.wide?1.4:1;x.globalAlpha=.5;x.strokeStyle='#4fe3ff';x.lineWidth=14*w;x.beginPath();x.moveTo(c.g.O.x,c.g.O.y);x.lineTo(E.x,E.y);x.stroke();x.globalAlpha=.95;x.strokeStyle='#ffffff';x.lineWidth=4*w;x.stroke();
   if(Math.random()<.6){const u=Math.random();P({x:c.g.O.x+(E.x-c.g.O.x)*u,y:c.g.O.y+(E.y-c.g.O.y)*u,vx:rnd(-40,40),vy:rnd(-90,-30),color:['#bff6ff','#ffffff','#4fe3ff'][Math.random()*3|0],size:2,life:.35,grav:300});}}
@@ -1449,12 +1449,12 @@ function drawTotem(q){const x=ctx;x.save();x.translate(q.x,q.y);x.scale(SC,SC);x
 const despK=c=>c.desp?1+.005*Math.max(0,c.o.maxHp-c.o.hp):1,beamDps=c=>c.dps*despK(c)+(c.ramp||0);/* (1.0.33.8) c.ramp: the beam burns hotter the longer it stays on a caster (wizard-v130.js) */
 function beamGeom(c){const w=c.o,O={x:w.x+w.face*22,y:w.y},FP={x:O.x+Math.cos(c.ang)*700,y:O.y+Math.sin(c.ang)*700};const blk=wallBetween(w,O,FP);return{O,FP,E:blk?{x:blk.x,y:blk.y}:FP,blk}}
 function updateCannons(dt){
- for(const c of cannons){SRC='beam';const w=c.o;c.t+=dt;if(w.dead||ended){c.t=c.dur;continue}if(c.g&&!c.clashT){c.sc=(c.sc||0)+dt;if(c.sc>.045){c.sc=0;beamTrails.push({O:{x:c.g.O.x,y:c.g.O.y},E:clipToField(c.g.O,c.g.E),t:0,w:c.wide?1.4:1,foe:!!(c.o&&!c.o.me)});}}const f=w.foe,ta=Math.atan2(f.y-w.y,f.x-w.x);let da=ta-c.ang;while(da>Math.PI)da-=6.28;while(da<-Math.PI)da+=6.28;c.ang+=clamp(da,-.7*dt,.7*dt);c.g=beamGeom(c);}
+ for(const c of cannons){SRC='beam';const w=c.o;c.t+=dt;if(w.dead||ended){c.t=c.dur;continue}if(c.g&&!c.clashT){c.sc=(c.sc||0)+dt;if(c.sc>.045){c.sc=0;beamTrails.push({O:{x:c.g.O.x,y:c.g.O.y},E:clipToField(c.g.O,c.g.E),t:0,w:c.wide?1.4:1,foe:!!(c.o&&!c.o.me),col:window.beamCol&&c.o&&c.o.me&&PR.cway&&PR.cway.beam||window.beamCol&&c.o&&c.o.me&&PR.look&&PR.look.beamSkin?beamCol(c):null});}}const f=w.foe,ta=Math.atan2(f.y-w.y,f.x-w.x);let da=ta-c.ang;while(da>Math.PI)da-=6.28;while(da<-Math.PI)da+=6.28;c.ang+=clamp(da,-.7*dt,.7*dt);c.g=beamGeom(c);}
  // head-on clash?
  const A=cannons.find(c=>c.o.me&&c.t<c.dur),B=cannons.find(c=>!c.o.me&&c.t<c.dur);let clashing=null;
  if(A&&B){const aw=A.o,bw=B.o,ab=Math.atan2(bw.y-aw.y,bw.x-aw.x),ba=ab+Math.PI,d1=Math.abs(Math.atan2(Math.sin(A.ang-ab),Math.cos(A.ang-ab))),d2=Math.abs(Math.atan2(Math.sin(B.ang-ba),Math.cos(B.ang-ba)));
   if(d1<.6&&d2<.6&&!wallBetween(aw,aw,bw)&&!wallBetween(bw,bw,aw)){const pa=(A.dur-A.t)*A.dps,pb=(B.dur-B.t)*B.dps,sh=clamp((pa-pb)/(pa+pb),-.8,.8)*.35;
-   const k=.5+sh+Math.sin(T*30)*.02;clashing={x:aw.x+(bw.x-aw.x)*k,y:aw.y+(bw.y-aw.y)*k};A.cp=B.cp=clashing;
+   const k=.5+sh+Math.sin(T*30)*.02;clashing={x:aw.x+(bw.x-aw.x)*k,y:aw.y+(bw.y-aw.y)*k};A.cp=B.cp=clashing;A.cpT=B.cpT=T;/* (1.0.33.17) marks a clash this frame */
    if(!A.clashT){comics.push({x:clashing.x+10,y:clashing.y-110*HS,w:'KRAKOOM!',t:0,life:1.4,rot:-.15,sc:1.1});flashScreen();}A.clashT+=dt;B.clashT=A.clashT;}}
  if(clashing){const cx=clashing.x,cy=clashing.y-40*HS;shake=Math.max(shake,6);slow=.55;
   for(let i=0;i<5;i++){const an=rnd(0,6.28),v=rnd(150,380);P({x:cx,y:cy,vx:Math.cos(an)*v,vy:Math.sin(an)*v-80,color:['#ffffff','#4fe3ff','#ffd45e',A.o.robe[0],B.o.robe[0],'#ff7a86'][Math.random()*6|0],size:rnd(2,4.5),life:rnd(.5,1),grav:380});}
@@ -1476,7 +1476,7 @@ function drawCannons(x){
   x.fillStyle='#e8fcff';x.strokeStyle='#000';x.lineWidth=2.5;x.beginPath();x.arc(ox,oy,r,0,7);x.fill();x.stroke();
   if(Math.random()<f){const a=rnd(0,6.28),rr=rnd(30,60);P({x:ox+Math.cos(a)*rr,y:oy+Math.sin(a)*rr,vx:-Math.cos(a)*rr*3,vy:-Math.sin(a)*rr*3,color:'#4fe3ff',size:2.5,life:.3});}}
  for(const c of cannons){SRC='beam';if(!c.g)continue;const w=c.o,ox=w.x+w.face*22*SC*.9,oy=w.y-74*HS,end=c.cp&&c.clashT>0?{x:c.cp.x,y:c.cp.y-40*HS}:{x:c.g.E.x,y:c.g.E.y-40*HS},wid=(c.wide?30:20)*Math.min(1.7,despK(c))*(1+Math.sin(T*40)*.08)*Math.min(1,c.t*8)*Math.min(1,(c.dur-c.t)*6);
-  const col=c.o.me?'#4fe3ff':'#ff7a86';x.save();x.lineCap='round';
+  const col=window.beamCol?beamCol(c):(c.o.me?'#4fe3ff':'#ff7a86');x.save();x.lineCap='round';/* (1.0.33.17) cannon colourways */
   [['#000',wid+8],[col,wid],['#ffffff',wid*.42]].forEach(([cc,lw])=>{x.strokeStyle=cc;x.lineWidth=lw;x.beginPath();x.moveTo(ox,oy);x.lineTo(end.x,end.y);x.stroke();});
   if(c.desp){const rb=clamp((despK(c)-1)/.45,0,1);if(rb>.02){const N=28,Lr=Math.hypot(end.x-ox,end.y-oy);x.save();x.globalAlpha=rb*.9;x.lineWidth=wid*.78;for(let i=0;i<N;i++){const u0=i/N,u1=(i+1)/N;x.strokeStyle=`hsl(${(u0*360-T*420)%360+360|0},100%,62%)`;x.beginPath();x.moveTo(ox+(end.x-ox)*u0,oy+(end.y-oy)*u0);x.lineTo(ox+(end.x-ox)*u1,oy+(end.y-oy)*u1);x.stroke();}x.globalAlpha=1;x.strokeStyle='#ffffff';x.lineWidth=wid*.3;x.beginPath();x.moveTo(ox,oy);x.lineTo(end.x,end.y);x.stroke();x.restore();}}
   const L=Math.hypot(end.x-ox,end.y-oy),ux=(end.x-ox)/L,uy=(end.y-oy)/L;x.strokeStyle='#ffffffcc';x.lineWidth=2;for(let k=0;k<2;k++){x.beginPath();for(let s2=0;s2<=30;s2++){const d=s2/30*L,o=Math.sin(d*.08-T*40+k*3)*wid*.55;x.lineTo(ox+ux*d-uy*o,oy+uy*d+ux*o)}x.stroke();}
@@ -2130,5 +2130,7 @@ nav('home');
 <script src="wizard-v133.js"></script>
 <script src="wizard-v134.js"></script>
 <script src="wizard-v135.js"></script>
+<script src="wizard-v136.js"></script>
+<script src="wizard-v137.js"></script>
 <script src="wizard-release.js"></script>
 </body></html>
