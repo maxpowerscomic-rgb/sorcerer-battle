@@ -130,6 +130,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.7', d: '24 Nov 2026', items: ['Nothing pops up for a second after a screen opens or a curtain clears: tips, the tutorial and the login reward now wait.'] },
     { v: '1.0.33.6', d: '24 Nov 2026', items: ['Halt a cast: the halt button under the target buttons stops your next cast for up to 1 second (tap again to let it go), then rests for 8 seconds. A halt sign over your fighter shows it, and rivals can do it too.'] },
     { v: '1.0.33.4', d: '24 Nov 2026', items: ['When a new version is out, Hoot tells you: a notification, a red dot on Hoot, and the Help section\'s button reads New update available.', 'Hoot stays animated in his panel, and the training yard keeps going behind it.'] },
     { v: '1.0.33.3', d: '24 Nov 2026', items: ['A shorter first tutorial: just your name, path, first unlock, your hand, a first duel and a first upgrade.', 'Hoot now gives a short tip the first time you open each screen. Skip any of them, or turn tips off.', 'On an ability page, Upgrades, Matchups, Colour, Trials and Starting upgrades fold away with a tap.', 'Chests show their odds clearly.'] },

@@ -985,7 +985,7 @@
   .seasonrk{font:13px 'Lilita One';letter-spacing:.5px;color:#ffd75e;text-align:center;background:#0006;border:2px solid #000;border-radius:12px;padding:7px}`;
   document.head.appendChild(css);
   try { refreshMeta(); } catch (e) {}
-  const prompt = () => { try { if (!window.MATCH_DONE_SESSION /* (1.0.33) the login reward waits until you have played a match this session */ || !loginDue() || window.ONB_ACTIVE || !document.getElementById('home').classList.contains('on')) return; if (['sheet', 'upm', 'lvup', 'chestOv', 'pause'].some(id => { const e = document.getElementById(id); return e && (e.classList.contains('on') || (e.style.display && e.style.display !== 'none' && id !== 'sheet')); })) return; openLogin(); } catch (e) {} };
+  const prompt = () => { try { if (window.LANDED && !window.LANDED()) { setTimeout(prompt, 400); return; } if (!window.MATCH_DONE_SESSION /* (1.0.33) the login reward waits until you have played a match this session */ || !loginDue() || window.ONB_ACTIVE || !document.getElementById('home').classList.contains('on')) return; if (['sheet', 'upm', 'lvup', 'chestOv', 'pause'].some(id => { const e = document.getElementById(id); return e && (e.classList.contains('on') || (e.style.display && e.style.display !== 'none' && id !== 'sheet')); })) return; openLogin(); } catch (e) {} };
   setTimeout(prompt, 2200); const _sh = show; window.show = show = function (s) { const r = _sh.apply(this, arguments); if (s === 'home') setTimeout(prompt, 2600); return r; };
 })();
 

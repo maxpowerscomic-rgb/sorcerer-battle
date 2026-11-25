@@ -7,6 +7,17 @@
   'use strict';
   const $ = id => document.getElementById(id);
 
+  /* ---------------- (1.0.33.7) landing time ----------------
+     After any screen change, and after the opening or round curtain clears, nothing pops up for 1 second:
+     no tutorial bubble, no screen tips, no login reward. The scene itself stays live. */
+  let shownAt = performance.now(), curtainIdleAt = 0;
+  const curtainBusy = () => { const c = $('curtain'); return !!c && c.className !== 'curtain'; };
+  setInterval(() => { if (curtainBusy()) curtainIdleAt = 0; else if (!curtainIdleAt) curtainIdleAt = performance.now(); }, 100);
+  window.LANDED = () => !curtainBusy() && curtainIdleAt && performance.now() - curtainIdleAt >= 1000 && performance.now() - shownAt >= 1000;
+  if (typeof show === 'function') { const _sh = show; window.show = show = function () { shownAt = performance.now(); return _sh.apply(this, arguments); }; }
+  // the tutorial waits for the landing too
+  if (typeof onbStart === 'function') { const _ob = onbStart; window.onbStart = onbStart = function (from) { if (!window.LANDED()) { setTimeout(() => onbStart(from), 250); return; } return _ob.apply(this, arguments); }; }
+
   /* ---------------- the core tutorial: name, path, unlock, hand, first duel, spoils, first upgrade ---------------- */
   try { if (typeof ONB_STEPS !== 'undefined') {
       const drop = new Set(['look', 'spells', 'shop', 'friends', 'ranks', 'yard', 'ladder']);
@@ -40,7 +51,7 @@
   let T0 = null;   // { id, i }
   let el = null;
   function build() { if (el) return; el = document.createElement('div'); el.id = 'tipT'; el.className = 'onb'; el.innerHTML = '<div class="spot none"></div><div class="tip-shade"></div><div class="bub"></div>'; document.querySelector('.phone').appendChild(el); }
-  function startTour(id) { if (!TOURS[id] || tours()[id] || tours().__off) return; if (window.ONB_ACTIVE || !(PR.onb && PR.onb.done)) return; tours()[id] = 1; try { save(); } catch (e) {} T0 = { id, i: 0 }; build(); show(); }
+  function startTour(id) { if (!TOURS[id] || tours()[id] || tours().__off) return; if (!window.LANDED()) return; /* tried again by the timers below once the screen has landed */ if (window.ONB_ACTIVE || !(PR.onb && PR.onb.done)) return; tours()[id] = 1; try { save(); } catch (e) {} T0 = { id, i: 0 }; build(); show(); }
   function steps() { return (TOURS[T0.id] || []).filter(s => document.querySelector(s[0]) && document.querySelector(s[0]).offsetParent !== null); }
   function show() { if (!T0) return; const L = steps(); if (T0.i >= L.length) return end(); const [sel, txt] = L[T0.i], last = T0.i === L.length - 1;
     el.classList.remove('hide'); el.style.display = 'block'; const bub = el.querySelector('.bub'); bub.innerHTML = '';
@@ -56,7 +67,7 @@
     const bh = bub.offsetHeight || 130; bub.style.bottom = ''; bub.style.top = !r ? Math.max(20, (P.height - bh) / 2) + 'px' : (r.y + r.h / 2 > P.height / 2 ? Math.max(10, r.y - bh - 14) : Math.min(P.height - bh - 10, r.y + r.h + 14)) + 'px'; }
   function end() { T0 = null; if (el) { el.classList.add('hide'); el.style.display = 'none'; } }
   window.TIP_TOURS = { start: startTour, end, TOURS };
-  if (typeof nav === 'function') { const _n = nav; window.nav = nav = function (t) { const r = _n.apply(this, arguments); try { if (T0 && T0.id !== t) end(); setTimeout(() => { try { if ($(t) && $(t).classList.contains('on') && !document.querySelector('#sheet.on')) startTour(t); } catch (e) {} }, 650); } catch (e) {} return r; }; }
+  if (typeof nav === 'function') { const _n = nav; window.nav = nav = function (t) { const r = _n.apply(this, arguments); try { if (T0 && T0.id !== t) end(); [1100, 1600, 2400].forEach(ms => setTimeout(() => { try { if ($(t) && $(t).classList.contains('on') && !document.querySelector('#sheet.on') && !T0) startTour(t); } catch (e) {} }, ms)); } catch (e) {} return r; }; }
   // the home tour also starts when you come back home after the core tutorial
   setInterval(() => { try { if (!T0 && $('home') && $('home').classList.contains('on') && !document.querySelector('#sheet.on') && !window.ONB_ACTIVE && PR.onb && PR.onb.done && !tours().home) startTour('home'); else if (T0) place((steps()[T0.i] || [])[0]); } catch (e) {} }, 700);
   // replaying the tutorial resets the tips too
