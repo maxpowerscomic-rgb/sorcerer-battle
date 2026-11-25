@@ -130,6 +130,10 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.26', d: '24 Nov 2026', items: ['Survival enemies now improve too: every wave you clear gives them one upgrade (Swift, Tough, Vicious or Swarming), shown on your draft screen. In Endless they gain one every 45 seconds.',
+      'Zombie hordes also pick up Frenzy, then Grave Grip. Enemy casters get an upgrade for their own abilities per wave cleared.',
+      'Enemy casters now pick you or your partner at random.',
+      'The opening screen shows the version number.'] },
     { v: '1.0.25', d: '24 Nov 2026', items: ['Survival now has five enemy types: Zodiac (shadow beasts), Zombies (an ever-growing horde), and Wizards, Sorcerers or Mixed casters with 25 health and one ability each (two on wave 2, three on wave 3).',
       'Colour options are back on each ability\'s own page, and the wardrobe\'s Attacks tab is gone. Gilded Blood and Prismatic Collapse are picked on their ability pages too.',
       'Survival partners now act on their own: they have health (shown in the top bar), can fall, draft their own upgrades between attempts (shown on your draft screen), and a Regroup / Split up button calls them back or lets them roam.',

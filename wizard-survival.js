@@ -25,6 +25,11 @@
   // (1.0.25) what you are surviving: shadow beasts, a zombie horde, or enemy casters with 25 health and one random ability per wave number
   const KINDS = { zodiac: ['Zodiac', 'Shadow beasts of four kinds'], zombie: ['Zombies', 'More and more of the dead'], wiz: ['Wizards', 'Casters, 25 health, 1 spell each (2 on wave 2, 3 on wave 3)'], sorc: ['Sorcerers', 'Casters, 25 health, 1 technique each (2 on wave 2, 3 on wave 3)'], mixed: ['Mixed', 'Wizards and sorcerers together'] };
   const isCast = k => k === 'wiz' || k === 'sorc' || k === 'mixed';
+  // (1.0.26) the enemy improves too: one of these after every wave you clear (and every 45 seconds in Endless)
+  const HUPS = { swift: ['Swift', 'they move 25% faster'], tough: ['Tough', 'they have 35% more health'], vicious: ['Vicious', 'they hit 30% harder'], swarm: ['Swarming', 'they arrive 25% faster'] };
+  const hn = (s, id) => (s.hu || []).filter(q => q === id).length, hmul = (s, id, per) => Math.pow(1 + per, hn(s, id));
+  function hGain(s) { s.hu = s.hu || []; const ids = Object.keys(HUPS), id = ids[Math.random() * ids.length | 0]; s.hu.push(id); s.huNew = id; return id; }
+  const ZUPS = ['frenzy', 'grip', 'clawed'];   // zombie hordes also pick up the zombies' own upgrades, one per wave
   const best = () => (PR.svBest = Array.isArray(PR.svBest) ? PR.svBest : []);
   const decks = () => Array.isArray(PR.decks) ? PR.decks : [];
   const favs = () => Array.isArray(PR.clubFav) ? PR.clubFav : [];
@@ -49,20 +54,21 @@
   const spot = me => { const a = rnd(0, 6.283), d = rnd(150, 230); return (window.TECHX && TECHX.inArena) ? TECHX.inArena(me.x + Math.cos(a) * d, me.y + Math.sin(a) * d * .8) : { x: clamp(me.x + Math.cos(a) * d, F.x0, F.x1), y: clamp(me.y + Math.sin(a) * d * .8, F.y0, F.y1) }; };
   function spawnZombie(s, fo, me) { const wave = s.endless ? 0 : Math.min(2, M.score.me), q = spot(me); if (Math.hypot(q.x - me.x, q.y - me.y) < 90) return;
     const hm = s.endless ? 1 + s.t / 70 : WAVE_MUL[wave], dm = (s.endless ? 1 : WAVE_MUL[wave]) * ramp(s.t), hp = 18 * hm;
-    zombies.push({ o: fo, x: q.x, y: q.y, mx: hp, hp, rise: 0, cd: rnd(0, .5), t: rnd(0, 9), flash: 0, lunge: 0, svMob: 1, dmg: 6 * dm, spd: rnd(1.05, 1.6) }); }
+    const hp2 = hp * hmul(s, 'tough', .35); zombies.push({ o: fo, x: q.x, y: q.y, mx: hp2, hp: hp2, rise: 0, cd: rnd(0, .5), t: rnd(0, 9), flash: 0, lunge: 0, svMob: 1, dmg: 6 * dm * hmul(s, 'vicious', .3), spd: rnd(1.05, 1.6) * hmul(s, 'swift', .25) }); }
   function spawnCaster(s, fo, me) { const wave = s.endless ? Math.min(2, Math.floor(s.t / 45)) : Math.min(2, M.score.me), q = spot(me); if (Math.hypot(q.x - me.x, q.y - me.y) < 120) return;
     const cls = s.kind === 'mixed' ? (Math.random() < .5 ? 'wiz' : 'sorc') : s.kind, pool = Object.keys(SP).filter(k => !SELF.has(k) && !(window.VARIANTS && VARIANTS[k]) && typeof SCHOOL_OF === 'function' && SCHOOL_OF(k) === cls && TYPE_OF[k] && ICON[k]).sort(() => Math.random() - .5), book = pool.slice(0, wave + 1); if (!book.length) return;
     const look = Object.assign(typeof randomLook === 'function' ? randomLook() : {}, { cls, pet: 'none' }), keep = M.foeLook; let wz; M.foeLook = look; try { wz = mkWiz('foe'); } finally { M.foeLook = keep; } Object.assign(wz, { petId: 'none', svSprite: 1, t: rnd(0, 9) });
-    const hp = 25 * (s.endless ? 1 + s.t / 90 : 1);
-    zombies.push({ o: fo, x: q.x, y: q.y, mx: hp, hp, rise: 1, cd: 9, t: rnd(0, 9), flash: 0, lunge: 0, svMob: 1, svCaster: { wz, book, i: 0, c: rnd(.4, 1.6), hx: q.x, hy: q.y, dm: (s.endless ? 1 : WAVE_MUL[wave]) * ramp(s.t) }, dmg: .01, spd: .01, noFx: 1 });
+    const hp = 25 * (s.endless ? 1 + s.t / 90 : 1) * hmul(s, 'tough', .35);
+    const cup = new Set(); { const opts = []; for (const k of book) for (const u of (UPG[k] || [])) if (!u.sig && !u.req) opts.push(k + '.' + u.id); opts.sort(() => Math.random() - .5); for (const u of opts.slice(0, (s.hu || []).length)) cup.add(u); }   // one upgrade for its abilities per wave cleared
+    zombies.push({ o: fo, x: q.x, y: q.y, mx: hp, hp, rise: 1, cd: 9, t: rnd(0, 9), flash: 0, lunge: 0, svMob: 1, svCaster: { wz, book, up: cup, i: 0, c: rnd(.4, 1.6), hx: q.x, hy: q.y, sp: hmul(s, 'swift', .25), dm: (s.endless ? 1 : WAVE_MUL[wave]) * ramp(s.t) * hmul(s, 'vicious', .3) }, dmg: .01, spd: .01, noFx: 1 });
     try { burst(q.x, q.y - 30 * HS, 16, ['#c9b8ff', '#ffffff', '#8a6cff'], 160, 4, .45); inkRing(q.x, q.y, '#c9b8ff', 2, 6, 44, .45); } catch (e) {} }
   function spawn(s, fo, me) { if (s.kind === 'zombie') return spawnZombie(s, fo, me); if (isCast(s.kind)) return spawnCaster(s, fo, me); const wave = s.endless ? 0 : Math.min(2, M.score.me), t = s.t, r = Math.random();
     let kind = 'walker'; const late = s.endless ? t > 20 : (wave > 0 || t > 18);
     if (r < .22 && t > 6) kind = 'runner'; else if (r < .38 && late) kind = 'bomber'; else if (r < .47 && (s.endless ? t > 35 : (wave > 0 || t > 24))) kind = 'brute';
     const b = MOBS[kind], a = rnd(0, 6.283), d = rnd(150, 230), q = (window.TECHX && TECHX.inArena) ? TECHX.inArena(me.x + Math.cos(a) * d, me.y + Math.sin(a) * d * .8) : { x: clamp(me.x + Math.cos(a) * d, F.x0, F.x1), y: clamp(me.y + Math.sin(a) * d * .8, F.y0, F.y1) };
     if (Math.hypot(q.x - me.x, q.y - me.y) < 90) return;   // the corner pushed it too close: skip this one
-    const hm = (s.endless ? 1 + t / 70 : WAVE_MUL[wave]), dm = (s.endless ? 1 : WAVE_MUL[wave]) * ramp(t), hp = b.hp * hm;
-    zombies.push({ o: fo, x: q.x, y: q.y, mx: hp, hp, rise: .3, cd: rnd(.1, .4), t: rnd(0, 9), flash: 0, lunge: 0, beast: b, hue: b.hue, spd: b.spd, dmg: Math.max(.01, b.dmg * dm), acd: b.acd, svMob: 1, boomD: b.boom ? b.boom * dm : 0, onHit: b.boom ? boom : null });
+    const hm = (s.endless ? 1 + t / 70 : WAVE_MUL[wave]) * hmul(s, 'tough', .35), dm = (s.endless ? 1 : WAVE_MUL[wave]) * ramp(t) * hmul(s, 'vicious', .3), hp = b.hp * hm;
+    zombies.push({ o: fo, x: q.x, y: q.y, mx: hp, hp, rise: .3, cd: rnd(.1, .4), t: rnd(0, 9), flash: 0, lunge: 0, beast: b, hue: b.hue, spd: b.spd * hmul(s, 'swift', .25), dmg: Math.max(.01, b.dmg * dm), acd: b.acd, svMob: 1, boomD: b.boom ? b.boom * dm : 0, onHit: b.boom ? boom : null });
     try { decals.push({ k: 'hole', x: q.x, y: q.y, t: 0, life: 3 }); } catch (e) {} }
   function boom(z, tgt, kind) { if (z.hp <= 0) return; const R = 46; try { inkRing(z.x, z.y, '#ff7a2a', 3, 10, R * 1.3, .5); burst(z.x, z.y - 20 * HS, 26, ['#ffb347', '#ff5a1f', '#fff'], 240, 6, .5); shake = Math.max(shake, 9); sfx('boom', { x: z.x, vol: .7 }); } catch (e) {}
     const me = ents[0]; if (!me.dead && me.ghostT <= 0 && Math.hypot(me.x - z.x, me.y - z.y) < R + 10) { const sv0 = SRC; SRC = 'horde'; try { damage(me, z.boomD, (me.x - z.x) * 4, (me.y - z.y) * 4, '#ffb347'); } finally { SRC = sv0; } }
@@ -70,7 +76,10 @@
     hurtZ(z, 1e6, null, 'fire'); }
   if (typeof startDuel === 'function') { const _sd = startDuel; window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments);
       try { const s = sv(); if (s) { const me = ents[0], fo = ents[1]; fo.svAnchor = 1; fo.petId = 'none'; fo.x = CX; fo.y = F.y0 - 300; me.x = CX; me.y = CY; me.petX = me.x - 30; me.petY = me.y + 8;
-          s.t = 0; s.spT = 1.2; s.over = 0; s.seen = new Set(); s.pc = 0; s.pi = 0; s.P = null;
+          s.t = 0; s.spT = 1.2; s.over = 0; s.seen = new Set(); s.huE = 0;
+          s.hu = s.hu || []; if (!s.endless) { while (s.hu.length < M.score.me) hGain(s); }
+          if (s.kind === 'zombie') fo.up = new Set(ZUPS.slice(0, s.endless ? 0 : M.score.me).map(u => 'zombies.' + u));
+          if (s.hu.length) setTimeout(() => { try { if (!ended) text(W / 2, H / 2 - 60, 'ENEMY: ' + [...new Set(s.hu)].map(id => HUPS[id][0] + (hn(s, id) > 1 ? ' x' + hn(s, id) : '')).join(', ').toUpperCase(), '#ff9aa6', true); } catch (e) {} }, 1700); s.pc = 0; s.pi = 0; s.P = null;
           if (s.pt) { const keep = M.foeLook; M.foeLook = s.pt.look || keep; try { s.P = mkWiz('foe'); } finally { M.foeLook = keep; } Object.assign(s.P, { x: CX - 60, y: CY + 40, petId: 'none', svPartner: 1, face: 1, me: false, hp: 150, maxHp: 150, dead: 0 }); if (s.dueDraft) { s.dueDraft = 0; } }
           try { const bar = $('hpF') && $('hpF').parentElement; if (bar) bar.style.visibility = s.pt ? '' : 'hidden'; const n = $('hpnF'); if (n) n.style.visibility = s.pt ? '' : 'hidden'; } catch (e) {} groupBtn();
           hud(); } else { const h = $('svHud'); if (h) h.style.display = 'none'; const g = $('svGroup'); if (g) g.style.display = 'none'; try { const bar = $('hpF') && $('hpF').parentElement; if (bar) bar.style.visibility = ''; const n = $('hpnF'); if (n) n.style.visibility = ''; } catch (e2) {} } } catch (e) { try { window.logCrash && logCrash(e, 'svStart'); } catch (e2) {} }
@@ -83,7 +92,8 @@
           let near = null, nd = 1e9; for (const z of mobs) { if (z.rise < 1) continue; const d = Math.hypot(z.x - me.x, z.y - me.y); if (d < nd) { nd = d; near = z; } }
           if (near) { fo.x = near.x; fo.y = near.y; } else { fo.x = me.x; fo.y = me.y - 150 < F.y0 ? me.y + 150 : me.y - 150; } fo.vx = fo.vy = 0; fo.stunT = .5; fo._immSaid = T; fo.p = 0; fo.ghostT = 0; fo.svNear = near;
           if (s.P) { fo.maxHp = s.P.maxHp; fo.hp = Math.max(.01, s.P.hp); } else fo.hp = fo.maxHp;   /* the top bar is the partner's health; solo, it is hidden */ try { clock = s.endless ? 99 : Math.max(.5, dur - s.t); } catch (e) {}
-          s.spT -= dt * (s.endless ? 1 : WAVE_MUL[wave]) * ramp(s.t); if (s.spT <= 0) { const cst = isCast(s.kind), zb = s.kind === 'zombie'; s.spT = (cst ? 3.4 : zb ? .62 : 1.45) * rnd(.7, 1.3); if (mobs.length < (cst ? 5 + wave : zb ? 44 : CAP)) { spawn(s, fo, me); if (!cst && s.t > (zb ? 20 : 40) && Math.random() < (zb ? .5 : .35)) spawn(s, fo, me); } }
+          s.spT -= dt * (s.endless ? 1 : WAVE_MUL[wave]) * ramp(s.t) * hmul(s, 'swarm', .25);
+          if (s.endless && s.t > 45 * ((s.huE || 0) + 1)) { s.huE = (s.huE || 0) + 1; const id = hGain(s); text(W / 2, H / 2 - 40, 'THE ENEMY GROWS: ' + HUPS[id][0].toUpperCase(), '#ff9aa6', true); } if (s.spT <= 0) { const cst = isCast(s.kind), zb = s.kind === 'zombie'; s.spT = (cst ? 3.4 : zb ? .62 : 1.45) * rnd(.7, 1.3); if (mobs.length < (cst ? 5 + wave : zb ? 44 : CAP)) { spawn(s, fo, me); if (!cst && s.t > (zb ? 20 : 40) && Math.random() < (zb ? .5 : .35)) spawn(s, fo, me); } }
           casters(s, fo, me, dt);
           if (!s.over && s.t >= dur && !me.dead) { s.over = 1; text(W / 2, H / 2, 'WAVE CLEARED', '#7dffa8', true); for (const z of mobs) hurtZ(z, 1e6, null, 'crush'); endRound('me', 900); }
         } catch (e) { try { window.logCrash && logCrash(e, 'svTick'); } catch (e2) {} } }
@@ -92,18 +102,20 @@
       if (s && typeof ents !== 'undefined' && ents && ents[0]) { try { partner(s, dt); hud(); } catch (e) { try { window.logCrash && logCrash(e, 'svPartner'); } catch (e2) {} } }
       return r; }; }
   // a hit aimed at the anchor lands on the mob it is riding
-  if (typeof damage === 'function') { const _d = damage; window.damage = damage = function (t, d) { if (t && t.svAnchor) { try { const z = t.svNear; if (z && z.hp > 0 && d > 0) hurtZ(z, d, null, 'hit'); } catch (e) {} return; } return _d.apply(this, arguments); }; }
+  if (typeof damage === 'function') { const _d = damage; window.damage = damage = function (t, d) { { const s0 = sv(); if (s0 && s0.castAtP && t && t.me && d > 0) { phurt(s0, d); return; } } if (t && t.svAnchor) { try { const z = t.svNear; if (z && z.hp > 0 && d > 0) hurtZ(z, d, null, 'hit'); } catch (e) {} return; } return _d.apply(this, arguments); }; }
   if (typeof drawWiz === 'function') { const _dw = drawWiz; window.drawWiz = drawWiz = function (w) { if (w && w.svAnchor) return; return _dw.apply(this, arguments); }; }
 
   /* ---------------- enemy casters ---------------- */
   // each one stands off at range and casts its own small hand; the cast goes out through the anchor from where the caster stands
   function casters(s, fo, me, dt) { for (const z of zombies) { const c = z.svCaster; if (!c || z.hp <= 0) continue; const wz = c.wz;
-      const dx = me.x - c.hx, dy = me.y - c.hy, d = Math.hypot(dx, dy) || 1, want = 150, mv = (d > want + 25 ? 1 : d < want - 35 ? -1 : 0) * 34 * dt;
+      const dx = me.x - c.hx, dy = me.y - c.hy, d = Math.hypot(dx, dy) || 1, want = 150, mv = (d > want + 25 ? 1 : d < want - 35 ? -1 : 0) * 34 * (c.sp || 1) * dt;
       if (mv && !(z.frozen > 0) && !(z.stun > 0)) { const q = (window.TECHX && TECHX.inArena) ? TECHX.inArena(c.hx + dx / d * mv, c.hy + dy / d * mv) : { x: c.hx + dx / d * mv, y: c.hy + dy / d * mv }; c.hx = q.x; c.hy = q.y; }
       z.x = c.hx; z.y = c.hy; z.cd = 9; wz.x = z.x; wz.y = z.y; wz.vx = mv ? dx / d * 30 * Math.sign(mv) : 0; wz.vy = 0; wz.t += dt; wz.face = me.x > z.x ? 1 : -1; wz.flash = z.flash; wz.recoil = Math.max(0, (wz.recoil || 0) - dt);
       if (z.frozen > 0 || z.stun > 0 || me.dead) continue; const k = c.book[c.i % c.book.length]; c.c -= dt; wz.book = c.book; wz.i = c.i % c.book.length; wz.p = Math.max(0, 1 - c.c);
       if (c.c <= 0) { c.c = (SP[k].t || 1.5) * 1.7 + rnd(.3, 1.2); c.i++; const keep = { x: fo.x, y: fo.y, face: fo.face, lv: fo.lv, up: fo.up, i: fo.i, p: fo.p, castN: fo.castN, lastK: fo.lastK }, sc = window.CLONE_SCALE;
-        try { fo.x = z.x; fo.y = z.y; fo.face = wz.face; fo.up = NOUP; window.CLONE_SCALE = .75 * c.dm; cast(fo, k); wz.recoil = .25; } catch (e) {} finally { fo.x = keep.x; fo.y = keep.y; fo.face = keep.face; fo.up = keep.up; fo.i = keep.i; fo.p = keep.p; fo.castN = keep.castN; fo.lastK = keep.lastK; window.CLONE_SCALE = sc; } } } }
+        // it picks you or your partner at random; aimed at the partner, the cast is thrown at where it stands and what would have struck you strikes it
+        const Pw = s.P && !s.P.dead ? s.P : null, atP = Pw && Math.random() < .5, mk = { x: me.x, y: me.y };
+        try { fo.x = z.x; fo.y = z.y; fo.face = wz.face; fo.up = c.up || NOUP; window.CLONE_SCALE = .75 * c.dm; if (atP) { me.x = Pw.x; me.y = Pw.y; s.castAtP = 1; wz.face = Pw.x > z.x ? 1 : -1; } cast(fo, k); wz.recoil = .25; } catch (e) {} finally { s.castAtP = 0; me.x = mk.x; me.y = mk.y; fo.x = keep.x; fo.y = keep.y; fo.face = keep.face; fo.up = keep.up; fo.i = keep.i; fo.p = keep.p; fo.castN = keep.castN; fo.lastK = keep.lastK; window.CLONE_SCALE = sc; } } } }
   const NOUP = new Set();
   if (typeof drawZombie === 'function') { const _dz = drawZombie; window.drawZombie = drawZombie = function (z) { if (z && z.svCaster) { if (z.hp > 0) { try { drawWiz(z.svCaster.wz); const x = ctx, W0 = 30; x.fillStyle = '#000'; x.fillRect(z.x - W0 / 2, z.y - 104 * HS, W0, 5); x.fillStyle = '#ff5a6e'; x.fillRect(z.x - W0 / 2 + 1, z.y - 104 * HS + 1, (W0 - 2) * Math.max(0, z.hp / z.mx), 3); } catch (e) {} } return; } return _dz.apply(this, arguments); }; }
 
@@ -120,6 +132,7 @@
     for (const z of mobs) { if (z.svCaster) continue; const dp = Math.hypot(z.x - Pw.x, z.y - Pw.y), dm = Math.hypot(z.x - me.x, z.y - me.y);
       if (dp < dm - 20 && !(z.frozen > 0) && !(z.stun > 0) && z._px !== undefined) { const st = 44 * (z.beast ? 1 : .8) * (z.spd || 1) * dt; if (dp > 20) { z.x = z._px + (Pw.x - z._px) / (Math.hypot(Pw.x - z._px, Pw.y - z._py) || 1) * st; z.y = z._py + (Pw.y - z._py) / (Math.hypot(Pw.x - z._px, Pw.y - z._py) || 1) * st; } else { z.x = z._px; z.y = z._py; } }
       if (dp < 26) { z.pcd = (z.pcd || 0) - dt; if (z.pcd <= 0) { z.pcd = z.acd || .6; z.lunge = .2; if (z.boomD) { phurt(s, z.boomD); hurtZ(z, 1e6, null, 'fire'); try { burst(z.x, z.y - 20 * HS, 22, ['#ffb347', '#ff5a1f', '#fff'], 220, 6, .5); } catch (e) {} } else phurt(s, z.dmg || 4); } } }
+    try { for (const p of projs) if (p.o === fo && p.life > 0 && Math.hypot(p.x - Pw.x, p.y - (Pw.y - 38 * HS)) < 24) { p.life = 0; phurt(s, S(fo, 'fireball', 'dmg') * (p.dmgMul || 1)); burst(p.x, p.y, 16, ['#ffb347', '#ff5a1f', '#fff'], 180, 5, .4); } } catch (e) {}
     if (Pw.dead) return;
     const hand = s.pt.hand, k = hand[s.pi % hand.length]; s.pc += dt; const need = (SP[k].t || 1.5) * 1.25;
     if (s.pc >= need && near) { s.pc = 0; s.pi++;
@@ -135,10 +148,12 @@
     if (pt.hand.length < 5 && extra.length && (Math.random() < .35 || !ups.length)) { const k = extra[Math.random() * extra.length | 0]; pt.hand.push(k); pick = { k, n: SP[k].n, t: 'New ability' }; }
     else if (ups.length) { const [k, u] = ups[Math.random() * ups.length | 0]; pt.up.add(k + '.' + u.id); pick = { k, n: u.n, t: SP[k].n + ' upgrade' }; }
     if (pick) pt.log.push(pick); return pick; }
-  function pStrip() { const s = sv(), host = $('draft'); if (!host) return; let el = $('svPd'); if (!s || !s.pt) { if (el) el.remove(); return; } const pt = s.pt, last = pt.log[pt.log.length - 1];
-    const h = `<b>${esc(pt.n)}</b><span class="sv-h">${pt.hand.map(k => `<img src="${ICON[k]}">`).join('')}</span><small>${last ? 'drafted ' + esc(last.n) + ' (' + esc(last.t) + ')' : 'is choosing for itself'} · ${pt.up.size} upgrade${pt.up.size === 1 ? '' : 's'}</small>`;
+  function pStrip() { const s = sv(), host = $('draft'); if (!host) return; let el = $('svPd'); if (!s) { if (el) el.remove(); return; } const pt = s.pt, last = pt && pt.log[pt.log.length - 1];
+    const foeN = (s.endless ? 0 : M.score.me), will = s.kind === 'zombie' && !s.endless ? ZUPS.slice(0, foeN).map(u => ((UPG.zombies || []).find(q => q.id === u) || { n: u }).n) : [];
+    const eh = `<em>Enemy</em><small>${(s.hu || []).length || will.length ? [...new Set(s.hu || [])].map(id => HUPS[id][0] + (hn(s, id) > 1 ? ' x' + hn(s, id) : '') + ': ' + HUPS[id][1]).concat(will).join(' · ') : 'no upgrades yet: it gains one for every wave you clear'}</small>`;
+    const h = (!pt ? '' : `<b>${esc(pt.n)}</b><span class="sv-h">${pt.hand.map(k => `<img src="${ICON[k]}">`).join('')}</span><small>${last ? 'drafted ' + esc(last.n) + ' (' + esc(last.t) + ')' : 'is choosing for itself'} · ${pt.up.size} upgrade${pt.up.size === 1 ? '' : 's'}</small>`) + eh;
     if (!el) { (host.querySelector('.content') || host).insertAdjacentHTML('afterbegin', '<div id="svPd"></div>'); el = $('svPd'); } el.innerHTML = h; }
-  if (typeof show === 'function') { const _sh = show; window.show = show = function (id) { const r = _sh.apply(this, arguments); try { const s = sv(); if (id === 'draft' && s && s.pt && s.draftRd !== M.round) { s.draftRd = M.round; const pk = pDraft(s); if (pk) toast(`${s.pt.n} drafted ${pk.n}`); } if (id === 'draft') pStrip(); } catch (e) {} return r; }; }
+  if (typeof show === 'function') { const _sh = show; window.show = show = function (id) { const r = _sh.apply(this, arguments); try { const s = sv(); if (id === 'draft' && s && s.pt && s.draftRd !== M.round) { s.draftRd = M.round; const pk = pDraft(s); if (pk) toast(`${s.pt.n} drafted ${pk.n}`); } if (id === 'draft' && s && !s.endless) { s.hu = s.hu || []; while (s.hu.length < M.score.me) hGain(s); } if (id === 'draft') pStrip(); } catch (e) {} return r; }; }
   window.svGroup = function () { const s = sv(); if (!s) return; s.group = s.group ? 0 : 1; groupBtn(); try { sfx('ui_click'); const me = ents[0]; text(me.x, me.y - 100 * HS, s.group ? 'REGROUP' : 'SPLIT UP', '#ffe08a'); } catch (e) {} };
   function groupBtn() { const s = sv(), b = $('battle'); if (!b) return; let g = $('svGroup'); if (!s || !s.pt) { if (g) g.style.display = 'none'; return; }
     if (!g) { b.insertAdjacentHTML('beforeend', '<button id="svGroup"></button>'); g = $('svGroup'); g.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); svGroup(); }); } g.style.display = ''; g.textContent = s.group ? 'Split up' : 'Regroup'; g.classList.toggle('on', !!s.group); }
@@ -197,7 +212,7 @@
   css.textContent = `
   #svHud{position:absolute;left:50%;top:152px;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:9px;padding:5px 12px;border-radius:14px;border:2px solid #000;background:#171029;box-shadow:0 3px 0 #000;pointer-events:none;white-space:nowrap}
   #svGroup{position:absolute;right:6px;top:calc(50% + 78px);z-index:4;font:12px 'Lilita One';letter-spacing:.3px;padding:7px 8px;border-radius:11px;border:2px solid #000;background:#1a1236;color:#d6cbf5;box-shadow:0 2px 0 #000;touch-action:none}#svGroup.on{background:linear-gradient(#ffe27a,#f0a830);color:#2a1600}
-  #svPd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 10px 0;padding:7px 10px;border-radius:12px;border:2px solid #000;background:#171029;position:relative;z-index:3}#svPd b{font:14px 'Lilita One';font-weight:400;color:#ffd45e}#svPd small{font:800 11.5px Nunito;color:#d6cbf5;flex:1 1 100%}
+  #svPd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 10px 0;padding:7px 10px;border-radius:12px;border:2px solid #000;background:#171029;position:relative;z-index:3}#svPd b{font:14px 'Lilita One';font-weight:400;color:#ffd45e}#svPd small{font:800 11.5px Nunito;color:#d6cbf5;flex:1 1 100%}#svPd em{font:14px 'Lilita One';font-style:normal;color:#ff9aa6}
   #svHud b{font:13px 'Lilita One';font-weight:400;letter-spacing:.6px;color:#ffd45e}#svHud span{font:15px 'Lilita One';color:#fff;min-width:38px;text-align:center}#svHud i{font-style:normal;color:#ff5a6e;font-size:14px;letter-spacing:1px}#svHud i u{text-decoration:none;color:#ffffff2e}#svHud em{font:800 11px Nunito;font-style:normal;color:#ff9aa6}
   .sv-tabs{display:flex;gap:6px;background:#0007;border:2px solid #000;border-radius:14px;padding:4px;margin:6px 0 10px}.sv-tabs button{flex:1;font:15px 'Lilita One';letter-spacing:.3px;padding:8px 0;border-radius:10px;border:0;background:transparent;color:#b9a9e6}.sv-tabs button.on{background:linear-gradient(#4a3a80,#2b2050);color:#fff;box-shadow:0 2px 0 #000}
   .sv-modes{display:flex;gap:8px;margin-top:10px}.sv-modes button,.sv-opt{flex:1;display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left;padding:10px 12px;border-radius:14px;border:2px solid #000;background:#1a1236;color:#fff;box-shadow:0 3px 0 #000}

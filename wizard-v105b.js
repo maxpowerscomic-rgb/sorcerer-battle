@@ -183,6 +183,7 @@
 
   /* ---------------- load splash: the curtain starts shut with the logo, then opens ---------------- */
   (function () { const c = $('curtain'); if (!c || !c.classList.contains('splash')) return; try { if (typeof setLogo === 'function') setLogo(); } catch (e) {}
+    try { const v = $('splVer'); if (v && typeof GAME_VERSION !== 'undefined') v.textContent = 'VERSION ' + GAME_VERSION; } catch (e) {}
     if (window.SB_SHOT) { c.className = 'curtain'; return; }
     const t0 = performance.now(), open = () => { if (!c.classList.contains('splash')) return; c.className = 'curtain opening spl'; setTimeout(() => { if (c.className === 'curtain opening spl') c.className = 'curtain'; }, 560); };
     const go = () => setTimeout(open, Math.max(0, 2550 - (performance.now() - t0)));
