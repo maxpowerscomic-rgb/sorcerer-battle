@@ -42,6 +42,23 @@
       const a = Math.atan2(s.vy, s.vx), b = Math.atan2(dy, dx); let da = b - a; while (da > Math.PI) da -= 6.283; while (da < -Math.PI) da += 6.283; const na = a + Math.max(-6 * dt, Math.min(6 * dt, da)); s.vx = Math.cos(na) * sp; s.vy = Math.sin(na) * sp; if (s.a !== undefined) s.a = na; } }
   if (typeof update === 'function') { const _u = update; window.update = update = function (dt) { const r = _u.apply(this, arguments); try { if (!ended) steerTick(dt); for (const m of marks) m.t += dt; marks = marks.filter(m => m.t < .45); } catch (e) {} if (ended) steer.clear(); return r; }; }
 
+  /* ---------------- (1.0.33.3) ability page: fold sections away ----------------
+     Upgrades, Matchups, Colour, Attack skin, Trials and Starting upgrades each get a header you can tap to fold or open; the choice is remembered. */
+  const SECS = [['.ups', 'Upgrades', 'up'], ['.ctrs', 'Matchups', 'ctrs'], ['.cw-row:not(.sk-row)', 'Colour', 'cw'], ['.sk-row', 'Attack skin', 'sk'], ['.trials', 'Trials', 'tr'], ['.starts', 'Starting upgrades', 'st']];
+  window.secToggle = function (id, el) { PR.secOff = PR.secOff || {}; PR.secOff[id] = PR.secOff[id] ? 0 : 1; try { save(); sfx('ui_click'); } catch (e) {} const box = el.closest('.cs-box'); if (box) box.classList.toggle('cs-off', !!PR.secOff[id]); };
+  function foldable() { const P0 = $('sheetP'); if (!P0) return; PR.secOff = PR.secOff || {};
+    for (const [sel, name, id] of SECS) { let box = P0.querySelector(sel); if (!box) continue; if (id === 'up') box = box.parentElement === P0 ? box : box.closest('#sheetP > *') || box; if (!box || box.classList.contains('cs-box')) continue;
+      box.classList.add('cs-box'); let head = box.querySelector(':scope > .trh') || (id === 'cw' || id === 'sk' ? box.querySelector(':scope > b') : null);
+      if (!head) { box.insertAdjacentHTML('afterbegin', `<div class="cs-h cs-made"><b>${name}</b></div>`); head = box.firstElementChild; } else head.classList.add('cs-h');
+      head.insertAdjacentHTML('beforeend', '<i class="cs-chev"></i>'); head.setAttribute('role', 'button'); head.onclick = ev => { ev.stopPropagation(); secToggle(id, head); };
+      box.classList.toggle('cs-off', !!PR.secOff[id]); } }
+  if (typeof openSpell === 'function') { const _os = openSpell; window.openSpell = openSpell = function () { const r = _os.apply(this, arguments); try { foldable(); setTimeout(foldable, 80); } catch (e) {} return r; }; }
+  { const css = document.createElement('style'); css.textContent = `
+  .cs-h{display:flex;align-items:center;justify-content:space-between;cursor:pointer;-webkit-tap-highlight-color:transparent}.cs-made{margin:2px 0 6px}.cs-made b{font:13px 'Lilita One';font-weight:400;letter-spacing:.5px;text-transform:uppercase;color:#f3ecff}
+  .cs-chev{flex:none;width:9px;height:9px;margin-left:8px;border-right:2.5px solid #d6cbf5;border-bottom:2.5px solid #d6cbf5;transform:rotate(-135deg) translate(-2px,-2px);transition:transform .15s}.cs-off .cs-chev{transform:rotate(45deg) translate(-2px,-2px)}
+  .cs-off>:not(.cs-h){display:none!important}.cs-box.cs-off{padding-bottom:6px!important}.cw-row>b.cs-h{display:flex}
+  #sheetP .ups .off{color:#b4a8dc!important}   /* not-yet-owned upgrade names: 6.6:1 on the panel (was 2.7:1) */`; document.head.appendChild(css); }
+
   /* ---------------- see-through outline: an enemy hidden behind one of your units ---------------- */
   // after the frame is drawn, any enemy standing behind a friendly unit is drawn again over it, half see-through with a red rim
   // (no canvas filter here: a drop-shadow filter on the full-size battle canvas cost seconds per frame)

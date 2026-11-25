@@ -444,6 +444,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
 .rcard .rcl{font:10px 'Lilita One';color:#d6ccf2;margin-top:2px;white-space:nowrap}
 .rcard{width:84px!important}
 .curtain{position:absolute;inset:0;z-index:50;display:none;pointer-events:none}
+.chodds{display:block;font:800 11px/1.3 Nunito!important;color:#fff!important;opacity:1!important;margin:2px 4px 4px;text-shadow:0 1px 0 #000}/* (1.0.33.3) chest odds, readable */
 .curtain.on,.curtain.opening{display:block;pointer-events:auto}
 .curtain .ct{position:absolute;left:0;right:0;height:56%;background:linear-gradient(160deg,#4a2a8a,#1a1036);border:0 solid #000}
 .curtain .ct::after{content:"";position:absolute;inset:0;opacity:.08;background-image:radial-gradient(#fff 1px,transparent 1.5px);background-size:22px 22px}
@@ -1974,7 +1975,7 @@ function renderShop(){dealDay();const un=unlockedSpells();let sd=PR.dealSeed||1;
  const deals=[{k:pick(0),q:5,c:60},{k:pick(1),q:5,c:60},{k:pick(2),q:3,c:100}];
  {const now=new Date(),mid=new Date(now);mid.setHours(24,0,0,0);const ms=mid-now,h=Math.floor(ms/36e5),m=Math.floor(ms%36e5/6e4);const c=refreshCost();$('dealTm').innerHTML=`Resets in ${h}h ${m}m <button class="dref" ${PR.coins<c?'disabled':''} onclick="refreshDeals()">↻ <span class="ci coin-i"></span>${c}</button>`;}
  $('deals').innerHTML=deals.map((d,i)=>{const sold=PR.deals[i];return `<div class="deal ${sold?'sold':''}"><img src="${ICON[d.k]}"><div class="q">×${d.q}</div><button class="price" ${sold||PR.coins<d.c?'disabled':''} onclick="buyDeal(${i},'${d.k}',${d.q},${d.c})">${sold?'Sold':`<span class="ci coin-i"></span>${d.c}`}</button></div>`}).join('');
- $('chests').innerHTML=[{n:'Magic Chest',g:30,cards:8,c:['#b47bff','#5b2fb8'],bg:'#6a3fc0'},{n:'Arcane Chest',g:75,cards:24,c:['#ff7ad0','#a8176f'],bg:'#a8176f'}].map(c=>`<div class="chest" style="--c:${c.bg}">${chestSVG(c.c[0],c.c[1])}<div class="nm">${c.n}</div><small>${c.cards} skill points</small><small style="opacity:.75;font-size:10px">Each point goes to a random ability you own, equal odds</small><button class="price gp" ${PR.gems<c.g?'disabled':''} onclick="buyChest('${c.n}',${c.g},${c.cards})"><span class="ci">${SVG.gem}</span>${c.g}</button></div>`).join('');
+ $('chests').innerHTML=[{n:'Magic Chest',g:30,cards:8,c:['#b47bff','#5b2fb8'],bg:'#6a3fc0'},{n:'Arcane Chest',g:75,cards:24,c:['#ff7ad0','#a8176f'],bg:'#a8176f'}].map(c=>`<div class="chest" style="--c:${c.bg}">${chestSVG(c.c[0],c.c[1])}<div class="nm">${c.n}</div><small>${c.cards} skill points</small><small class="chodds">Odds: each point goes to one of your ${unlockedSpells().length} unlocked abilities, ${Math.round(1000/Math.max(1,unlockedSpells().length))/10}% each</small><button class="price gp" ${PR.gems<c.g?'disabled':''} onclick="buyChest('${c.n}',${c.g},${c.cards})"><span class="ci">${SVG.gem}</span>${c.g}</button></div>`).join('');
  $('gemPacks').innerHTML=[[80,'$0.99',1,''],[500,'$4.99',3,'POPULAR'],[1200,'$9.99',5,'+20%']].map(([q,p,n,t])=>`<div class="pack">${t?`<div class="tagx">${t}</div>`:''}<div class="gems">${SVG.gem.repeat(n)}</div><div class="q">${fmt(q)}</div><button class="price" onclick="toast('Real-money purchases are off in this mockup')">${p}</button></div>`).join('');
  $('coinPacks').innerHTML=[[500,15],[1500,40],[5000,120]].map(([q,g])=>`<div class="pack"><div class="gems">${'<span class="ci coin-i" style="width:30px;height:30px;margin:0 -6px"></span>'.repeat(q>=5000?4:q>=1500?3:2)}</div><div class="q">${fmt(q)}</div><button class="price gp" ${PR.gems<g?'disabled':''} onclick="buyCoins(${q},${g})"><span class="ci">${SVG.gem}</span>${g}</button></div>`).join('');}
 function buyDeal(i,k,q,c){if(PR.coins<c||PR.deals[i])return;PR.coins-=c;PR.deals[i]=1;PR.spells[k].cards+=q;toast(`+${q} ${SP[k].n} skill points`);refreshMeta();}
@@ -2122,5 +2123,6 @@ nav('home');
 <script src="wizard-v126.js"></script>
 <script src="wizard-v127.js"></script>
 <script src="wizard-v128.js"></script>
+<script src="wizard-v129.js"></script>
 <script src="wizard-release.js"></script>
 </body></html>
