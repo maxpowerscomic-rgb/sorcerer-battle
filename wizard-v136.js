@@ -33,7 +33,7 @@
       return r; }; }
 
   /* ---------------- rewards ---------------- */
-  function freeR(t) { if (t % 5 === 0) return { k: 'gems', n: 15 }; if (t % 2) return { k: 'gold', n: 50 + 5 * t }; return { k: 'sp', n: 3 }; }
+  function freeR(t) { if (t % 5 === 0) return { k: 'gems', n: 8 }; if (t % 2) return { k: 'gold', n: 50 + 5 * t }; return { k: 'sp', n: 3 }; }
   // (1.0.33.17) premium is generous on purpose: 500 gold every tier, 10 Echo Runes every third tier, and 5 premium-only cosmetics in the first 9 tiers
   const PCOS = { 1: { cat: 'robe', id: 'starforged', n: 'Starforged Robe / Gi' }, 3: { cat: 'trail', id: 'comet', n: 'Comet Trail' }, 5: { cat: 'beam', id: 'starfire', n: 'Starfire Cannon' }, 7: { cat: 'aurastyle', id: 'starfall', n: 'Starfall Aura' }, 9: { cat: 'hat', id: 'voidcrown', n: 'Void Crown' } };
   function premR(t) { const out = [{ k: 'gold', n: 500 }], b = PASS_BLOOD.find(q => q.tier === t), cs = PCOS[t];

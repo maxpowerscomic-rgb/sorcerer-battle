@@ -51,7 +51,7 @@ function onbBuild() {
     const css = document.createElement('style'); css.textContent = `#onbSkipAll{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));right:8px;z-index:9999;font:12px 'Lilita One';letter-spacing:.5px;padding:6px 11px;border-radius:11px;border:2px solid #000;background:#150f27e6;color:#e8e0ff;cursor:pointer;box-shadow:0 3px 0 #000;display:none}html.onb-on #onbSkipAll{display:block}`; document.head.appendChild(css); }
 }
 function onbAskSkip() {
-  try { $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Skip the tutorial?</div><div class="ssub" style="margin:0">You can replay it any time from Options.</div><button class="upbtn" onclick="closeSheet();onbFinish(true)">Skip it</button><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="closeSheet()">Keep going</button>`; $('sheet').classList.add('on'); } catch (e) { if (confirm('Skip the tutorial? You can replay it from Options.')) onbFinish(true); } }
+  try { $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Skip the tutorial?</div><div class="ssub" style="margin:0">You can replay it any time: tap Hoot and choose See the tutorial again.</div><button class="upbtn" onclick="closeSheet();onbFinish(true)">Skip it</button><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050)" onclick="closeSheet()">Keep going</button>`; $('sheet').classList.add('on'); } catch (e) { if (confirm('Skip the tutorial? You can replay it any time from Hoot.')) onbFinish(true); } }
 function owlCanvas() {
   const c = document.createElement('canvas'); c.width = c.height = 148; c.className = 'owl';
   const x = c.getContext('2d'); let t = 0;
@@ -129,7 +129,7 @@ const ONB_STEPS = [
   { id: 'ladder', dot: 6, enter() { nav('home'); }, target: '#ldBtn', place: 'bottom',
     html: () => `<b class="who">Hoot</b>The <em>Ladder</em>: fixed rivals with gems and new abilities to win. The <em>Club</em> tab has bounties and <em>Survival</em>, where you hold out against waves of mobs. Wins in a row pay <em>streak gold</em>, and after a loss you can pay for a <em>rematch</em>.<div class="row"><button class="go" data-next>Next</button></div>` },
   { id: 'done', dot: -1, enter() { nav('home'); },
-    html: () => `<b class="who">Hoot</b>That's everything, <em>${PR.name}</em>. The arena awaits! Take these to get started.<div class="gift"><span class="ci" style="width:22px;height:22px;display:grid">${SVG.gem}</span>+100 gems</div><div class="row"><button class="go" data-finish>Let's duel!</button></div>` },
+    html: () => `<b class="who">Hoot</b>That's everything, <em>${PR.name}</em>. The arena awaits! Take these to get started.<div class="gift"><span class="ci" style="width:22px;height:22px;display:grid">${SVG.gem}</span>+50 gems</div><div class="row"><button class="go" data-finish>Let's duel!</button></div>` },
 ];
 
 /* ---------- in-match coaching (bubble only, no blocking) ---------- */
@@ -226,7 +226,7 @@ function onbPrepUpgrade() {
 function onbFinish(skipped) {
   document.documentElement.classList.remove('onb-on');
   clearInterval(ONB.tick); window.ONB_ACTIVE = 0; window.ONB_SLOW = 0; ONB.i = -1;
-  if (!skipped && !(PR.onb && PR.onb.gifted)) { PR.gems += 100; PR.onb = { done: 1, gifted: 1 }; toast('+100 gems! Good luck out there.'); sfx('ui_coin'); }
+  if (!skipped && !(PR.onb && PR.onb.gifted)) { PR.gems += 50; PR.onb = { done: 1, gifted: 1 }; toast('+50 gems! Good luck out there.'); sfx('ui_coin'); }
   else PR.onb = Object.assign({}, PR.onb, { done: 1 });
   save(); refreshMeta(); if (ONB.el) ONB.el.classList.add('hide'); nav('home');
 }

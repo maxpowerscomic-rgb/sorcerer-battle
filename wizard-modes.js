@@ -130,6 +130,15 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.19', d: '25 Nov 2026', items: [
+      'New players start with every ability locked and choose their first four with tokens. Hoot suggests one to start with.',
+      'Gem packs are bigger: 400 for $0.99, 2,200 for $4.99, 5,000 for $9.99.',
+      'Chests are bigger and pricier: Magic Chest 25 skill points for 150 gems, Arcane Chest 80 for 400 gems.',
+      'Cosmetics are bought with gems only. Former gold items cost 100 or 200 gems, and no gem cosmetic is under 100.',
+      'Gems earned from level ups, ranks, the Ladder, Fight Club bonuses, the free pass track and the tutorial are halved. Free gems in the Shop are unchanged.',
+      'Notices fit the screen, stay up for 3.5 seconds, and have a ✕ with a countdown ring.',
+      'Hoot: "See the tutorial again" at the bottom of his panel. If you skip the tutorial he tells you where to find it.',
+      'Fixed: the Skip tutorial button covered Hoot\'s words and the ✕ on ability pages. The 👁 button no longer covers long draft titles.'] },
     { v: '1.0.33.18', d: '25 Nov 2026', items: ['Drag an ability in your Battle Hand onto another slot to rearrange it.', 'Fixed: the bar at the top of the draft and order screens (you, the round, your rival) is centred again.'] },
     { v: '1.0.33.17', d: '25 Nov 2026', items: [
       'Season Pass premium is far bigger: 500 gold every tier, 10 Echo Runes every third tier, and five premium-only cosmetics in the first tiers (Starforged robe, Comet trail, Starfire cannon, Starfall aura, Void Crown), on top of the three season bloods.',

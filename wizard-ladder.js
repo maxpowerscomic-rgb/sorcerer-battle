@@ -4,7 +4,7 @@
 
    The Ladder: twenty named rivals in order, each built around one ability with partners that make it hard to
    answer. Their hands are shown before the fight so the player can build against them. A rung opens when the
-   one before is beaten and the player has 50 trophies per rung. First win: 10 gems and the rival's featured
+   one before is beaten and the player has 50 trophies per rung. First win: 5 gems and the rival's featured
    ability (if not owned). Every fifth rival is a boss who pays a VARIANT: an existing ability with a twist,
    shown in the spell book but only won here.
    ===================================================================== */
@@ -244,7 +244,7 @@
     { id: 'eldrin', n: 'Eldrin the Unbound', title: 'The Thirtieth Rung', cls: 'sorc', feat: 'polarity', boss: 'crimsonzodiac', hand: ['polarity', 'sanctum', 'crimsonzodiac', 'copycast'], ups: ['crimsonzodiac.bloodmoon', 'crimsonzodiac.mend', 'polarity.collapse', 'polarity.boundary', 'polarity.cornered', 'sanctum.unmake', 'sanctum.vast', 'dissect.cleave'], look: { robe: 'midnight', hat: 'crown', staff: 'moon', beard: 'violet', skin: 'gilded', pet: 'dragon' }, aura: 'violet', line: 'Everything you throw, I have already answered.', mood: 'cocky', tip: 'Boundary sends your shots back, Copy Cast repeats your best move, and his red beasts are two animals each. Kill the Regent before its bolts add up.' },
   ];
   /* The Advanced Ladder: thirty harder rivals. Each is built on TWO abilities that feed each other, with two supports behind them.
-     They open after the first twenty are beaten, fight with 5-slot books, start with more upgrades and pay 100 gems on the first win. */
+     They open after the first twenty are beaten, fight with 5-slot books, start with more upgrades and pay 50 gems on the first win. */
   const adv = (id, n, title, cls, mains, sup, ups, look, aura, line, tip, extra) => Object.assign({ id, n, title, cls, adv: 1, mains, feat: mains[0], hand: mains.concat(sup), ups, look, aura, line, mood: 'cocky', tip }, extra || {});
   const lk = (robe, hat, staff, beard, skin, pet) => ({ robe, hat, staff, beard, skin, pet });
   const A = [
@@ -285,7 +285,7 @@
   for (const k in VARIANTS) { const i = L.findIndex(r => r.boss === k); if (i >= 0) VARIANTS[k].boss = i; }
   window.LADDER = L;
   const GATE = 75;
-  const gemsFor = r => r.adv ? 100 : 10;
+  const gemsFor = r => r.adv ? 50 : 5;   // halved in 1.0.33.19
   const st = () => { PR.ladder = PR.ladder || { won: {} }; PR.ladder.won = PR.ladder.won || {}; return PR.ladder; };
   const beaten = i => !!st().won[L[i].id];
   const gateOf = i => L[i].adv ? 0 : i * GATE;
@@ -344,7 +344,7 @@
       return `<button class="lrow ${done ? 'done' : open ? 'open' : 'lock'} ${r.boss ? 'boss' : ''}" onclick="openLadder(${i})"><span class="lno ${done || open || i === nextI ? 'pic' : 'q'}">${done || open || i === nextI ? `<canvas width="88" height="88" data-l="${i}"></canvas><i>${done ? '✓' : no}</i>` : '?'}</span><span class="lmid"><b>${r.n}</b><small><i class="lcls ${r.cls}">${r.cls === 'sorc' ? 'Sorcerer' : 'Wizard'}</i>${r.title}</small><span class="lhand">${done || open ? icons(r.hand) : mystery(r.hand.length)}</span></span><span class="lrt">${done ? '<em class="ok">Beaten</em>' : open ? '<em class="go">Fight</em>' : `<em>${i > 0 && !beaten(i - 1) ? 'Locked' : gateOf(i) + ' 🏆'}</em>`}<small>${k && (done || open || r.boss) ? `<img src="${ICON[k]}">` : ''}+${gemsFor(r)} 💎</small></span></button>`; }).join('');
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">The Ladder</div>
       <div class="ntabs ltabs"><button class="${ladTab === 'base' ? 'on' : ''}" onclick="ladderTab('base')">Ladder ${nBase}/${BASE_N}</button><button class="${ladTab === 'adv' ? 'on' : ''}" onclick="ladderTab('adv')">Advanced ${nAdv}/${nA}</button></div>
-      <div class="ssub" style="margin:0">${ladTab === 'adv' ? (advOpen ? 'Thirty harder rivals, each built on two abilities that feed each other. 5-slot books. 100 gems for each first win.' : `Opens when all ${BASE_N} Ladder rivals are beaten. Thirty harder rivals, 100 gems each.`) : 'Each first win pays 10 gems and the rival\'s ability.'}</div>
+      <div class="ssub" style="margin:0">${ladTab === 'adv' ? (advOpen ? 'Thirty harder rivals, each built on two abilities that feed each other. 5-slot books. 50 gems for each first win.' : `Opens when all ${BASE_N} Ladder rivals are beaten. Thirty harder rivals, 100 gems each.`) : 'Each first win pays 10 gems and the rival\'s ability.'}</div>
       ${first ? `<div class="lintro"><b>Hoot</b>These rivals do not change. Tap one to study their <em>hand</em>, then build a <em>Battle Hand</em> that answers it. Beat them in order. A new rung opens every ${GATE} trophies. Every fifth is a <em>boss</em> with an ability you can win nowhere else.</div>` : ''}
       <div class="llist">${rows}</div>`;
     $('sheet').classList.add('on');

@@ -1,6 +1,6 @@
 /* The version shown at the bottom of Options. Bump the last number with every update pushed live (1.0 -> 1.0.1 -> 1.0.2);
    bump the middle number for a big content drop. */
-const GAME_VERSION = '1.0.33.18';
+const GAME_VERSION = '1.0.33.19';
 /* =====================================================================
    SPELLBINDER: GAME DATA
    Pure data, no rendering. Port these tables straight into the real build.
@@ -157,17 +157,17 @@ const UPG = {
 const RANKS = [
   { n: 'Apprentice',  t: 0,    c: ['#c9bdf0', '#6f6496'], unlock: null,        r: {} },
   { n: 'Adept',       t: 150,  c: ['#a6e6ff', '#2f86c4'], unlock: 'lightning', r: { coins: 150 } },
-  { n: 'Conjurer',    t: 350,  c: ['#a8fff0', '#1fa58f'], unlock: 'meteor',    r: { gems: 20 } },
+  { n: 'Conjurer',    t: 350,  c: ['#a8fff0', '#1fa58f'], unlock: 'meteor',    r: { gems: 10 } },
   { n: 'Sorcerer',    t: 600,  c: ['#bff59a', '#3f9a25'], unlock: 'flies',     r: { coins: 300 } },
-  { n: 'Warlock',     t: 900,  c: ['#ffb98a', '#c9361a'], unlock: 'ghost',     r: { gems: 40 } },
+  { n: 'Warlock',     t: 900,  c: ['#ffb98a', '#c9361a'], unlock: 'ghost',     r: { gems: 20 } },
   { n: 'Archmage',    t: 1300, c: ['#e0c2ff', '#7a3fd6'], unlock: 'mirror',    r: { coins: 600 } },
-  { n: 'Grand Magus', t: 1800, c: ['#fff0a8', '#d99a14'], unlock: 'gravity',   r: { gems: 100 } },
+  { n: 'Grand Magus', t: 1800, c: ['#fff0a8', '#d99a14'], unlock: 'gravity',   r: { gems: 50 } },
   /* (1.0.21) the road runs on to 5,000 trophies */
-  { n: 'Spellbreaker', t: 2300, c: ['#ffd0e0', '#d6386a'], unlock: null, r: { gems: 120 } },
+  { n: 'Spellbreaker', t: 2300, c: ['#ffd0e0', '#d6386a'], unlock: null, r: { gems: 60 } },
   { n: 'Runelord',     t: 2900, c: ['#c8f0ff', '#1f8fd6'], unlock: null, r: { coins: 1200 } },
-  { n: 'Stormcrown',   t: 3500, c: ['#e8ffb0', '#6fb81f'], unlock: null, r: { gems: 180 } },
+  { n: 'Stormcrown',   t: 3500, c: ['#e8ffb0', '#6fb81f'], unlock: null, r: { gems: 90 } },
   { n: 'Voidwalker',   t: 4200, c: ['#d8c8ff', '#4a1fb8'], unlock: null, r: { coins: 2000 } },
-  { n: 'Mythic',       t: 5000, c: ['#ffffff', '#ff8a1f'], unlock: null, r: { gems: 400 } },
+  { n: 'Mythic',       t: 5000, c: ['#ffffff', '#ff8a1f'], unlock: null, r: { gems: 200 } },
 ];
 const MS_STEP = 50;
 /* Extra spells unlock on Rank Road milestones (trophies) */

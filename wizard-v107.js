@@ -26,7 +26,7 @@
      (1.0.21) A wager board. Entering a bounty costs STAKE gems; winning pays WIN. Beating all three wizards, all three sorcerers
      and all six each pay a bonus. A beaten bounty can be starred to keep it after the board turns over (rematch for a little gold).
      The whole board can be re-rolled for RESET gems. */
-  const SLOT_MS = 30 * 60 * 1000, STAKE = 15, WIN = 25, SET_W = 40, SET_S = 40, ALL = 250, RESET = 100, FAVGOLD = 10, FAVMAX = 10, LVL = 3;
+  const SLOT_MS = 30 * 60 * 1000, STAKE = 15, WIN = 25, SET_W = 20, SET_S = 20, ALL = 125, RESET = 100, FAVGOLD = 10, FAVMAX = 10, LVL = 3;
   window.ECON = Object.assign(window.ECON || {}, { clubStake: STAKE, clubWin: WIN, clubSet: SET_W, clubAll: ALL, clubReset: RESET, clubSlotMin: 30 });
   const slotNow = () => Math.floor(Date.now() / SLOT_MS);
   const rng = seed => { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };

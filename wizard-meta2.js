@@ -1371,7 +1371,7 @@ function bloodLayer(x) {
 /* ---------------- Gem packs are the only real-money purchase (F-551) ----------------
    The Unlock Packs (Wizard Tome, Sorcerer Scroll, Grand Bundle) are gone. Money buys gems; gems buy chests, coins and
    Echo Runes. In the iOS app the packs go through StoreKit; on the web they explain that packs are in the app. */
-const GEM_PACKS = [{ id: 'gems80', q: 240, price: '$0.99', n: 1 }, { id: 'gems500', q: 1500, price: '$4.99', n: 3, tag: 'POPULAR' }, { id: 'gems1200', q: 3600, price: '$9.99', n: 5, tag: '+20%' }];
+const GEM_PACKS = [{ id: 'gems80', q: 400, price: '$0.99', n: 1 }, { id: 'gems500', q: 2200, price: '$4.99', n: 3, tag: 'POPULAR' }, { id: 'gems1200', q: 5000, price: '$9.99', n: 5, tag: 'BEST VALUE' }];
 window.GEM_PACKS = GEM_PACKS;
 window.grantGems = function (id) { const p = GEM_PACKS.find(q => q.id === id); if (!p) return false; PR.gems = (PR.gems || 0) + p.q; try { save(); sfx('ui_coin'); } catch (e) {} try { refreshMeta(); renderShop(); } catch (e) {} toast(`+${p.q.toLocaleString()} gems. Thank you!`); return true; };
 window.buyGems = function (id) { const iap = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iap; if (iap) iap.postMessage({ action: 'buy', id }); else toast('Gem packs can be bought in the iOS app.'); };

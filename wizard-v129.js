@@ -26,7 +26,7 @@
       if (typeof DOT_STEPS !== 'undefined') DOT_STEPS.splice(0, DOT_STEPS.length, 'name', 'path', 'hand', 'battle', 'upgrade');
       const hand = ONB_STEPS.find(s => s.id === 'hand'); if (hand) hand.html = () => `<b class="who">Hoot</b>Your <em>Battle Hand</em>: the 4 abilities you bring to a duel. Tap an ability to add or swap it.<div class="row"><button class="go" data-next>Ready to fight</button></div>`;
       const spoils = ONB_STEPS.find(s => s.id === 'spoils'); if (spoils) spoils.html = () => `<b class="who">Hoot</b>Every ability you used earned <em>skill points</em>. Enough of them levels it up.`;
-      const done = ONB_STEPS.find(s => s.id === 'done'); if (done) done.html = () => `<b class="who">Hoot</b>That's all you need, <em>${PR.name}</em>. I'll pop up with a quick tip the first time you open anything new. Take these to get started.<div class="gift"><span class="ci" style="width:22px;height:22px;display:grid">${SVG.gem}</span>+100 gems</div><div class="row"><button class="go" data-finish>Let's duel!</button></div>`;
+      const done = ONB_STEPS.find(s => s.id === 'done'); if (done) done.html = () => `<b class="who">Hoot</b>That's all you need, <em>${PR.name}</em>. I'll pop up with a quick tip the first time you open anything new. Take these to get started.<div class="gift"><span class="ci" style="width:22px;height:22px;display:grid">${SVG.gem}</span>+50 gems</div><div class="row"><button class="go" data-finish>Let's duel!</button></div>`;
     } } catch (e) {}
 
   // (1.0.33.6) the coached first duel also points out the halt button
