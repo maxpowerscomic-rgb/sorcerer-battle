@@ -18,6 +18,9 @@
       const done = ONB_STEPS.find(s => s.id === 'done'); if (done) done.html = () => `<b class="who">Hoot</b>That's all you need, <em>${PR.name}</em>. I'll pop up with a quick tip the first time you open anything new. Take these to get started.<div class="gift"><span class="ci" style="width:22px;height:22px;display:grid">${SVG.gem}</span>+100 gems</div><div class="row"><button class="go" data-finish>Let's duel!</button></div>`;
     } } catch (e) {}
 
+  // (1.0.33.6) the coached first duel also points out the halt button
+  try { if (typeof MATCH_TIPS !== 'undefined' && !MATCH_TIPS.halt) MATCH_TIPS.halt = { when: () => isOn('battle') && M.round === 1 && ONB.seen.fight && !!document.getElementById('holdBtn'), target: '#holdBtn', place: 'bottom', text: 'This is <em>Halt</em>. Tap it to stop your next cast for a moment, then tap again to fire. It rests 8 seconds.', ttl: 7 }; } catch (e) {}
+
   /* ---------------- first-visit tips ---------------- */
   const TOURS = {
     home: [['#battleBtn', 'Tap <em>Battle</em> to duel. Ranked wins earn trophies; Casual is just for fun.'],
