@@ -130,6 +130,14 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.14', d: '25 Nov 2026', items: [
+      'Free gems in the Shop: 1 every hour, 5 a day, 20 a week and 60 a month. Come back to claim each one.',
+      'Reminders (iOS app, next update): choose what Hoot reminds you about in Options, Notifications. Free gems, daily rewards, new rivals, the season ending.',
+      'Spell Cutter now cuts a Spell Cannon: time slows, the beam splits, sparks fly and land as embers, and a blade runs up the beam into the caster for the cut plus a 5-damage blast.',
+      'The Juggernaut swings: a heavy gold sweep shows exactly when it attacks.',
+      'Zombies and beasts push apart instead of stacking, so a crowd surrounds you rather than all hitting from one spot.',
+      'Endless shows how many enemies you have defeated, live.',
+      'A severed zombie arm flies off in any direction.'] },
     { v: '1.0.33.13', d: '24 Nov 2026', items: [
       'Hoot is your help button: he sits bottom-right on every menu screen. A red dot means he has something new for you, like a lesson about the screen you are on or a mode that just opened. Screens no longer start tutorials on their own.',
       'The Club opens as you level: Survival at player level 2, the Fight Club at level 4. If you have already played them, they stay open.',

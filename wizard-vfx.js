@@ -160,9 +160,10 @@
   let limbs = [];
   function dropLimb(z) {
     const f = z.o && z.o.foe, face = f && f.x > z.x ? 1 : -1, robe = (z.o && z.o.robe) || ['#7a6a9a', '#4a3f6a', '#2a2040'];
-    limbs.push({ x: z.x + face * 8, y: z.y, h: 20 * SC, vx: face * rnd(20, 60) + rnd(-25, 25), vy: rnd(-22, 22), vh: rnd(110, 170), rot: rnd(-.5, .5), vr: rnd(-9, 9), face, skin: z.revived ? '#9ab4ac' : '#93d46c', skinD: z.revived ? '#62807a' : '#5f9c48', sleeve: robe[1], t: 0, land: 0, s: rnd(0, 9) });
+    const la = rnd(0, 6.283), lsp = rnd(35, 80);   /* (1.0.33.14) the arm flies off any way, not always the same */
+    limbs.push({ x: z.x + face * 8, y: z.y, h: 20 * SC, vx: Math.cos(la) * lsp, vy: Math.sin(la) * lsp * .6, vh: rnd(110, 170), rot: rnd(-.5, .5), vr: rnd(-9, 9), face, skin: z.revived ? '#9ab4ac' : '#93d46c', skinD: z.revived ? '#62807a' : '#5f9c48', sleeve: robe[1], t: 0, land: 0, s: rnd(0, 9) });
     if (limbs.length > 26) limbs.shift();
-    for (let i = 0; i < 9; i++) P({ x: z.x + face * 6 + rnd(-3, 3), y: z.y - 18 * SC + rnd(-3, 3), vx: face * rnd(10, 90) + rnd(-30, 30), vy: rnd(-120, -20), color: ['#5a8a3a', '#3a5a24', '#7a1a1a'][i % 3], size: rnd(2, 3.6), life: rnd(.35, .7), grav: 420, glow: false });
+    for (let i = 0; i < 9; i++) P({ x: z.x + face * 6 + rnd(-3, 3), y: z.y - 18 * SC + rnd(-3, 3), vx: Math.cos(la) * rnd(10, 90) + rnd(-30, 30), vy: rnd(-120, -20), color: ['#5a8a3a', '#3a5a24', '#7a1a1a'][i % 3], size: rnd(2, 3.6), life: rnd(.35, .7), grav: 420, glow: false });
     try { sfx('hit', { x: z.x, vol: .45 }); } catch (e) {}
   }
   const _hz = hurtZ;
