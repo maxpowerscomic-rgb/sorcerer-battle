@@ -2021,7 +2021,7 @@ function renderRoad(){const ri=rankOf(PR.trophies),nm=nextMs();
 function gainXp(n){PR.xp+=n;let up=false;const from=PR.lvl;while(PR.xp>=xpNeed(PR.lvl)){PR.xp-=xpNeed(PR.lvl);PR.lvl++;up=true;}if(up){PR._lvFrom=PR._lvFrom||from;PR._lvPending=1;}return up}
 function count(el,from,to,ms=900,pre=''){const t0=performance.now();const f=now=>{const k=Math.min(1,(now-t0)/ms),e=1-Math.pow(1-k,3);el.textContent=pre+fmt(Math.round(from+(to-from)*e));if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f)}
 function showRewards(){const won=M.score.me>M.score.foe,ranked=M.mode==='ranked';
- const dT=ranked?(won?30:-18):0,coins=(won?60:20)+M.score.me*10,xp=won?45:20,nCards=won?5:2;
+ const dT=ranked?(won?30:-18):0,coins=(won?60:20)+M.score.me*10,xp=Math.round((won?45:20)*(M.sv?.75:1))/* (1.0.33.2) Survival gives 25% less */,nCards=won?5:2;
  const preLvl=PR.lvl,preXp=PR.xp,preRank=rankOf(PR.trophies),preTroph=PR.trophies;
  PR.trophies=Math.max(0,PR.trophies+dT);PR.coins+=coins;setTimeout(()=>sfx('ui_coin'),900);const got=givePoints(nCards);const road=[];
  const newRank=rankOf(PR.trophies);let rankMsg='';if(newRank>preRank&&!PR.claimed.includes(newRank)){PR.claimed.push(newRank);const r=RANKS[newRank].r;PR.coins+=r.coins||0;PR.gems+=r.gems||0;rankMsg=RANKS[newRank].n;}

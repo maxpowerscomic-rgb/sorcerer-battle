@@ -16,6 +16,23 @@
       try { if (M && M.sv) { const sub = document.querySelector('#pzBody .sub'); if (sub) sub.textContent = `Survival · ${M.sv.endless ? 'Endless' : 'Wave ' + (Math.min(2, M.score.me) + 1) + ' of 3'}${M.sv.pt ? ' · with ' + M.sv.pt.n : ''}`; } } catch (e) {}
       return r; }; }
 
+  /* ---------------- (1.0.33.2) player level: tap the level badge or the XP bar ---------------- */
+  window.openLevelInfo = function (ev) { try { if (ev) { ev.stopPropagation(); ev.preventDefault(); } } catch (e) {}
+    const L = PR.lvl, need = xpNeed(L), have = Math.floor(PR.xp), left = need - have, wins = Math.ceil(left / 45);
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button>
+      <div class="pl-head"><div class="pl-badge">${L}</div><div><b>Player level ${L}</b><span>${have} / ${need} XP · ${left} to level ${L + 1}</span></div></div>
+      <div class="pl-bar"><i style="width:${Math.min(100, have / need * 100)}%"></i></div><div class="pl-note">About ${wins} win${wins > 1 ? 's' : ''} to go.</div>
+      <div class="pl-sec"><b>How you earn XP</b>
+        <div class="pl-row"><span>Win a match</span><em>+45</em></div><div class="pl-row"><span>Lose a match</span><em>+20</em></div>
+        <div class="pl-row"><span>Survival: clear all 3 waves</span><em>+34</em></div><div class="pl-row"><span>Survival: fall, or end an Endless run</span><em>+15</em></div>
+        <div class="pl-row"><span>Level up an ability</span><em>+25</em></div>
+        <small>Every mode counts: Ranked, Casual, the Ladder, Fight Club and Survival. Survival gives 25% less than a duel.</small></div>
+      <div class="pl-sec"><b>Each new level gives you</b><div class="pl-row"><span>Gems</span><em>+10</em></div><div class="pl-row"><span>Echo Rune</span><em>+1</em></div><div class="pl-row"><span>Spell Token pick</span><em>+1</em></div>
+        <small>Each level needs a little more XP than the last: level ${L} needs ${need}, level ${L + 1} needs ${xpNeed(L + 1)}.</small></div>`;
+    $('sheet').classList.add('on'); };
+  function lvlHook() { const b = $('pLvlR'), bar = document.querySelector('.prof .xpbar'); for (const el of [b, bar]) if (el && !el._lvHook) { el._lvHook = 1; el.style.cursor = 'pointer'; el.addEventListener('click', openLevelInfo, true); } }
+  try { lvlHook(); } catch (e) {} document.addEventListener('DOMContentLoaded', () => { try { lvlHook(); } catch (e) {} });
+
   /* ---------------- Hoot: what to do next ---------------- */
   // a Hoot button above the fighter button on the home screen; it always has a few concrete suggestions, and a dot when one is ready right now
   function goals() { const out = [];
@@ -72,6 +89,11 @@
 
   const css = document.createElement('style');
   css.textContent = `
+  .pl-head{display:flex;align-items:center;gap:12px;margin:2px 0 10px}.pl-badge{width:56px;height:56px;border-radius:16px;border:3px solid #000;display:grid;place-items:center;font:28px 'Lilita One';color:#fff;background:linear-gradient(#6a8cff,#3a4fd0);box-shadow:0 3px 0 #000;-webkit-text-stroke:2px #000;paint-order:stroke}
+  .pl-head b{display:block;font:22px 'Lilita One';font-weight:400;color:#f3ecff}.pl-head span{font:800 13px Nunito;color:#d6cbf5}
+  .pl-bar{height:14px;border-radius:8px;border:2px solid #000;background:#170f2a;overflow:hidden}.pl-bar i{display:block;height:100%;background:linear-gradient(#9fd8ff,#4f7bff)}.pl-note{font:800 12px Nunito;color:#b9a9e6;margin:5px 0 12px}
+  .pl-sec{background:#1a1236;border:2px solid #000;border-radius:14px;padding:10px 12px;margin-bottom:10px}.pl-sec>b{display:block;font:15px 'Lilita One';font-weight:400;letter-spacing:.4px;color:#f3ecff;margin-bottom:6px}
+  .pl-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #ffffff14}.pl-row span{font:800 13.5px Nunito;color:#e6defc}.pl-row em{font:16px 'Lilita One';font-style:normal;color:#ffd45e}.pl-sec small{display:block;margin-top:7px;font:700 11.5px/1.4 Nunito;color:#b9a9e6}
   #hgBtn{position:absolute;right:12px;bottom:134px;z-index:2;width:56px;height:56px;border-radius:50%;border:3px solid #000;padding:0;overflow:visible;background:radial-gradient(circle at 40% 35%,#5a3fa8,#1d1240);box-shadow:0 3px 0 #000;cursor:pointer}
   #hgBtn canvas{width:100%;height:100%;border-radius:50%;display:block}#hgBtn i{display:none;position:absolute;top:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#ff4a5a;border:2px solid #000}#hgBtn.ready i{display:block}
   .hg-head{display:flex;align-items:center;gap:12px;margin:2px 0 12px}.hg-head canvas{width:64px;height:64px;border-radius:50%;border:3px solid #000;background:radial-gradient(circle at 40% 35%,#5a3fa8,#1d1240)}

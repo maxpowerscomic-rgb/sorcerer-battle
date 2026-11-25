@@ -130,6 +130,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.2', d: '24 Nov 2026', items: ['Tap your level badge or XP bar to see your player level, XP to the next level, how XP is earned and what each level gives.', 'Survival gives 25% less XP than a duel.'] },
     { v: '1.0.33.1', d: '24 Nov 2026', items: ['Sure Hit reworked: while the dome stands, your shots home in on enemies inside it, and other damaging casts land on every enemy inside it, summons included.',
       'Zodiac Beasts: a +2 upgrade for each animal. A draft offers at most one at a time.',
       'An enemy hidden behind one of your units now shows through it, faded with a red outline.',
