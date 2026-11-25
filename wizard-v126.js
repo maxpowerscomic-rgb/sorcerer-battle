@@ -57,7 +57,22 @@
       const tx = clamp(w.x + (q.x - w.x) * .4, F.x0 + 8, F.x1 - 8), ty = clamp(w.y + (q.y - w.y) * .4, F.y0 + 8, F.y1 - 8); if (Math.hypot(tx - j.x, ty - j.y) > 280) continue;
       j.icd = T + 4; j.leap = { t: 0, x0: j.x, y0: j.y, tx, ty, q }; text(j.x, j.y - 100 * HS, 'GUARD!', '#ffe08a'); slow = Math.min(slow, .5); setTimeout(() => { if (!ended) slow = 1; }, 180); } }
 
-  if (typeof update === 'function') { const _u = update; window.update = update = function (dt) { const r = _u.apply(this, arguments);
+  /* ---------------- (1.0.32.1) the Juggernaut's body blocks shots ----------------
+     Its big frame was only as wide as a zombie to incoming shots, so arrows aimed at its caster flew straight through it.
+     Now any enemy shot that reaches its body (fireballs and other bolts, arrows, ricochet runes, blood lances, Dissection slashes) stops on it and hurts it instead. */
+  function bodyBlock() { const js = zombies.filter(z => z.beast && z.beast.boss && z.hp > 0 && z.rise >= 1 && !z.leap); if (!js.length) return;
+    const R = j => 30 * (j.beast.sz || 1.5) / 1.5, hit = (j, x, y) => Math.hypot(j.x - x, j.y - y) < R(j);
+    const take = (j, d, x, y) => { const s0 = SRC; try { hurtZ(j, Math.max(1, d || 8), null, 'hit'); } finally { SRC = s0; } j.flash = .12; try { burst(x, y - 30 * HS, 10, ['#ffe08a', '#ffffff'], 140, 3, .3); text(j.x, j.y - 96 * HS, 'BLOCKED', '#ffe08a'); } catch (e) {} };
+    for (const j of js) {
+      if (typeof arrows !== 'undefined') for (const ar of arrows) if (ar.o !== j.o && ar.life > 0 && hit(j, ar.x, ar.y + 40 * HS)) { ar.life = 0; ar.miss = false; take(j, ar.dmg, ar.x, ar.y + 40 * HS); }
+      if (typeof projs !== 'undefined') for (const p of projs) if (p.o !== j.o && p.life > 0 && p.held === undefined && hit(j, p.x, p.y + 38 * HS)) { p.life = 0; take(j, (p.dmg || (typeof S === 'function' ? S(p.o, p.src && SP[p.src] ? p.src : 'fireball', 'dmg') : 10)) * (p.dmgMul || 1), p.x, p.y + 38 * HS); }
+      if (typeof runes !== 'undefined') for (const q of runes) if (q.o !== j.o && q.life > 0 && hit(j, q.x, q.y)) { q.life = 0; take(j, q.dmg, q.x, q.y); }
+      try { for (const b of (window.BLOOD_DEBUG ? BLOOD_DEBUG.bloods : [])) if (b.o !== j.o && b.k === 'lance' && b.life > 0 && hit(j, b.x, b.y)) { b.life = 0; take(j, b.dmg, b.x, b.y); } } catch (e) {}
+      try { for (const sl of (TECHX.slashes || [])) if (sl.o !== j.o && sl.life > 0 && hit(j, sl.x, sl.y)) { sl.life = 0; take(j, sl.dmg, sl.x, sl.y); } } catch (e) {} } }
+
+  if (typeof update === 'function') { const _u = update; window.update = update = function (dt) {
+      try { if (typeof ents !== 'undefined' && ents && ents.length && !ended && !(introT > 0)) bodyBlock(); } catch (e) { try { window.logCrash && logCrash(e, 'bodyBlock'); } catch (e2) {} }
+      const r = _u.apply(this, arguments);
       try { if (typeof ents !== 'undefined' && ents && ents.length && !ended) { collapseTick(dt); drawTick(); hopTick(dt); guardTick(dt); } else if (ended) caught.clear(); } catch (e) { try { window.logCrash && logCrash(e, 'v126'); } catch (e2) {} }
       return r; }; }
   if (typeof startDuel === 'function') { const _sd = startDuel; window.startDuel = startDuel = function () { caught.clear(); return _sd.apply(this, arguments); }; }

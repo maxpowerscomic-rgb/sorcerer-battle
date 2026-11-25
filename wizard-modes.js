@@ -130,6 +130,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.32.1', d: '24 Nov 2026', items: ['The Juggernaut\'s body now blocks shots: arrows, fireballs and other bolts, ricochet runes, blood lances and Dissection slashes stop on it instead of passing through to its caster.'] },
     { v: '1.0.32', d: '24 Nov 2026', items: ['Take the Blow now throws you well clear of the attack, and nothing can hurt you for a moment afterwards.', 'Bodyguard: your Juggernaut leaps in front of a Collapse or a tier 3 technique (Repel, Dissection, Blood lance, Rushdown) aimed at you and takes it instead, once every 4 seconds.'] },
     { v: '1.0.31', d: '24 Nov 2026', items: ['Collapse (and Unrestrained Collapse) catches every summon it touches, the Juggernaut included, drags them along, and destroys them all when it ends.',
       'Polarity\'s Draw: whatever its catch is dragged past takes 2 damage.',
