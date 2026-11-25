@@ -130,6 +130,14 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.1', d: '24 Nov 2026', items: ['Sure Hit reworked: while the dome stands, your shots home in on enemies inside it, and other damaging casts land on every enemy inside it, summons included.',
+      'Zodiac Beasts: a +2 upgrade for each animal. A draft offers at most one at a time.',
+      'An enemy hidden behind one of your units now shows through it, faded with a red outline.',
+      'Performance: fixed long freezes when enemies were hidden behind your units, and a drawing error when a Survival partner cast Arcane Orbs.'] },
+    { v: '1.0.33', d: '24 Nov 2026', items: ['Matches are now first to 3 round wins.', 'Hoot sits on the home screen with ideas for what to do next: abilities ready to level, the next Ladder rival, rewards waiting. A red dot means something is ready now.',
+      'Draft cards show a short stat line (damage, health, how many) instead of text.', 'Summons show a health bar from their first hit until they fall: green for yours, red for the enemy\'s.',
+      'The daily login reward now appears after your first match instead of when you open the game.',
+      'Survival: one timer, wave numbers instead of rounds, Survival results and pause text, your partner\'s hand shown large and labelled, and enemy area spells (meteors, fire rings, pits, thorns, acid, storms) now hurt your partner too.'] },
     { v: '1.0.32.5', d: '24 Nov 2026', items: ['Survival with a partner: defeated enemies sometimes drop a heart. A hurt partner walks over to collect it and heals 20%.', 'Endless: while your partner is down, upgrade crystals include a choice to revive them at 25% health.'] },
     { v: '1.0.32.4', d: '24 Nov 2026', items: ['Endless Survival: once every upgrade for your hand is taken, crystals offer a boon instead: more damage, faster casting, or more health for you and your partner. Bigger crystals give bigger boons.', 'Endless Survival: up to 50 enemies on the field (was 25), and zombie spawn points keep appearing, one every 5 seconds up to 24.'] },
     { v: '1.0.32.3', d: '24 Nov 2026', items: ['Every hit on a caster spills a small puddle of blood, and Bloodcraft can gather every puddle on the floor, whoever spilled it.', 'Endless Survival: your partner says which upgrade it took when you pick from a crystal.', 'Speech bubbles use larger text and wrap long lines.'] },

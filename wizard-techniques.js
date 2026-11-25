@@ -292,7 +292,7 @@
     // the boosted cast (and Sure Hit) only lands on an enemy standing inside your dome; it waits while they're outside
     if (w.sanctNext && k !== 'sanctum' && isDamaging(k)) { const live = domes.filter(d => d.o === w && d.t < d.dur && !d.left);
       if (!live.length) w.sanctNext = null;
-      else if (!w.foe.dead && live.some(d => d.open || Math.hypot(w.foe.x - d.x, (w.foe.y - d.y) * 1.4) < d.r)) { const sn = w.sanctNext; w.sanctNext = null; domainBlast(w, k, sn); } }
+      else if (!w.foe.dead && live.some(d => d.open || Math.hypot(w.foe.x - d.x, (w.foe.y - d.y) * 1.4) < d.r)) { const sn = w.sanctNext; w.sanctNext = null; if (!sn.sure) domainBlast(w, k, sn); } }   /* (1.0.33.1) Sure Hit works through homing and guaranteed hits instead (wizard-v128.js) */
     // Copy Cast: the armed side casts the same thing back at once
     const c = w.foe;
     if (!copying && c && c.copyArmed > 0 && !c.dead && !ended && k !== 'copycast' && k !== 'chosen') {   /* Chosen One cannot be copied */
@@ -773,7 +773,8 @@
     if (U(w, k, 'mend')) { const full = U(w, k, 'mend2'); for (const q of zombies) if (q.o === w && q.beast && q.hp > 0 && q.hp < q.mx) { q.hp = full ? q.mx : Math.min(q.mx, q.hp + q.mx * .5); text(q.x, q.y - 50 * HS, full ? 'MENDED' : '+50%', '#7dffa8'); burst(q.x, q.y - 20 * HS, 8, ['#7dffa8', '#fff'], 100, 3, .4); } }
     const dome = domes.find(d => d.o === w && d.t < d.dur);
     const o = w.foe, a = Math.atan2(o.y - w.y, o.x - w.x), n = !b.crim && b.id === 'rabbit' ? (U(w, k, 'warren') ? 7 : 4) /* (1.0.30) rabbits come as a litter */ : !b.crim && b.id === 'snake' ? (U(w, k, 'snakepit') ? 3 : 1) * (dome ? 2 : 1) : (U(w, k, 'pack') && ['rat', 'rooster'].includes(b.id) ? 2 : 1) * (dome && !b.boss ? 2 : 1);
-    for (let i = 0; i < n; i++) {
+    const nMore = !b.crim && !b.boss && window.ZODIAC_MORE ? ZODIAC_MORE(w, b.id) : 0;   // (1.0.33.1) the per-animal +2 upgrades
+    for (let i = 0; i < n + nMore; i++) {
       const ra = rnd(0, 6.283), rd = dome ? Math.sqrt(Math.random()) * dome.r * .85 : 0, q = dome ? inArena(dome.x + Math.cos(ra) * rd, dome.y + Math.sin(ra) * rd / 1.4) : inArena(w.x + Math.cos(a) * 34 + rnd(-12, 12), w.y + Math.sin(a) * 34 + rnd(-12, 12)), hp = S(w, k, 'hp') * b.hp * (w.czNow && !b.regent && U(w, 'crimsonzodiac', 'bloodmoon') ? 1.25 : 1) * (!b.crim && b.id === 'rabbit' ? .6 : 1);
       const z = { crim: w.czNow ? 1 : 0, o: w, x: q.x, y: q.y, mx: hp, hp, rise: .35, cd: rnd(0, .3), t: rnd(0, 9), flash: 0, lunge: 0, beast: b, spd: b.spd, dmg: b.boss ? 20 : S(w, k, 'dmg') * b.dmg * (!b.crim && b.id === 'rabbit' ? .7 : 1), acd: b.acd, onHit: beastHit };
       if (b.boss) w.jRef = z;
@@ -1202,7 +1203,7 @@
     x.restore();
     // wisps
     if (!z.noFx && Math.random() < .25) P({ x: z.x + rnd(-10, 10) * b.sz, y: z.y - rnd(5, 30) * HS * b.sz, vx: rnd(-10, 10), vy: rnd(-40, -15), color: ['#3a2a6a', '#8a6cff'][Math.random() * 2 | 0], size: rnd(3, 5), life: .5, glow: false });
-    if (z.hp < z.mx && !z.noFx) { const W = 26 * b.sz; x.fillStyle = '#000'; x.fillRect(z.x - W / 2, z.y - S0 * SC - 6, W, 4); x.fillStyle = '#b79cff'; x.fillRect(z.x - W / 2 + 1, z.y - S0 * SC - 5, (W - 2) * z.hp / z.mx, 2); }
+    if (false && z.hp < z.mx && !z.noFx) {   /* (1.0.33) drawn by the shared summon health bars */ const W = 26 * b.sz; x.fillStyle = '#000'; x.fillRect(z.x - W / 2, z.y - S0 * SC - 6, W, 4); x.fillStyle = '#b79cff'; x.fillRect(z.x - W / 2 + 1, z.y - S0 * SC - 5, (W - 2) * z.hp / z.mx, 2); }
   }
 
   /* ground layer: springs sit under the fighters (drawn right after the scorch/frost decals) */

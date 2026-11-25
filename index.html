@@ -801,7 +801,7 @@ body{background:radial-gradient(ellipse at top,#2a1d4a,#0c0817 70%);min-height:1
 <script>
 /* ================= GAME ================= */
 const ROUNDS=99;let WIN=4;const PICKS=r=>r===1?3:2;
-const decider=()=>M&&M.score.me===WIN-1&&M.score.foe===WIN-1;const roundLabel=()=>'ROUND '+M.round+(decider()?' · DECIDER':'');
+const decider=()=>M&&M.score.me===WIN-1&&M.score.foe===WIN-1;const roundLabel=()=>M.sv?(M.sv.endless?'ENDLESS':'WAVE '+(Math.min(2,M.score.me)+1)+' / 3'):'ROUND '+M.round+(decider()?' · DECIDER':'');
 
 const ICON={};const ART_ICONS=['fireball','icewall','zombies','lightning','meteor','flies','ghost','mirror','gravity','orbs','bubbles','ricochet','archer','beam','shield'];Object.keys(SP).forEach(k=>ICON[k]=ART_ICONS.includes(k)?'art/icons/'+k+'.png':icon(k));
 const BADGE_OF={inner:'blast',grand:'shieldb',circle:'skull',march:'crowd',creep:'wing',wall:'shieldb',heat:'blast',ward:'shieldb',trail:'wing',flare:'blast',bloat:'skull',grip:'crowd',twin:'x2',twinbolt:'x2',triple:'x3',tribolt:'x3',blast:'blast',burst:'blast',nova:'blast',cavein:'blast',shatter:'blast',shrapnel:'blast',collapse:'blast',discharge:'boltplus',pierce:'pierce',inferno:'pierce',seek:'pierce',fork:'pierce',seeker:'pierce',thick:'shieldb',sturdy:'shieldb',iron:'shieldb',capacity:'shieldb',coil:'shieldb',longhold:'shieldb',spikes:'spikes',bramble:'spikes',strangle:'spikes',mirror:'mirrorb',split:'mirrorb',echo:'mirrorb',infect:'skull',plague:'skull',swallow:'skull',horde:'crowd',legion:'crowd',bigswarm:'crowd',volley:'crowd',five:'crowd',hive:'crowd',bloom:'crowd',frenzy:'wing',quick:'wing',hasten:'wing',step:'wing',tail:'wing',double:'wing',undying:'heart',rewind:'heart',lifesap:'heart',overcharge:'boltplus',supercharge:'boltplus',thunder:'boltplus',static:'boltplus',overload:'boltplus',more:'bubbleplus',sticky:'bubbleplus',linger:'bubbleplus'};
@@ -817,7 +817,7 @@ function genRival(){const un=unlockedPath(),cnt={};un.forEach(k=>{const e=ELEM_O
  const prim=pickEl(els),rest=els.filter(e=>e!==prim),sec=rest.length&&Math.random()<.45?pickEl(rest):null,fav={};Object.keys(SP).forEach(k=>{fav[k]=ELEM_OF[k]===prim?6:ELEM_OF[k]===sec?4:1;});
  return{id:'gen-'+prim+(sec?'-'+sec:''),n:ELEMS[prim].t+(sec?' · '+ELEMS[sec].n:''),fav,look:null,name:rivalName(prim)};}
 function rivalName(el){PR.recentFoes=PR.recentFoes||[];let n,guard=0;do{const f=RIVAL_FIRST[Math.random()*RIVAL_FIRST.length|0],ep=RIVAL_EPI[el]||RIVAL_EPI.arcane,e=ep[Math.random()*ep.length|0];n=f+' '+e;}while(PR.recentFoes.includes(n)&&guard++<20);PR.recentFoes=[n].concat(PR.recentFoes).slice(0,10);return n;}
-function newMatch(o={}){resetScars();WIN=o.tut?2:4;const prof=o.profile||genRival();M={foeRank:clamp(rankOf(PR.trophies)+(Math.random()<.25?-1:Math.random()<.33?1:0),0,RANKS.length-1),arena:o.arena||ARENAS[Math.random()*ARENAS.length|0],opts:o,profile:prof,unlocked:unlockedSpells(),foeLook:o.look||(o.profile&&prof.look)||randomLook(),mode:o.mode||PR.mode,foeName:o.name||prof.name||FOES[Math.random()*FOES.length|0],foeLv:o.lv||null,round:1,casts:{},score:{me:0,foe:0},me:{book:[],up:new Set(),pool:PR.hand.slice()},foe:{book:[],up:new Set(),pool:foeHand(prof)},pick:0,offer:[],sel:0,swapSel:null,lastAdded:-1};
+function newMatch(o={}){resetScars();WIN=o.tut?2:3;/* (1.0.33) first to 3 */const prof=o.profile||genRival();M={foeRank:clamp(rankOf(PR.trophies)+(Math.random()<.25?-1:Math.random()<.33?1:0),0,RANKS.length-1),arena:o.arena||ARENAS[Math.random()*ARENAS.length|0],opts:o,profile:prof,unlocked:unlockedSpells(),foeLook:o.look||(o.profile&&prof.look)||randomLook(),mode:o.mode||PR.mode,foeName:o.name||prof.name||FOES[Math.random()*FOES.length|0],foeLv:o.lv||null,round:1,casts:{},score:{me:0,foe:0},me:{book:[],up:new Set(),pool:PR.hand.slice()},foe:{book:[],up:new Set(),pool:foeHand(prof)},pick:0,offer:[],sel:0,swapSel:null,lastAdded:-1};
  M.mySyn=synergyOf(PR.hand);M.foeSyn=synergyOf(M.foe.pool);setArena(M.arena);showVs(startDraft);}
 function hasUp(p,id){return p.up.has(id)}
 const capOf=()=>Math.max(BOOK_BASE+BOOK_SLOT_RANKS.filter(r=>rankOf(PR.trophies)>=r).length,(typeof M!=='undefined'&&M&&M.ladder&&M.ladder.adv)?5:0);   /* Advanced Ladder fights always have at least 5 book slots */
@@ -832,6 +832,7 @@ function genOffer(p,round){const UN=(p.pool||M.unlocked).filter(k=>!(ONE_COPY.ha
 function apply(p,c){if(false/* (1.0.17) either-or upgrades are both kept and take turns, for every ability */)UPG[c.k].forEach(o=>{if(o.grp===c.u.grp&&o.id!==c.u.id)p.up.delete(c.k+'.'+o.id)});if(c.type==='replace'){const old=p.book[c.slot];p.book[c.slot]=c.k;if(!p.book.includes(old))[...p.up].forEach(u=>{if(u.startsWith(old+'.'))p.up.delete(u)});return c.slot}if(c.type==='new'){p.book.push(c.k);return p.book.length-1}p.up.add(c.k+'.'+c.u.id);return -1}
 function scoreHTML(){return `<button class="pbtn" onclick="openPause()">${SVG.pause}</button>`+scoreHTML0()}
 function scoreHTML0(){const pip=(n,cls)=>`<div class="pips ${cls}">${[...Array(WIN).keys()].map(i=>`<i class="${i<n?'w':''}"></i>`).join('')}</div>`;
+ if(M.sv){const L=Math.max(0,3-M.score.foe);return `<div class="side"><span class="sdn">${String(PR.name||'You').replace(/[<>&]/g,'')}</span> <span class="svlives">${'♥'.repeat(L)}<u>${'♥'.repeat(3-L)}</u></span></div><span class="rd">${roundLabel()}</span><div class="side">${M.sv.pt?String(M.sv.pt.n).replace(/[<>&]/g,''):'Survival'}</div>`}
  return `<div class="side"><span class="sdn">${String(PR.name||'You').replace(/[<>&]/g,'')}</span> ${pip(M.score.me,'me')}</div><span class="rd">${roundLabel()}</span><div class="side">${pip(M.score.foe,'foe')} Rival</div>`}
 const METAS=['home','spells','shop','friends','ranks','wardrobe'];
 const MATCH_SCREENS=['vs','draft','order','battle'];
@@ -2119,5 +2120,7 @@ nav('home');
 <script src="wizard-survival.js"></script>
 <script src="wizard-v125.js"></script>
 <script src="wizard-v126.js"></script>
+<script src="wizard-v127.js"></script>
+<script src="wizard-v128.js"></script>
 <script src="wizard-release.js"></script>
 </body></html>

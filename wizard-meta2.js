@@ -985,21 +985,21 @@
   .seasonrk{font:13px 'Lilita One';letter-spacing:.5px;color:#ffd75e;text-align:center;background:#0006;border:2px solid #000;border-radius:12px;padding:7px}`;
   document.head.appendChild(css);
   try { refreshMeta(); } catch (e) {}
-  const prompt = () => { try { if (!loginDue() || window.ONB_ACTIVE || !document.getElementById('home').classList.contains('on')) return; if (['sheet', 'upm', 'lvup', 'chestOv', 'pause'].some(id => { const e = document.getElementById(id); return e && (e.classList.contains('on') || (e.style.display && e.style.display !== 'none' && id !== 'sheet')); })) return; openLogin(); } catch (e) {} };
+  const prompt = () => { try { if (!window.MATCH_DONE_SESSION /* (1.0.33) the login reward waits until you have played a match this session */ || !loginDue() || window.ONB_ACTIVE || !document.getElementById('home').classList.contains('on')) return; if (['sheet', 'upm', 'lvup', 'chestOv', 'pause'].some(id => { const e = document.getElementById(id); return e && (e.classList.contains('on') || (e.style.display && e.style.display !== 'none' && id !== 'sheet')); })) return; openLogin(); } catch (e) {} };
   setTimeout(prompt, 2200); const _sh = show; window.show = show = function (s) { const r = _sh.apply(this, arguments); if (s === 'home') setTimeout(prompt, 2600); return r; };
 })();
 
 /* ---------------- the final stretch: from round 5 the battle music switches to a harder track (F-496)
    and every draft offer holds one card picked to counter the build you are facing (F-497) ---------------- */
 (function () {
-  const FINAL = 5;
+  const FINAL = 4;   /* (1.0.33) first to 3: round 4 is the last stretch */
   const _mu = window.music;
   // battle music by round. "Follows the fight" (the default): rounds 1-2, 3-4, 5-6 and 7 each have their own track, with two
   // alternatives for the last two phases chosen once per match. Any other choice keeps the old rule: harder music from round 5.
   const ready = id => { const e = AU.man && AU.man[id]; return !!(e && e.files && AU.buf[e.files[0]] !== null); };
   window.music = music = function (id) { try { if (id === 'bgm_battle' && typeof M !== 'undefined' && M && AU.man) { const r = M.round || 1, mode = typeof bgmChoice === 'function' ? bgmChoice('battle') : 'shuffle';
       const one = a => { const ok = a.filter(ready); return (ok.length ? ok : a)[Math.random() * (ok.length || a.length) | 0]; }; M.musPick = M.musPick || [one(['bgm_phase3', 'bgm_battle_final', 'bgm_phase3b']), one(['bgm_final2', 'bgm_battle_finale', 'bgm_final3'])];
-      if (mode === 'phase') { const want = r >= 7 ? M.musPick[1] : r >= 5 ? M.musPick[0] : r >= 3 ? 'bgm_phase2' : 'bgm_phase1'; if (ready(want)) return _mu(want); }
+      if (mode === 'phase') { const want = r >= 5 ? M.musPick[1] : r >= 4 ? M.musPick[0] : r >= 2 ? 'bgm_phase2' : 'bgm_phase1';   /* (1.0.33) phases fit a first-to-3 match */ if (ready(want)) return _mu(want); }
       if (r >= FINAL) { if (r >= 7 && ready(M.musPick[1])) return _mu(M.musPick[1]); if (ready(M.musPick[0])) return _mu(M.musPick[0]); } } } catch (e) {} return _mu.apply(this, arguments); };
   const _sd = startDuel;
   window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); try { if (M && M.round >= FINAL) { music('bgm_battle'); if (M.round === FINAL && !M._finalSaid) { M._finalSaid = 1; setTimeout(() => { try { toast('Final stretch! Each draft now includes a counter card.'); } catch (e) {} }, 600); } } } catch (e) {} return r; };

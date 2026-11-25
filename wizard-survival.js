@@ -86,8 +86,9 @@
           if (s.pt) { const keep = M.foeLook; M.foeLook = s.pt.look || keep; try { s.P = mkWiz('foe'); } finally { M.foeLook = keep; } Object.assign(s.P, { x: CX - 60, y: CY + 40, petId: 'none', svPartner: 1, face: 1, me: false, hp: 150 + ((s.boon && s.boon.hp) || 0), maxHp: 150 + ((s.boon && s.boon.hp) || 0), dead: 0 }); if (s.dueDraft) { s.dueDraft = 0; } }
           try { const bar = $('hpF') && $('hpF').parentElement; if (bar) bar.style.visibility = s.pt ? '' : 'hidden'; const n = $('hpnF'); if (n) n.style.visibility = s.pt ? '' : 'hidden'; } catch (e) {} groupBtn();
           // (1.0.30) the top bar shows your partner's actual hand, not hidden question marks; solo, it is empty
+          try { const tm = $('timer'); if (tm) tm.style.visibility = 'hidden'; } catch (e) {}   // (1.0.33) one timer: the wave chip
           try { const q = $('qF'); if (q) q.innerHTML = s.pt ? s.pt.hand.map(k => `<div class="qi rev" onclick="tipFromQueue(this,'${k}','foe')"><img src="${ICON[k]}"></div>`).join('') : ''; } catch (e) {}
-          hud(); } else { const h = $('svHud'); if (h) h.style.display = 'none'; const g = $('svGroup'); if (g) g.style.display = 'none'; try { const bar = $('hpF') && $('hpF').parentElement; if (bar) bar.style.visibility = ''; const n = $('hpnF'); if (n) n.style.visibility = ''; } catch (e2) {} } } catch (e) { try { window.logCrash && logCrash(e, 'svStart'); } catch (e2) {} }
+          hud(); } else { const h = $('svHud'); if (h) h.style.display = 'none'; const g = $('svGroup'); if (g) g.style.display = 'none'; const tm = $('timer'); if (tm) tm.style.visibility = ''; try { const bar = $('hpF') && $('hpF').parentElement; if (bar) bar.style.visibility = ''; const n = $('hpnF'); if (n) n.style.visibility = ''; } catch (e2) {} } } catch (e) { try { window.logCrash && logCrash(e, 'svStart'); } catch (e2) {} }
       return r; }; }
   if (typeof update === 'function') { const _u = update; window.update = update = function (dt) { const s = sv();
       if (s && typeof ents !== 'undefined' && ents && ents[1] && !ended && !(introT > 0)) { try { const me = ents[0], fo = ents[1], wave = Math.min(2, M.score.me), dur = s.endless ? Infinity : DUR[wave];
@@ -193,7 +194,7 @@
   /* ---------------- the partner ---------------- */
   function partner(s, dt) { const Pw = s.P; if (!Pw || introT > 0) return; const me = ents[0], fo = ents[1];
     if (Pw.dead) { Pw.dead += dt; return; } if (ended) return;
-    const mobs = zombies.filter(z => z.svMob && z.hp > 0 && z.rise >= 1); let near = null, nd = 1e9; for (const z of mobs) { const d = Math.hypot(z.x - Pw.x, z.y - Pw.y); if (d < nd) { nd = d; near = z; } }
+    const mobs = zombies.filter(z => (z.svMob || z.o === fo) && z.hp > 0 && z.rise >= 1); let near = null, nd = 1e9; for (const z of mobs) { const d = Math.hypot(z.x - Pw.x, z.y - Pw.y); if (d < nd) { nd = d; near = z; } }
     // Regroup: it holds a spot at your side. Split up: it roams, keeping its own distance from whatever is nearest to it.
     let tx, ty; if (s.group || !near) { const ax = me.x - fo.x, ay = me.y - fo.y, ad = Math.hypot(ax, ay) || 1; tx = me.x + ax / ad * 30 - ay / ad * 38; ty = me.y + ay / ad * 30 + ax / ad * 38; if (!s.group && !near) { tx = Pw.hx === undefined ? Pw.x : Pw.hx; ty = Pw.hy === undefined ? Pw.y : Pw.hy; } }
     else { const dx = Pw.x - near.x, dy = Pw.y - near.y, d = Math.hypot(dx, dy) || 1, want = 115; Pw.wa = (Pw.wa || 0) + dt * .6; tx = near.x + dx / d * want + Math.cos(Pw.wa) * 40; ty = near.y + dy / d * want + Math.sin(Pw.wa * 1.3) * 30; const ex = tx - me.x, ey = ty - me.y, ed = Math.hypot(ex, ey) || 1; if (ed < 70) { tx = me.x + ex / ed * 70; ty = me.y + ey / ed * 70; } }
@@ -205,6 +206,16 @@
       if (dp < dm - 20 && !(z.frozen > 0) && !(z.stun > 0) && z._px !== undefined) { const st = 44 * (z.beast ? 1 : .8) * (z.spd || 1) * dt; if (dp > 20) { z.x = z._px + (Pw.x - z._px) / (Math.hypot(Pw.x - z._px, Pw.y - z._py) || 1) * st; z.y = z._py + (Pw.y - z._py) / (Math.hypot(Pw.x - z._px, Pw.y - z._py) || 1) * st; } else { z.x = z._px; z.y = z._py; } }
       if (dp < 26) { z.pcd = (z.pcd || 0) - dt; if (z.pcd <= 0) { z.pcd = z.acd || .6; z.lunge = .2; if (z.boomD) { phurt(s, z.boomD); hurtZ(z, 1e6, null, 'fire'); try { burst(z.x, z.y - 20 * HS, 22, ['#ffb347', '#ff5a1f', '#fff'], 220, 6, .5); } catch (e) {} } else phurt(s, z.dmg || 4); } } }
     try { for (const p of projs) if (p.o === fo && p.life > 0 && Math.hypot(p.x - Pw.x, p.y - (Pw.y - 38 * HS)) < 24) { p.life = 0; phurt(s, S(fo, 'fireball', 'dmg') * (p.dmgMul || 1)); burst(p.x, p.y, 16, ['#ffb347', '#ff5a1f', '#fff'], 180, 5, .4); } } catch (e) {}
+    // (1.0.33) enemy area spells hurt the partner too: meteors, fire rings, pits, thorns, acid, gravity crush and storm strikes
+    try { const inR = (x0, y0, r) => Math.hypot(Pw.x - x0, (Pw.y - y0) / .8) < r; let dot = 0;
+      for (const m of (typeof meteors !== 'undefined' ? meteors : [])) if (m.o === fo && m.done && !m._pHit) { m._pHit = 1; const d = Math.hypot(Pw.x - m.tx, Pw.y - m.ty); if (d < m.r) phurt(s, Math.round((m.dmg || 20) * (1 - d / m.r * .5))); }
+      for (const g of (typeof firerings !== 'undefined' ? firerings : [])) if (g.o === fo && !g.done) { g._pH = g._pH || new Set(); if (!g._pH.has(Pw) && Math.abs(Math.hypot(Pw.x - g.x, Pw.y - g.y) - g.r) < 14) { g._pH.add(Pw); phurt(s, g.dmg || 8); } }
+      for (const p of (typeof pits !== 'undefined' ? pits : [])) if (p.o === fo && !p.done && inR(p.x, p.y, p.r)) dot += p.dps || 4;
+      for (const p of (typeof patches !== 'undefined' ? patches : [])) if (p.o === fo && p.t < p.life && inR(p.x, p.y, p.r)) dot += p.dps || 3;
+      for (const b of (typeof bubbles !== 'undefined' ? bubbles : [])) if (b.o === fo && !b.dead && Math.hypot(Pw.x - b.x, Pw.y - b.y) < (b.r || 30)) dot += b.dps || 3;
+      for (const g of (typeof wells !== 'undefined' ? wells : [])) if (g.o === fo && g.t < g.dur && g.crush && inR(g.x, g.y, g.r * .35)) dot += 6;
+      for (const c of (typeof clouds !== 'undefined' ? clouds : [])) if (c.o === fo) for (const mk of (c.marks || [])) if (mk.hit && !mk._pHit) { mk._pHit = 1; if (Math.hypot(Pw.x - mk.x, Pw.y - mk.y) < 42) phurt(s, c.dmg || 10); }
+      if (dot) { s.pDot = (s.pDot || 0) + dot * dt; s.pDotT = (s.pDotT || 0) + dt; if (s.pDotT >= .5) { s.pDotT = 0; const v = s.pDot; s.pDot = 0; if (v >= .5) phurt(s, Math.round(v * 10) / 10); } } } catch (e) {}
     if (Pw.dead) return;
     const hand = s.pt.hand, k = hand[s.pi % hand.length]; s.pc += dt; const need = (SP[k].t || 1.5) * 1.25;
     if (s.pc >= need && near) { s.pc = 0; s.pi++;
@@ -234,7 +245,7 @@
       let hid = null; try { const s0 = sv(), fo = s0 && typeof ents !== 'undefined' && ents && ents[1]; if (fo && fo.svAnchor) { hid = { fo, x: fo.x, y: fo.y, st: fo.stunT }; fo.x = -4000; fo.y = -4000; fo.stunT = 0; } } catch (e) {}
       let r; try { r = _r.apply(this, arguments); } finally { if (hid) { hid.fo.x = hid.x; hid.fo.y = hid.y; hid.fo.stunT = hid.st; } }
       try { if ($('battle').classList.contains('on')) drawDrops(); } catch (e) {}
-      try { const s1 = sv(), q = $('qF'); if (s1 && s1.pt && q) { const n = s1.pt.hand.length, cur = s1.pi % n, k = s1.pt.hand[cur], need = (SP[k].t || 1.5) * 1.25; if (q.children.length !== n) q.innerHTML = s1.pt.hand.map(k2 => `<div class="qi rev" onclick="tipFromQueue(this,'${k2}','foe')"><img src="${ICON[k2]}"></div>`).join(''); for (let i = 0; i < q.children.length; i++) { q.children[i].style.opacity = s1.P && s1.P.dead ? '.35' : i === cur ? '1' : '.85'; q.children[i].classList.toggle('now', i === cur && !(s1.P && s1.P.dead)); if (i === cur) q.children[i].style.setProperty('--p', Math.min(1, s1.pc / need)); } } } catch (e) {}
+      try { const s1 = sv(), q = $('qF'); if (s1 && s1.pt && q) { const n = s1.pt.hand.length, cur = s1.pi % n, k = s1.pt.hand[cur], need = (SP[k].t || 1.5) * 1.25; if (q.children.length !== n) q.innerHTML = s1.pt.hand.map(k2 => `<div class="qi rev" onclick="tipFromQueue(this,'${k2}','foe')"><img src="${ICON[k2]}"></div>`).join(''); for (let i = 0; i < q.children.length; i++) { q.children[i].style.opacity = s1.P && s1.P.dead ? '.4' : '1'; q.children[i].classList.toggle('now', i === cur && !(s1.P && s1.P.dead)); if (i === cur) q.children[i].style.setProperty('--p', Math.min(1, s1.pc / need)); } } } catch (e) {}
       try { const s = sv(); if (s && s.P && $('battle').classList.contains('on') && !(s.P.dead > 1.2)) { const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0); drawWiz(s.P); x.restore(); } } catch (e) {}
       return r; }; }
 
@@ -258,7 +269,8 @@
       // gold: 2 a zombie, 3 a beast, 5 a caster, paid only for clearing all three waves (Endless pays half as it has no end); a failed run pays a flat 10. Capped at 250 a run.
       try { if (s) { const rate = s.kind === 'zombie' ? 2 : s.kind === 'zodiac' ? 3 : 5, won = !s.endless && M.score.me >= 3, g = won ? Math.min(250, s.kills * rate) : s.endless ? Math.max(10, Math.min(250, Math.floor(s.kills * rate / 2))) : 10; PR.coins = coins0 + g; s.gold = g; save(); const put = () => { const el = $('rwC'); if (el) el.textContent = '+' + g; }; put(); setTimeout(put, 900); setTimeout(put, 2200); if (typeof refreshMeta === 'function') refreshMeta(); } } catch (e) {}
       try { if (s && stats0) { PR.stats = JSON.parse(stats0); save(); const rm = $('rwRm'); if (rm) rm.remove(); document.querySelectorAll('#rewards .stknote').forEach(e => e.remove()); } } catch (e) {}
-      try { if (s) { const el = $('rewards'), at = $('rwRow'); if (at && !el.querySelector('.sv-res')) at.insertAdjacentHTML('beforebegin', `<div class="sv-res"><b>${s.endless ? 'Endless' : (M.score.me >= 3 ? 'All 3 waves survived' : 'Fell on wave ' + (Math.min(2, M.score.me) + 1))}</b><span>${fmt(s.total)} survived · ${s.kills} defeated · +${s.gold || 0} gold</span></div>`); } } catch (e) {}
+      try { if (s) { const won = !s.endless && M.score.me >= 3, K = KINDS[s.kind] || KINDS.zodiac; $('rwMode').textContent = `Survival · ${K[0]} · ${s.endless ? 'Endless' : '3 Waves'}${s.pt ? ' · with ' + s.pt.n : ''}`; $('rwTitle').textContent = s.endless ? 'Run over' : won ? 'Survived!' : 'Fell on wave ' + (Math.min(2, M.score.me) + 1); $('rwTitle').style.color = won || s.endless ? '#ffd45e' : '#ff8a96'; $('rwScore').textContent = fmt(s.total);
+          const el = $('rewards'), at = $('rwRow'); if (at && !el.querySelector('.sv-res')) at.insertAdjacentHTML('beforebegin', `<div class="sv-res"><span>${s.kills} defeated · +${s.gold || 0} gold</span></div>`); } } catch (e) {}
       return r; }; }
 
   /* ---------------- the Fight Club tab ---------------- */
