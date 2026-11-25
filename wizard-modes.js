@@ -130,6 +130,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.29', d: '24 Nov 2026', items: ['Coloured ability text now appears only on the ability page from the Abilities screen. Descriptions during a match are back to plain, readable text.'] },
     { v: '1.0.28', d: '24 Nov 2026', items: ['Ability and upgrade text is colour coded: health in light blue, damage in orange, cast and timing numbers in green, status effects in purple, movement in a warmer orange, and rules to keep in mind in yellow.',
       'Daily Challenges now come in Easy (50 gold), Medium (100) and Hard (150), drawn at random, with a countdown to the next free set and four new titles for completing them.',
       'Survival: enemies walk in from off screen. Casters open a wave as a group of 2, 4 or 6, with a fresh group every 30 seconds. Zombies pour from spawn points (2, 3, then 4; one more every 8 seconds in Endless), up to 25 on the field.',

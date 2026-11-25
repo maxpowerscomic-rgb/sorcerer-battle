@@ -109,9 +109,12 @@
     for (const k in SP) add(SP[k].d); try { for (const k in UPG) for (const u of (UPG[k] || [])) add(u.d); } catch (e) {} try { for (const b of (typeof ZODIAC !== 'undefined' ? ZODIAC : [])) add(b.q); } catch (e) {} return DMAP; }
   function paintText(root) { if (!root) return; const mp = dmap(), w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), hits = []; let n; while ((n = w.nextNode())) { const v = n.nodeValue; if (!v || v.length < 13) continue; const p = n.parentNode; if (!p || (p.classList && p.classList.contains('dc')) || p.nodeName === 'SCRIPT' || p.nodeName === 'STYLE') continue; const t = v.trim(); if (mp.has(t)) hits.push([n, t]); }
     for (const [nd, t] of hits) { const sp = document.createElement('span'); sp.className = 'dc-wrap'; sp.innerHTML = mp.get(t); nd.parentNode.replaceChild(sp, nd); } }
-  try { let queued = new Set(), raf = 0; const flush = () => { raf = 0; const L = [...queued]; queued = new Set(); for (const el of L) { try { if (el.isConnected) paintText(el); } catch (e) {} } };
-    const ob = new MutationObserver(ms => { for (const m of ms) { for (const nd of m.addedNodes) { if (nd.nodeType === 1) { if (!(nd.classList && nd.classList.contains('dc-wrap'))) queued.add(nd); } else if (nd.nodeType === 3 && nd.parentNode && nd.parentNode.nodeType === 1 && !(nd.parentNode.classList && (nd.parentNode.classList.contains('dc') || nd.parentNode.classList.contains('dc-wrap')))) queued.add(nd.parentNode); } } if (queued.size && !raf) raf = setTimeout(flush, 30); });
-    for (const id of ['sheetP', 'draft', 'order', 'spells', 'repBody', 'upDesc']) { const el = $(id); if (el) ob.observe(el, { childList: true, subtree: true }); } } catch (e) {}
+  // (1.0.29) colours appear only on the ability page opened from the Abilities screen. Never in a match (draft, order, battle) or anywhere else,
+  // because those panels sit on lighter or busier backgrounds where pale coloured text cannot be read.
+  const onAbilities = () => { const sp = $('spells'); return !!(sp && sp.classList.contains('on')) && !['draft', 'order', 'battle', 'vs', 'rewards'].some(id => { const e = $(id); return e && e.classList.contains('on'); }); };
+  if (typeof openSpell === 'function') { const _osT = openSpell; window.openSpell = openSpell = function () { const r = _osT.apply(this, arguments);
+      try { if (onAbilities()) { const Pn = $('sheetP'); paintText(Pn); setTimeout(() => { try { if (onAbilities() && $('sheet').classList.contains('on')) paintText($('sheetP')); } catch (e) {} }, 60); } } catch (e) {}
+      return r; }; }
   window.DESC_TINT = tint;
 
   const css = document.createElement('style');
