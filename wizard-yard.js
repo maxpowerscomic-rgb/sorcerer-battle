@@ -20,7 +20,7 @@
   // what the dummy does: the abilities it casts on a loop (none = it just stands there) and whether it walks like a fighter
   const cfg = () => { const c = (PR.yardDummy = PR.yardDummy || {}); c.book = (Array.isArray(c.book) ? c.book : []).filter(k => SP[k]).slice(0, 4); c.walk = !!c.walk; return c; };
   const homeOn = () => { const h = $('home'); return h && h.classList.contains('on'); };
-  const sheetOn = () => { const s = $('sheet'); return s && s.classList.contains('on'); };
+  const sheetOn = () => { const s = $('sheet'); return s && s.classList.contains('on') && !s.classList.contains('live-bg'); };   /* (1.0.33.4) panels marked live-bg (Hoot, player level) let the yard keep fighting behind them */
 
   function build() {
     const sv = showVs; Y.building = true;

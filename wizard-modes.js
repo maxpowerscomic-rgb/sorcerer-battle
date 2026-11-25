@@ -130,6 +130,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.4', d: '24 Nov 2026', items: ['When a new version is out, Hoot tells you: a notification, a red dot on Hoot, and the Help section\'s button reads New update available.', 'Hoot stays animated in his panel, and the training yard keeps going behind it.'] },
     { v: '1.0.33.3', d: '24 Nov 2026', items: ['A shorter first tutorial: just your name, path, first unlock, your hand, a first duel and a first upgrade.', 'Hoot now gives a short tip the first time you open each screen. Skip any of them, or turn tips off.', 'On an ability page, Upgrades, Matchups, Colour, Trials and Starting upgrades fold away with a tap.', 'Chests show their odds clearly.'] },
     { v: '1.0.33.2', d: '24 Nov 2026', items: ['Tap your level badge or XP bar to see your player level, XP to the next level, how XP is earned and what each level gives.', 'Survival gives 25% less XP than a duel.'] },
     { v: '1.0.33.1', d: '24 Nov 2026', items: ['Sure Hit reworked: while the dome stands, your shots home in on enemies inside it, and other damaging casts land on every enemy inside it, summons included.',

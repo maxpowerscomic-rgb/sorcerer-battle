@@ -59,6 +59,21 @@
   // replaying the tutorial resets the tips too
   if (typeof replayTutorial === 'function') { const _rt = replayTutorial; window.replayTutorial = replayTutorial = function () { PR.tours = {}; try { save(); } catch (e) {} return _rt.apply(this, arguments); }; }
 
+  /* ---------------- (1.0.33.4) tell the player when a new version is out ----------------
+     The web game checks the live version quietly (shortly after opening, then every 10 minutes). When a newer one is out:
+     Hoot shows it as a ready item with a red dot, it goes into notifications once, and the Help section's button reads
+     "New update available" with a red dot. In the iPhone app the files are bundled and updates come from the App Store,
+     so there the button keeps its manual check. */
+  const native = () => !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.app) || location.protocol === 'app:';
+  const vcmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 4; i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0 ? 1 : -1; } return 0; };
+  async function quietCheck() { if (native() || location.hostname === 'localhost') return; try { const r = await fetch(new URL('.', location.href).href + 'wizard-data.js?t=' + Date.now(), { cache: 'no-store' }), m = /GAME_VERSION = '([0-9.]+)'/.exec(await r.text()), live = m && m[1];
+      if (live && vcmp(live, GAME_VERSION) > 0) { const first = window.UPDATE_READY !== live; window.UPDATE_READY = live; if (first && PR.updNoted !== live) { PR.updNoted = live; try { save(); if (window.logNote) logNote(`Hoot: version ${live} is out. Tap Hoot or Options › Help to update.`, 'update'); } catch (e) {} } paintUpd(); try { refreshMeta(); } catch (e) {} } } catch (e) {} }
+  function paintUpd() { const v = window.UPDATE_READY; if (!v) return; const b = $('updBtn'); if (b && !b.dataset.ready) { b.dataset.ready = 1; b.innerHTML = `★ New update available (${v}) <span class="upd-dot"></span>`; b.classList.add('upd-ready'); }
+    document.querySelectorAll('.og-sec[data-g="Help"] > summary b').forEach(h => { if (!h.querySelector('.upd-dot')) h.insertAdjacentHTML('beforeend', ' <span class="upd-dot"></span>'); }); }
+  setTimeout(quietCheck, 6000); setInterval(quietCheck, 10 * 60 * 1000);
+  if (typeof settingsHTML === 'function') { const _sh3 = settingsHTML; window.settingsHTML = settingsHTML = function () { const h = _sh3.apply(this, arguments); setTimeout(paintUpd, 0); return h; }; }
+  window.UPDATE_ITEM = () => window.UPDATE_READY ? { ready: 1, ic: 'gift', t: `Version ${window.UPDATE_READY} is out. Tap to update.`, go: 'checkUpdate()' } : null;
+
   const css = document.createElement('style');
   css.textContent = `
   #tipT{position:absolute;inset:0;z-index:72;pointer-events:auto;font-family:'Nunito',sans-serif}#tipT.hide{display:none!important}
@@ -72,6 +87,7 @@
   #tipT .row{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
   #tipT .go{font:16px 'Lilita One';color:#2a1600;background:linear-gradient(#ffe27a,#f0a830);border:3px solid #000;border-radius:12px;padding:5px 14px;box-shadow:0 3px 0 #000;cursor:pointer}
   #tipT .skip{font:800 12px Nunito;color:#5a4a7a;background:none;border:none;cursor:pointer;text-decoration:underline;padding:4px}#tipT .row .skip:first-of-type{margin-left:auto}
+  .upd-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff4a5a;border:2px solid #000;vertical-align:middle;margin-left:4px;font-style:normal}#updBtn.upd-ready{background:linear-gradient(#ffe27a,#f0a830)!important;color:#2a1600!important}
   #tipT .tip-n{font:800 12px Nunito;color:#5a4a7a}#tipT .tip-shade{display:none}`;
   document.head.appendChild(css);
 })();

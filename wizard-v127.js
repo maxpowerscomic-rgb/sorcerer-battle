@@ -29,13 +29,13 @@
         <small>Every mode counts: Ranked, Casual, the Ladder, Fight Club and Survival. Survival gives 25% less than a duel.</small></div>
       <div class="pl-sec"><b>Each new level gives you</b><div class="pl-row"><span>Gems</span><em>+10</em></div><div class="pl-row"><span>Echo Rune</span><em>+1</em></div><div class="pl-row"><span>Spell Token pick</span><em>+1</em></div>
         <small>Each level needs a little more XP than the last: level ${L} needs ${need}, level ${L + 1} needs ${xpNeed(L + 1)}.</small></div>`;
-    $('sheet').classList.add('on'); };
+    $('sheet').classList.add('on', 'live-bg'); };
   function lvlHook() { const b = $('pLvlR'), bar = document.querySelector('.prof .xpbar'); for (const el of [b, bar]) if (el && !el._lvHook) { el._lvHook = 1; el.style.cursor = 'pointer'; el.addEventListener('click', openLevelInfo, true); } }
   try { lvlHook(); } catch (e) {} document.addEventListener('DOMContentLoaded', () => { try { lvlHook(); } catch (e) {} });
 
   /* ---------------- Hoot: what to do next ---------------- */
   // a Hoot button above the fighter button on the home screen; it always has a few concrete suggestions, and a dot when one is ready right now
-  function goals() { const out = [];
+  function goals() { const out = []; try { const u = window.UPDATE_ITEM && UPDATE_ITEM(); if (u) out.push(u); } catch (e) {}
     try { if (typeof loginDue === 'function' && loginDue()) out.push({ ready: 1, ic: 'gift', t: 'Your daily login reward is ready.', go: 'openLogin()' }); } catch (e) {}
     try { const st = window.CH_DEBUG && CH_DEBUG.chState(); if (st) { const done = st.list.filter(c => c.done && c.claimed === 0).length; if (done) out.push({ ready: 1, ic: 'gold', t: `${done} challenge${done > 1 ? 's' : ''} finished. Collect the gold.`, go: 'openChallenges()' }); } } catch (e) {}
     try { const un = unlockedSpells(), cand = []; for (const k of un) { const s = PR.spells[k]; if (!s || s.lvl >= MAXL) continue; const need = CARDS[s.lvl] || 1, cost = COST[s.lvl] || 0; if (s.cards >= need) cand.push({ k, ready: PR.coins >= cost, f: 2, cost }); else cand.push({ k, ready: 0, f: s.cards / need, left: need - s.cards }); }
@@ -51,10 +51,15 @@
   window.openHootGoals = function () { const G = goals();
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="hg-head"><canvas id="hgOwl" width="96" height="96"></canvas><div><b>Hoot</b><span>Here is what I would do next.</span></div></div>
       <div class="hg-list">${G.map(g => `<button class="hg-row${g.ready ? ' ready' : ''}" onclick="closeSheet();${g.go.replace(/"/g, '&quot;')}">${g.k ? `<img src="${ICON[g.k]}">` : `<i>${ICS[g.ic] || '★'}</i>`}<span>${esc(g.t)}</span><em>Go</em></button>`).join('') || '<div class="ssub">Nothing pressing. Go win a match!</div>'}</div>`;
-    $('sheet').classList.add('on'); try { const c = $('hgOwl'), x = c.getContext('2d'); x.translate(48, 104); x.scale(2, 2); drawPet(x, 'owl', performance.now() / 1000, 1); } catch (e) {} };
+    $('sheet').classList.add('on', 'live-bg');
+    // Hoot keeps moving while his panel is open
+    const c = $('hgOwl'); const loop = () => { if (!c || !c.isConnected || !$('sheet').classList.contains('on')) return; try { const x = c.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, 96, 96); x.translate(48, 104); x.scale(2, 2); drawPet(x, 'owl', performance.now() / 1000, 1); } catch (e) {} requestAnimationFrame(loop); }; loop(); };
   function hootBtn() { const st = document.querySelector('#home .stage'); if (!st) return; let b = $('hgBtn'); if (!b) { st.insertAdjacentHTML('beforeend', '<button id="hgBtn" onclick="openHootGoals()" aria-label="Hoot\'s suggestions"><canvas width="96" height="96"></canvas><i></i></button>'); b = $('hgBtn'); }
     let ready = false; try { ready = goals().some(g => g.ready); } catch (e) {} b.classList.toggle('ready', ready); }
   function hootFace() { try { const c = document.querySelector('#hgBtn canvas'); if (!c || !$('home').classList.contains('on')) return; const x = c.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, 96, 96); x.translate(48, 104); x.scale(2, 2); drawPet(x, 'owl', performance.now() / 1000, 1); } catch (e) {} }
+  // a live-bg panel only stays live-bg until the sheet closes
+  if (typeof closeSheet === 'function') { const _cs = closeSheet; window.closeSheet = closeSheet = function () { try { $('sheet').classList.remove('live-bg'); } catch (e) {} return _cs.apply(this, arguments); }; }
+  { const _osP = window.openSpell; if (typeof _osP === 'function') window.openSpell = openSpell = function () { try { $('sheet').classList.remove('live-bg'); } catch (e) {} return _osP.apply(this, arguments); }; }
   if (typeof refreshMeta === 'function') { const _rm = refreshMeta; window.refreshMeta = refreshMeta = function () { const r = _rm.apply(this, arguments); try { hootBtn(); } catch (e) {} return r; }; }
   setInterval(hootFace, 120); try { hootBtn(); } catch (e) {}
 
