@@ -25,7 +25,7 @@
     shake = Math.max(shake, 16); if (typeof flashScreen === 'function') flashScreen(); try { sfx('c_rush', { x: mx }); } catch (e) {}
     setTimeout(() => { if (!ended) slow = 1; }, 260); }
   if (typeof update === 'function') { const _u = update; window.update = update = function (dt) {
-      try { if (typeof zombies !== 'undefined' && !ended) for (const z of zombies) if (isJ(z) && z.rise >= 1) { z.spd = z.beast.spd * Math.min(2.4, 1 + (z.bt || 0) * .05); if (U(z.o, 'zodiac', 'guard')) { z._gx = z.x; z._gy = z.y; } else z._gx = undefined; } } catch (e) {}
+      try { if (typeof zombies !== 'undefined' && !ended) for (const z of zombies) if (isJ(z) && z.rise >= 1) { z.spd = z.beast.spd * Math.min(4.3, 1 + (z.bt || 0) * .47);   /* (1.0.30) starts at a plod (about 18 px/s) and reaches a walking caster's pace (about 80 px/s) after 7 seconds */ if (U(z.o, 'zodiac', 'guard')) { z._gx = z.x; z._gy = z.y; } else z._gx = undefined; } } catch (e) {}
       const r = _u.apply(this, arguments);
       try { if (typeof ents !== 'undefined' && ents && !ended) {
           for (const z of zombies) if (isJ(z) && z._gx !== undefined && !(z.stun > 0) && !(z.frozen > 0)) { const w = z.o, f = w.foe; if (w.dead || threat(w, z)) continue;

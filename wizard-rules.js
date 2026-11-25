@@ -167,6 +167,8 @@
     try { if (typeof decals !== 'undefined') for (let i = decals.length - 1; i >= 0; i--) { const d = decals[i]; if ((d.k === 'acid' || d.k === 'fire' || d.k === 'frost') && d.o && d.o !== w && inD(d.x, d.y, 0)) { zap(d.x, d.y, d.r); decals.splice(i, 1); n++; } } } catch (e) {}
     try { for (const m of (window.TECH_DEBUG ? TECH_DEBUG.muds : [])) if (m.o !== w && m.t < m.dur && inD(m.x, m.y, m.r * .5)) { zap(m.x, m.y, m.r * .7); m.t = m.dur; n++; } for (const sp of (window.TECH_DEBUG ? TECH_DEBUG.springs : [])) if (sp.o !== w && sp.t < sp.dur && inD(sp.x, sp.y, 0)) { zap(sp.x, sp.y, sp.r); sp.t = sp.dur; n++; } } catch (e) {}
     try { if (typeof totems !== 'undefined') for (const q of totems.slice()) if (q.o !== w && q.hp > 0 && inD(q.x, q.y, 0)) { zap(q.x, q.y, 22); SRC = 'sanctum'; hurtTotem(q, 9999); n++; } } catch (e) {}
+    // (1.0.30) and enemy fly swarms inside it are scattered
+    try { if (typeof swarms !== 'undefined') for (const q of swarms) if (q.o !== w && q.hp > 0 && inD(q.x, q.y, 0)) { zap(q.x, q.y, 26); q.hp = 0; q.life = 0; n++; } } catch (e) {}
     // (1.0.28) a Sanctum going up dispels enemy storm clouds already inside it; a cloud cast into a standing Sanctum is untouched
     try { if (typeof clouds !== 'undefined') for (const c of clouds) if (c.o !== w && c.t < c.life && inD(c.x, c.y, 0)) { zap(c.x, c.y, 34); c.t = c.life; n++; } } catch (e) {}
     if (n) { text(dm.x, dm.y - 118 * HS, 'ERASED', '#ffffff', true); shake = Math.max(shake, 8); try { sfx('shatter', { x: dm.x, vol: .6, rate: 1.3 }); } catch (e) {} }

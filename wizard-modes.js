@@ -130,6 +130,13 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.30', d: '24 Nov 2026', items: ['Zodiac Beasts: the Rabbit comes as a litter of 4 (Warren upgrade: 7), the Snake\'s bite poisons over 3 seconds (Snake Pit upgrade: three snakes), and you ride your Horse across the arena, trampling the enemy caster if it runs through them.',
+      'The Juggernaut gets up to a walking caster\'s pace within 7 seconds.',
+      'Lightning and fire leave a fighter smouldering for 3 seconds, trailing embers as they move. A Sanctum going up scatters enemy fly swarms inside it.',
+      'Melee hits from summons and mobs have a 0.25 second guard, so a crowd cannot land all its hits at once. Spells are unaffected.',
+      'Draft cards show the ability\'s tier: plain parchment, then amber, then gilded with a gold rule.',
+      'Co-op survival shows your partner\'s abilities in the top bar instead of question marks.',
+      'Options are grouped into Gameplay, Sound, Display, Help and Account.'] },
     { v: '1.0.29', d: '24 Nov 2026', items: ['Coloured ability text now appears only on the ability page from the Abilities screen. Descriptions during a match are back to plain, readable text.'] },
     { v: '1.0.28', d: '24 Nov 2026', items: ['Ability and upgrade text is colour coded: health in light blue, damage in orange, cast and timing numbers in green, status effects in purple, movement in a warmer orange, and rules to keep in mind in yellow.',
       'Daily Challenges now come in Easy (50 gold), Medium (100) and Hard (150), drawn at random, with a countdown to the next free set and four new titles for completing them.',

@@ -772,10 +772,10 @@
     w.zn = (w.zn || 0) + 1;
     if (U(w, k, 'mend')) { const full = U(w, k, 'mend2'); for (const q of zombies) if (q.o === w && q.beast && q.hp > 0 && q.hp < q.mx) { q.hp = full ? q.mx : Math.min(q.mx, q.hp + q.mx * .5); text(q.x, q.y - 50 * HS, full ? 'MENDED' : '+50%', '#7dffa8'); burst(q.x, q.y - 20 * HS, 8, ['#7dffa8', '#fff'], 100, 3, .4); } }
     const dome = domes.find(d => d.o === w && d.t < d.dur);
-    const o = w.foe, a = Math.atan2(o.y - w.y, o.x - w.x), n = (U(w, k, 'pack') && ['rat', 'rabbit', 'rooster'].includes(b.id) ? 2 : 1) * (dome && !b.boss ? 2 : 1);
+    const o = w.foe, a = Math.atan2(o.y - w.y, o.x - w.x), n = !b.crim && b.id === 'rabbit' ? (U(w, k, 'warren') ? 7 : 4) /* (1.0.30) rabbits come as a litter */ : !b.crim && b.id === 'snake' ? (U(w, k, 'snakepit') ? 3 : 1) * (dome ? 2 : 1) : (U(w, k, 'pack') && ['rat', 'rooster'].includes(b.id) ? 2 : 1) * (dome && !b.boss ? 2 : 1);
     for (let i = 0; i < n; i++) {
-      const ra = rnd(0, 6.283), rd = dome ? Math.sqrt(Math.random()) * dome.r * .85 : 0, q = dome ? inArena(dome.x + Math.cos(ra) * rd, dome.y + Math.sin(ra) * rd / 1.4) : inArena(w.x + Math.cos(a) * 34 + rnd(-12, 12), w.y + Math.sin(a) * 34 + rnd(-12, 12)), hp = S(w, k, 'hp') * b.hp * (w.czNow && !b.regent && U(w, 'crimsonzodiac', 'bloodmoon') ? 1.25 : 1);
-      const z = { crim: w.czNow ? 1 : 0, o: w, x: q.x, y: q.y, mx: hp, hp, rise: .35, cd: rnd(0, .3), t: rnd(0, 9), flash: 0, lunge: 0, beast: b, spd: b.spd, dmg: b.boss ? 20 : S(w, k, 'dmg') * b.dmg, acd: b.acd, onHit: beastHit };
+      const ra = rnd(0, 6.283), rd = dome ? Math.sqrt(Math.random()) * dome.r * .85 : 0, q = dome ? inArena(dome.x + Math.cos(ra) * rd, dome.y + Math.sin(ra) * rd / 1.4) : inArena(w.x + Math.cos(a) * 34 + rnd(-12, 12), w.y + Math.sin(a) * 34 + rnd(-12, 12)), hp = S(w, k, 'hp') * b.hp * (w.czNow && !b.regent && U(w, 'crimsonzodiac', 'bloodmoon') ? 1.25 : 1) * (!b.crim && b.id === 'rabbit' ? .6 : 1);
+      const z = { crim: w.czNow ? 1 : 0, o: w, x: q.x, y: q.y, mx: hp, hp, rise: .35, cd: rnd(0, .3), t: rnd(0, 9), flash: 0, lunge: 0, beast: b, spd: b.spd, dmg: b.boss ? 20 : S(w, k, 'dmg') * b.dmg * (!b.crim && b.id === 'rabbit' ? .7 : 1), acd: b.acd, onHit: beastHit };
       if (b.boss) w.jRef = z;
       zombies.push(z); decals.push({ k: 'hole', x: q.x, y: q.y, t: 0, life: 4 });
       for (let j = 0; j < 14; j++) P({ x: q.x + rnd(-14, 14), y: q.y - rnd(0, 20), vx: rnd(-30, 30), vy: rnd(-90, -30), color: ['#8a6cff', '#140a30', '#3a2a6a'][j % 3], size: rnd(4, 8), life: rnd(.4, .8), glow: false });
@@ -788,6 +788,7 @@
     if (b.boss) { tgt.vx += (tgt.x - z.x) / d * 720; tgt.vy += (tgt.y - z.y) / d * 720; shake = Math.max(shake, 12); text(tgt.x, tgt.y - 96 * HS, 'LAUNCHED!', '#ffe08a', true); inkRing(tgt.x, tgt.y, '#ffe08a', 3, 8, 60, .6); slow = Math.min(slow, .4); setTimeout(() => { if (!ended) slow = 1; }, 120); }
     if (b.id === 'ox' || b.ram) { tgt.vx += (tgt.x - z.x) / d * 260; tgt.vy += (tgt.y - z.y) / d * 260; }
     if (b.slow) tgt.slowT = Math.max(tgt.slowT || 0, 1.4);
+    if (b.id === 'snake') { tgt.snPois = { t: 3, dps: U(z.o, 'zodiac', 'snakepit') ? 2.2 : 3, acc: 0 }; }   // (1.0.30) venom: poison damage over 3 seconds
     if (b.stun && Math.random() < .5) { dazeW(tgt, .4); text(z.x, z.y - 40 * HS, 'COCK-A-DOODLE!', '#ffe08a'); }
     if (b.steal) tgt.p = Math.max(0, (tgt.p || 0) - .25);
     if (b.fire) { tgt.burn = Math.max(tgt.burn || 0, 1.5); tgt.burnD = 3; tgt.burnSrc = 'zodiac'; for (let i = 0; i < 6; i++) fireFx.push({ x: z.x + Math.sign(tgt.x - z.x) * 14, y: z.y - 26 * HS, vx: (tgt.x - z.x) / d * 160 + rnd(-20, 20), vy: (tgt.y - z.y) / d * 160 - rnd(10, 40), t: 0, life: rnd(.2, .35), s: rnd(6, 9), seed: rnd(0, 99), smoke: 0 }); }

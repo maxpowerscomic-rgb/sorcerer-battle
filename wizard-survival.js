@@ -84,6 +84,8 @@
           if (s.hu.length) setTimeout(() => { try { if (!ended) text(W / 2, H / 2 - 60, 'ENEMY: ' + [...new Set(s.hu)].map(id => HUPS[id][0] + (hn(s, id) > 1 ? ' x' + hn(s, id) : '')).join(', ').toUpperCase(), '#ff9aa6', true); } catch (e) {} }, 1700); s.pc = 0; s.pi = 0; s.P = null;
           if (s.pt) { const keep = M.foeLook; M.foeLook = s.pt.look || keep; try { s.P = mkWiz('foe'); } finally { M.foeLook = keep; } Object.assign(s.P, { x: CX - 60, y: CY + 40, petId: 'none', svPartner: 1, face: 1, me: false, hp: 150, maxHp: 150, dead: 0 }); if (s.dueDraft) { s.dueDraft = 0; } }
           try { const bar = $('hpF') && $('hpF').parentElement; if (bar) bar.style.visibility = s.pt ? '' : 'hidden'; const n = $('hpnF'); if (n) n.style.visibility = s.pt ? '' : 'hidden'; } catch (e) {} groupBtn();
+          // (1.0.30) the top bar shows your partner's actual hand, not hidden question marks; solo, it is empty
+          try { const q = $('qF'); if (q) q.innerHTML = s.pt ? s.pt.hand.map(k => `<div class="qi rev" onclick="tipFromQueue(this,'${k}','foe')"><img src="${ICON[k]}"></div>`).join('') : ''; } catch (e) {}
           hud(); } else { const h = $('svHud'); if (h) h.style.display = 'none'; const g = $('svGroup'); if (g) g.style.display = 'none'; try { const bar = $('hpF') && $('hpF').parentElement; if (bar) bar.style.visibility = ''; const n = $('hpnF'); if (n) n.style.visibility = ''; } catch (e2) {} } } catch (e) { try { window.logCrash && logCrash(e, 'svStart'); } catch (e2) {} }
       return r; }; }
   if (typeof update === 'function') { const _u = update; window.update = update = function (dt) { const s = sv();
@@ -174,6 +176,7 @@
       // (1.0.27) the unseen anchor is moved off the field while the frame is drawn, so nothing that follows a caster around (aura, stun stars, glow) shows up on the mob it is riding
       let hid = null; try { const s0 = sv(), fo = s0 && typeof ents !== 'undefined' && ents && ents[1]; if (fo && fo.svAnchor) { hid = { fo, x: fo.x, y: fo.y, st: fo.stunT }; fo.x = -4000; fo.y = -4000; fo.stunT = 0; } } catch (e) {}
       let r; try { r = _r.apply(this, arguments); } finally { if (hid) { hid.fo.x = hid.x; hid.fo.y = hid.y; hid.fo.stunT = hid.st; } }
+      try { const s1 = sv(), q = $('qF'); if (s1 && s1.pt && q) { const n = s1.pt.hand.length, cur = s1.pi % n, k = s1.pt.hand[cur], need = (SP[k].t || 1.5) * 1.25; if (q.children.length !== n) q.innerHTML = s1.pt.hand.map(k2 => `<div class="qi rev" onclick="tipFromQueue(this,'${k2}','foe')"><img src="${ICON[k2]}"></div>`).join(''); for (let i = 0; i < q.children.length; i++) { q.children[i].style.opacity = s1.P && s1.P.dead ? '.35' : i === cur ? '1' : '.85'; q.children[i].classList.toggle('now', i === cur && !(s1.P && s1.P.dead)); if (i === cur) q.children[i].style.setProperty('--p', Math.min(1, s1.pc / need)); } } } catch (e) {}
       try { const s = sv(); if (s && s.P && $('battle').classList.contains('on') && !(s.P.dead > 1.2)) { const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0); drawWiz(s.P); x.restore(); } } catch (e) {}
       return r; }; }
 
