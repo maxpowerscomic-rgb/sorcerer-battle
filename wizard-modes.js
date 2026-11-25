@@ -130,6 +130,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.18', d: '25 Nov 2026', items: ['Drag an ability in your Battle Hand onto another slot to rearrange it.', 'Fixed: the bar at the top of the draft and order screens (you, the round, your rival) is centred again.'] },
     { v: '1.0.33.17', d: '25 Nov 2026', items: [
       'Season Pass premium is far bigger: 500 gold every tier, 10 Echo Runes every third tier, and five premium-only cosmetics in the first tiers (Starforged robe, Comet trail, Starfire cannon, Starfall aura, Void Crown), on top of the three season bloods.',
       'Spell Cannon colours: Gold, Jade, Violet and Aurora, earned on its ability page, plus the Starfire season skin.',
