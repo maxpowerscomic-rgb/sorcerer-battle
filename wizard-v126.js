@@ -79,6 +79,13 @@
       return r; }; }
   if (typeof startDuel === 'function') { const _sd = startDuel; window.startDuel = startDuel = function () { caught.clear(); return _sd.apply(this, arguments); }; }
 
+  /* ---------------- (1.0.32.3) every hit on a caster spills a little blood ----------------
+     Any damage to a fighter leaves a small puddle where they stand (bigger hits, bigger puddles; at most one every 0.25 s each).
+     Bloodcraft gathers every puddle on the floor, whoever spilled it. */
+  if (typeof damage === 'function') { const _dB = damage; window.damage = damage = function (t, d) { const h0 = t ? t.hp : 0, r = _dB.apply(this, arguments);
+      try { if (t && !t.svAnchor && !t.isDecoy && t.hp < h0 && window.BLOOD_DEBUG && (t._bldT === undefined || T - t._bldT > .25 || T < t._bldT)) { t._bldT = T; const lost = h0 - t.hp; BLOOD_DEBUG.pool(t, t.x + rnd(-8, 8), t.y + rnd(-3, 5), Math.min(13, 4 + lost * .35), 0); } } catch (e) {}
+      return r; }; }
+
   /* ---------------- order screen: Zodiac lists the upgrades you have taken ---------------- */
   if (typeof renderBook === 'function') { const _rb = renderBook; window.renderBook = renderBook = function () { const r = _rb.apply(this, arguments);
       try { const b = M.me.book, sel = M.swapSel ?? (M.lastAdded >= 0 ? M.lastAdded : 0), k = b[sel]; if (k === 'zodiac' || k === 'crimsonzodiac') { const box = document.querySelector('#detail .ostat'); if (box) { box.querySelectorAll('i:not(.r)').forEach(i => i.remove());

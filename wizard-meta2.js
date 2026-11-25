@@ -937,11 +937,13 @@
     try { const t1 = performance.now(); bubbles = bubbles.filter(b => t1 - b.t0 < (b.txt ? 2800 : 2200) && !b.w.dead);
       for (const b of bubbles) { const k = (t1 - b.t0) / 1000, life = b.txt ? 2.8 : 2.2, pop = k < .18 ? 1.25 - .25 * (k / .18) * (2 - k / .18) + (k < .09 ? -(1 - k / .09) * .9 : 0) : 1, al = k > life - .3 ? (life - k) / .3 : 1, x = ctx, w = b.w;
         x.save(); x.translate(clamp(w.x + (w.me ? 30 : -30), 50, W - 50), w.y - 128 * HS); x.scale(Math.max(.1, pop), Math.max(.1, pop)); x.globalAlpha = Math.max(0, al);
-        x.font = b.txt ? "13px 'Lilita One', system-ui" : '24px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
-        const tw = b.txt ? Math.min(170, x.measureText(b.txt).width + 20) : 40, th = b.txt ? 28 : 38;
+        x.font = b.txt ? "16px 'Lilita One', system-ui" : '24px system-ui'; x.textAlign = 'center'; x.textBaseline = 'middle';
+        // (1.0.32.3) speech is set larger and wraps onto a second line instead of being squeezed
+        let lines = null; if (b.txt) { if (!b.lines) { const words = b.txt.split(' '), L = []; let cur = ''; for (const wd of words) { const t2 = cur ? cur + ' ' + wd : wd; if (x.measureText(t2).width > 176 && cur) { L.push(cur); cur = wd; } else cur = t2; } if (cur) L.push(cur); b.lines = L.slice(0, 2); } lines = b.lines; }
+        const tw = b.txt ? Math.min(200, Math.max(...lines.map(l => x.measureText(l).width)) + 22) : 40, th = b.txt ? 14 + lines.length * 18 : 38;
         x.fillStyle = '#fff'; x.strokeStyle = '#000'; x.lineWidth = 2.5; x.beginPath(); if (x.roundRect) x.roundRect(-tw / 2, -th / 2, tw, th, 12); else x.rect(-tw / 2, -th / 2, tw, th); x.fill(); x.stroke();
         const tx = w.me ? -10 : 10; x.beginPath(); x.moveTo(tx - 6, th / 2 - 1); x.lineTo(tx - (w.me ? 12 : -12), th / 2 + 11); x.lineTo(tx + 6, th / 2 - 1); x.closePath(); x.fill(); x.beginPath(); x.moveTo(tx - 6, th / 2); x.lineTo(tx - (w.me ? 12 : -12), th / 2 + 11); x.lineTo(tx + 6, th / 2); x.stroke();
-        x.fillStyle = '#1a1030'; if (b.txt) x.fillText(b.txt, 0, 1, 160); else x.fillText(b.e, 0, 2);
+        x.fillStyle = '#1a1030'; if (b.txt) lines.forEach((l, i) => x.fillText(l, 0, 1 + (i - (lines.length - 1) / 2) * 18, 180)); else x.fillText(b.e, 0, 2);
         x.restore(); } } catch (e) {}
     return r; };
 })();

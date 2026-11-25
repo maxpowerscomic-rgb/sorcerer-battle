@@ -136,7 +136,10 @@
     el.style.display = 'grid'; try { sfx('ui_unlock'); } catch (e) {} }
   window.svDropPick = function (i) { const s = sv(); if (!s || !s.dropOps) return; const o = s.dropOps[i]; if (!o) return; M.me.up.add(o.k + '.' + o.u.id); s.dropOps = null; s.lastDraft = T; const el = $('svDrop'); if (el) el.style.display = 'none'; paused = false; try { last = performance.now(); } catch (e) {}
     try { text(ents[0].x, ents[0].y - 100 * HS, o.u.n.toUpperCase(), DTIER[o.t][1], true); sfx('ui_pick'); } catch (e) {}
-    if (s.pt) { const po = optionsFor(s.pt.hand, s.pt.up, o.t); if (po.length) { const q = po[0]; s.pt.up.add(q.k + '.' + q.u.id); s.pt.log.push({ k: q.k, n: q.u.n, t: SP[q.k].n + ' upgrade' }); try { toast(`${s.pt.n} took ${q.u.n}`); } catch (e) {} } } };
+    if (s.pt) { const po = optionsFor(s.pt.hand, s.pt.up, o.t); if (po.length) { const q = po[0]; s.pt.up.add(q.k + '.' + q.u.id); s.pt.log.push({ k: q.k, n: q.u.n, t: SP[q.k].n + ' upgrade' });
+        // (1.0.32.3) your partner says what it took, in a speech bubble over its head
+        const LINES = ['I\'ll take {u}!', '{u} for me!', 'Ooh, {u}. Mine!', 'Grabbing {u}.', '{u}. Let\'s go!'];
+        try { if (s.P && !s.P.dead && window.emoteSay) emoteSay(s.P, null, LINES[Math.random() * LINES.length | 0].replace('{u}', q.u.n)); else toast(`${s.pt.n} took ${q.u.n}`); } catch (e) {} } } };
   function drawDrops() { const s = sv(); if (!s || !s.drops || !s.drops.length) return; const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0);
     for (const d of s.drops) { const tt = DTIER[d.tier], bob = Math.sin(d.t * 6) * 3, y = d.y - 24 * HS + bob; x.globalCompositeOperation = 'lighter'; const g = x.createRadialGradient(d.x, y, 2, d.x, y, 22); g.addColorStop(0, tt[1]); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.beginPath(); x.arc(d.x, y, 22, 0, 7); x.fill();
       x.globalCompositeOperation = 'source-over'; x.fillStyle = tt[1]; x.strokeStyle = '#000'; x.lineWidth = 2; x.beginPath(); x.moveTo(d.x, y - 10); x.lineTo(d.x + 7, y); x.lineTo(d.x, y + 10); x.lineTo(d.x - 7, y); x.closePath(); x.fill(); x.stroke(); x.fillStyle = '#ffffff'; x.globalAlpha = .7; x.beginPath(); x.moveTo(d.x - 2, y - 6); x.lineTo(d.x + 2, y - 1); x.lineTo(d.x - 3, y + 1); x.closePath(); x.fill(); x.globalAlpha = 1; }

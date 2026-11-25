@@ -26,7 +26,7 @@
   // every loop the caster's spilled blood lifts off the floor and streams back into them
   // Bloodthirst: every pool on the floor is drawn in, whoever spilled it. Blood that is not the caster's own (knocked out of an
   // enemy, or spilled by the enemy's blood arts) feeds a damage bonus for the next loop: 2% a pool, up to 50%.
-  function recall(w) { const thirst = U(w, 'bloodcraft', 'absorb'), mine = pools.filter(p => thirst || p.o === w);
+  function recall(w) { const thirst = U(w, 'bloodcraft', 'absorb'), mine = pools.slice();   /* (1.0.32.3) every pool on the floor can be gathered, whoever spilled it; Bloodthirst still turns foreign blood into damage */
     if (thirst) { const n = mine.filter(p => p.f || p.o !== w).length, b = Math.min(.5, n * .02); w.bloodBuff = b; if (b > 0) { try { text(w.x, w.y - 104 * HS, '+' + Math.round(b * 100) + '% DAMAGE', '#ff5a6e', true); inkRing(w.x, w.y, '#ff5a6e', 2, 40, 10, .5); } catch (e) {} } }
     if (!mine.length) return; pools = pools.filter(p => !mine.includes(p));
     for (const p of mine) drops.push({ o: w, x: p.x, y: p.y, x0: p.x, y0: p.y, r: p.r, t: -Math.min(.35, Math.hypot(p.x - w.x, p.y - w.y) / 900) - rnd(0, .1), life: rnd(.45, .7) }); }

@@ -130,6 +130,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.32.3', d: '24 Nov 2026', items: ['Every hit on a caster spills a small puddle of blood, and Bloodcraft can gather every puddle on the floor, whoever spilled it.', 'Endless Survival: your partner says which upgrade it took when you pick from a crystal.', 'Speech bubbles use larger text and wrap long lines.'] },
     { v: '1.0.32.2', d: '24 Nov 2026', items: ['Endless Survival: defeated enemies can drop an upgrade crystal (15% an upgrade, 10% a tier 2 upgrade, 5% a signature upgrade). It floats to you and lets you pick one of three for your hand; your partner takes one of the same kind.',
       'Spell Cannon beams now stop and refract on the first thing they hit, summons included, so a Juggernaut or zombie in the way takes the beam instead of you.',
       'A beam that burns you always refracts off you, including inside a Sanctum.'] },
