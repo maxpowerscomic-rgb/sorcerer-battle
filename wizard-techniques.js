@@ -1248,6 +1248,7 @@
     for (const dm of domes) { if (dm.open) continue;
       const w = dm.o, k = dm.t / dm.dur, a = Math.min(1, dm.t * 5) * (k > .85 ? (1 - k) / .15 : 1), R = dm.r * Math.min(1, .2 + dm.t * 6), RY = R / 1.4, H = R * .95, hot = dm.hit > 0 ? 1 : 0, pl = Math.max(0, dm.pulse || 0) * 4, q = Math.max(0, dm.hp / dm.max);
       x.save(); x.translate(dm.x, dm.y); x.globalAlpha = a;
+      const dH = window.domeHue ? domeHue(dm) : null; if (dH !== null && window.V123) V123.hueOn(x, dH);   /* (1.0.25) Sanctum designs recolour the whole dome */
       // floor: tinted disc, a bright double rim and glyph ticks turning on it
       const g = x.createRadialGradient(0, 0, R * .1, 0, 0, R); g.addColorStop(0, `rgba(122,166,255,${.05 + pl * .1})`); g.addColorStop(.75, `rgba(90,130,255,${.14 + pl * .12})`); g.addColorStop(1, 'rgba(200,220,255,.5)');
       x.fillStyle = g; x.beginPath(); x.ellipse(0, 0, R, RY, 0, 0, 7); x.fill();
@@ -1267,6 +1268,7 @@
       if (q < .75) { x.strokeStyle = 'rgba(255,255,255,.85)'; x.lineWidth = 1.3; const n = q < .25 ? 5 : q < .5 ? 3 : 1; for (let i = 0; i < n; i++) { const an = 3.5 + i * .55, bx = Math.cos(an) * R * .8, by2 = Math.sin(an) * H * .8; x.beginPath(); x.moveTo(bx, by2); x.lineTo(bx + 8, by2 + 10); x.lineTo(bx + 2, by2 + 18); x.lineTo(bx + 12, by2 + 27); x.moveTo(bx + 8, by2 + 10); x.lineTo(bx + 17, by2 + 12); x.stroke(); } }
       if (dm.clash) {}
       else if (q < 1) { const W2 = 44; x.fillStyle = '#000'; x.fillRect(-W2 / 2, -H - 12, W2, 5); x.fillStyle = '#bcd2ff'; x.fillRect(-W2 / 2 + 1, -H - 11, (W2 - 2) * q, 3); }
+      if (dH !== null && window.V123) V123.hueOff(x);
       x.restore();
     }
     // Spirit Tuning: an ink-and-flame aura engulfs the caster while it charges

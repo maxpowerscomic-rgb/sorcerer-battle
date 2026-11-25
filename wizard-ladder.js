@@ -38,6 +38,8 @@
                     drop: ['pack', 'cycle', 'guard', 'laststand', 'vanguard'], ups: [{ id: 'bloodmoon', n: 'Blood Moon', d: 'Fused beasts arrive with 25% more health.' }] },
   };
   window.VARIANTS = VARIANTS;
+  // glyphs sit in a 24 by 24 box: 'f' is filled, 's' is stroked
+  const VGLYPH = { bluefire: ['f', 'M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-4 2.500-7 1.500 1 2 2.500 2 4 1.500-2 2-5 1.500-9z'], opensanctum: ['s', 'M4 16a8.500 8.500 0 0 1 3-9M11 4.500a8.500 8.500 0 0 1 7 3.500M20 12a8.500 8.500 0 0 1-2 6M4 21h16'], crimsontitan: ['f', 'M12 2 20 5v7c0 5-3.500 8-8 10-4.500-2-8-5-8-10V5z'], violetbolt: ['f', 'M9 2 3 13h4l-2 9 8-12H9zM18 4l-4 7h3l-2 7 6-9h-3z'], shadowrush: ['s', 'M3 7h9M3 12h13M3 17h9M15 6l6 6-6 6'], mirrorcounter: ['s', 'M12 2v20M9 7 4 12l5 5M15 7l5 5-5 5'], starfallarcher: ['f', 'M15 9l1.500 3.500 3.500.500-2.500 2.500.500 3.500-3-1.800-3 1.800.500-3.500L10 13l3.500-.500zM3 3l6 6-1.500 1.500L2 5z'], glassgolem: ['s', 'M12 2 21 9l-9 13L3 9zM3 9h18M12 2 8 9l4 13 4-13z'], blackfrost: ['s', 'M12 2v20M3.500 7l17 10M20.500 7l-17 10M12 6l-2.500-2.500M12 6l2.500-2.500M12 18l-2.500 2.500M12 18l2.500 2.500'], crimsonzodiac: ['s', 'M5 3c0 7 1 12 3 18M11 2c0 8 1 13 2.500 20M17 3c.500 7 1.500 12 3 17'] };
   for (const k in VARIANTS) { const v = VARIANTS[k], b = SP[v.base];
     SP[k] = Object.assign({}, b, { n: v.n, el: v.el, t: +(b.t * v.t).toFixed(2), d: v.d, tag: v.tag, variantOf: v.base });
     STATS[k] = STATS[v.base]; if (typeof STAT_LBL_SPELL !== 'undefined' && STAT_LBL_SPELL[v.base]) STAT_LBL_SPELL[k] = STAT_LBL_SPELL[v.base];
@@ -51,7 +53,9 @@
     // the icon is the base icon washed in the variant's colour
     ICON[k] = ICON[v.base]; const im = new Image(); im.onload = () => { try { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'); g.drawImage(im, 0, 0, 96, 96); g.globalCompositeOperation = 'source-atop'; g.globalAlpha = .62; g.fillStyle = COL[v.el][1]; g.fillRect(0, 0, 96, 96);
       g.globalAlpha = .5; g.globalCompositeOperation = 'source-atop'; const gr = g.createLinearGradient(0, 0, 96, 96); gr.addColorStop(0, '#ffffff'); gr.addColorStop(.5, 'rgba(255,255,255,0)'); gr.addColorStop(1, COL[v.el][2]); g.fillStyle = gr; g.fillRect(0, 0, 96, 96);
-      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.fillStyle = '#ffd75e'; g.strokeStyle = '#000'; g.lineWidth = 3; g.beginPath(); for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283 - 1.571, r = i % 2 ? 6 : 13; g.lineTo(78 + Math.cos(a) * r, 18 + Math.sin(a) * r); } g.closePath(); g.stroke(); g.fill();
+      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+      // (1.0.25) each variant carries its own mark: a gold badge in the corner with a glyph only that variant has
+      { const gl = VGLYPH[k]; g.fillStyle = '#ffd75e'; g.strokeStyle = '#000'; g.lineWidth = 3; g.beginPath(); g.arc(74, 22, 17, 0, 7); g.fill(); g.stroke(); if (gl) { g.save(); g.translate(62, 10); g.fillStyle = '#2a1600'; g.strokeStyle = '#2a1600'; g.lineWidth = 2.4; g.lineCap = 'round'; g.lineJoin = 'round'; const pth = new Path2D(gl[1]); if (gl[0] === 'f') g.fill(pth); else g.stroke(pth); g.restore(); } else { g.fillStyle = '#2a1600'; g.beginPath(); for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283 - 1.571, r = i % 2 ? 5 : 11; g.lineTo(74 + Math.cos(a) * r, 22 + Math.sin(a) * r); } g.closePath(); g.fill(); } }
       ICON[k] = c.toDataURL(); } catch (e) {} }; im.src = ICON[v.base]; }
   const isVar = k => !!VARIANTS[k];
   // a fighter carrying a variant uses the base ability's machinery: its level and shared upgrades are mirrored onto the base

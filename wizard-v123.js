@@ -70,7 +70,8 @@
   const CW = {   // ability: [base hue, [four target hues]]
     fireball: [22, [275, 140, 325, 48]], orbs: [272, [20, 140, 325, 48]], bubbles: [74, [200, 325, 275, 20]], ricochet: [272, [48, 200, 355, 140]],
     flies: [75, [355, 275, 200, 48]], gravity: [258, [355, 140, 48, 325]], thorns: [108, [325, 275, 20, 200]], icewall: [195, [325, 275, 140, 48]],
-    zodiac: [0, ['white', 'dusk', 'gold', 'cycle']],   // the beasts: ivory, dusk, gilded, and Aurora, which never stops changing
+    zodiac: [0, ['white', 'dusk', 'gold', 'cycle']],
+    sanctum: [225, [355, 140, 'gold', 'cycle']],   // (1.0.25) Sanctum designs: the dome itself changes colour   // the beasts: ivory, dusk, gilded, and Aurora, which never stops changing
   };
   window.COLOURWAYS = CW;
   const rival = k => { try { return (window.LADDER || []).find(r => r.feat === k && !r.adv); } catch (e) { return null; } };
@@ -80,6 +81,7 @@
     if (i === 1) return rv ? [!!(PR.ladder && PR.ladder.won && PR.ladder.won[rv.id]), `Beat ${rv.n} on the Ladder`] : [(tr(k).wins || 0) >= 10, `Win 10 matches with it (${Math.min(10, tr(k).wins || 0)}/10)`];
     return [lv >= (i === 2 ? 10 : 20), `Reach level ${i === 2 ? 10 : 20} with it (now ${lv})`]; }
   const cwOf = o => k => { if (!(o && o.me && PR.cway && CW[k] && PR.cway[k])) return null; const t = CW[k][1][PR.cway[k] - 1]; return t === 'cycle' ? (Math.round(T * 7) * 15) % 360 : t === 'dusk' ? 215 : typeof t === 'string' ? t : t - CW[k][0]; };
+  window.domeHue = dm => { try { return dm && dm.o ? cwOf(dm.o)('sanctum') : null; } catch (e) { return null; } };
   // colour maths
   const cache = new Map();
   function shift(col, d) { if (typeof col !== 'string') return col; const key = col + '|' + d; let v = cache.get(key); if (v !== undefined) return v; v = col; let r, g, b, a = 1, m;
@@ -164,5 +166,5 @@
   #handBar{position:relative}.hoot-btn{position:absolute;top:8px;right:10px;width:34px;height:34px;border-radius:50%;border:2px solid #000;padding:0;overflow:hidden;background:radial-gradient(circle at 40% 35%,#5a3fa8,#1d1240);box-shadow:0 2px 0 #000;opacity:.55}
   .hoot-btn.on{opacity:1;outline:2px solid #ffd45e}.hoot-btn canvas{width:100%;height:100%;display:block}#handX.hoot-off .hrate{display:none}`;
   document.head.appendChild(css);
-  window.V123 = { cwNeed, shift, tgHud, hname, hcss, hueOn, hueOff, ok: () => ok };
+  window.V123 = { cwNeed, shift, tgHud, hname, hcss, hueOn, hueOff, cwHTML, ok: () => ok };
 })();

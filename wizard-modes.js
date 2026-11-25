@@ -130,6 +130,14 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.25', d: '24 Nov 2026', items: ['Survival now has five enemy types: Zodiac (shadow beasts), Zombies (an ever-growing horde), and Wizards, Sorcerers or Mixed casters with 25 health and one ability each (two on wave 2, three on wave 3).',
+      'Colour options are back on each ability\'s own page, and the wardrobe\'s Attacks tab is gone. Gilded Blood and Prismatic Collapse are picked on their ability pages too.',
+      'Survival partners now act on their own: they have health (shown in the top bar), can fall, draft their own upgrades between attempts (shown on your draft screen), and a Regroup / Split up button calls them back or lets them roam.',
+      'Survival gold: 2 per zombie, 3 per beast, 5 per caster when you clear all three waves (up to 250 a run). A failed run pays 10.',
+      'Sanctum designs: Crimson, Jade, Gilded and Aurora domes, on the Sanctum page.',
+      'Sorcerer outfits: Fitted Tee and Hoodie, in the colours of your gi.',
+      'Every Ladder variant has its own badge on its icon.',
+      'Home screen tidy-up: gear, bell and streak share the top row, the other buttons are evenly spaced, and the mute button sits in the top right corner.'] },
     { v: '1.0.24', d: '24 Nov 2026', items: ['Survival, a new Fight Club tab: mobs rise all around you. Survive 30, 60 and 90 seconds with 3 lives, or go Endless. You draft between attempts.',
       'Four kinds of mob (Shambler, Skitter, Hulk, Burster). Their damage and numbers grow 5% every 10 seconds.',
       'Bring an AI partner: a random hand, one of your saved hands, or a Fight Club favourite. Best runs are listed with the build you used.',

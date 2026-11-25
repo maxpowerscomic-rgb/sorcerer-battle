@@ -397,9 +397,18 @@
     // lead arm sits behind the torso unless it is the one punching
     drawArm(x, lead, c[1], skin, fl, { trim });
     // jacket skirt, jacket, lapels
-    fs(x, GI_SKIRT, F(c[1]), 2.4); if (!fl) { within(x, GI_SKIRT, () => { x.fillStyle = c[2]; x.globalAlpha = .45; x.fillRect(4, -24, 14, 14); x.globalAlpha = 1; x.strokeStyle = c[2]; x.lineWidth = LW * (1); x.beginPath(); x.moveTo(.6, -19.6); x.lineTo(.6, -14.8); x.stroke(); }); }
+    const of = w.outfit === 'tee' || w.outfit === 'hoodie' ? w.outfit : null;   /* (1.0.25) street outfits: no jacket skirt, lapels or belt tails */
+    if (!of) fs(x, GI_SKIRT, F(c[1]), 2.4); if (!fl && !of) { within(x, GI_SKIRT, () => { x.fillStyle = c[2]; x.globalAlpha = .45; x.fillRect(4, -24, 14, 14); x.globalAlpha = 1; x.strokeStyle = c[2]; x.lineWidth = LW * (1); x.beginPath(); x.moveTo(.6, -19.6); x.lineTo(.6, -14.8); x.stroke(); }); }
     fs(x, GI, fl ? '#fff' : vgrad(x, -44, -20, c[0], c[1]), 0);
     if (!fl) within(x, GI, () => {
+      if (of) { x.fillStyle = c[2]; x.globalAlpha = .42; x.beginPath(); x.moveTo(4.6, -46); x.bezierCurveTo(8, -36, 8, -28, 6.6, -18); x.lineTo(18, -18); x.lineTo(18, -46); x.closePath(); x.fill(); x.globalAlpha = 1;
+        x.strokeStyle = 'rgba(255,255,255,.4)'; x.lineWidth = LW * (1.7); x.beginPath(); x.moveTo(-11.2, -38.6); x.quadraticCurveTo(-13, -31, -11.8, -24.6); x.stroke();
+        if (of === 'tee') { x.fillStyle = skin; x.strokeStyle = '#000'; x.lineWidth = LW * (1.6); x.beginPath(); x.ellipse(1, -44.4, 5, 3.4, 0, 0, 7); x.fill(); x.stroke(); x.strokeStyle = trim; x.lineWidth = LW * (1.3); x.beginPath(); x.ellipse(1, -44.2, 6.4, 4.6, 0, .2, 2.94); x.stroke();
+          x.fillStyle = trim; x.strokeStyle = '#000'; x.lineWidth = LW * (1); x.beginPath(); x.arc(-5.4, -33, 2.6, 0, 7); x.fill(); x.stroke(); x.strokeStyle = 'rgba(0,0,0,.3)'; x.lineWidth = LW * (1); x.beginPath(); x.moveTo(-12, -26.4); x.quadraticCurveTo(0, -23, 12, -26.4); x.stroke(); }
+        else { x.fillStyle = '#17131f'; x.beginPath(); x.moveTo(-4.6, -44.6); x.lineTo(1.2, -35.6); x.lineTo(6.4, -44.6); x.closePath(); x.fill(); x.fillStyle = skin; x.beginPath(); x.moveTo(-2.4, -44.6); x.lineTo(1.2, -39); x.lineTo(4.4, -44.6); x.closePath(); x.fill();
+          x.strokeStyle = '#000'; x.lineWidth = LW * (2.6); x.lineCap = 'round'; for (const [x0, x1] of [[-1.6, -2.8], [4, 4.8]]) { x.beginPath(); x.moveTo(x0, -40); x.lineTo(x1, -32.4); x.stroke(); } x.strokeStyle = trim; x.lineWidth = LW * (1.3); for (const [x0, x1] of [[-1.6, -2.8], [4, 4.8]]) { x.beginPath(); x.moveTo(x0, -40); x.lineTo(x1, -32.4); x.stroke(); }
+          x.fillStyle = c[2]; x.globalAlpha = .5; x.strokeStyle = '#000'; x.lineWidth = LW * (1.3); x.beginPath(); x.moveTo(-7, -29.4); x.lineTo(8, -29.4); x.lineTo(10.4, -22.6); x.lineTo(-9.4, -22.6); x.closePath(); x.fill(); x.globalAlpha = 1; x.stroke(); }
+        return; }
       x.fillStyle = c[2]; x.globalAlpha = .42; x.beginPath(); x.moveTo(4.6, -46); x.bezierCurveTo(8, -36, 8, -28, 6.6, -18); x.lineTo(18, -18); x.lineTo(18, -46); x.closePath(); x.fill(); x.globalAlpha = 1;
       x.fillStyle = '#17131f'; x.beginPath(); x.moveTo(-5.6, -44); x.lineTo(1.6, -31.4); x.lineTo(7, -44); x.closePath(); x.fill();
       x.fillStyle = skin; x.beginPath(); x.moveTo(-2.6, -44); x.lineTo(1.4, -37); x.lineTo(4.6, -44); x.closePath(); x.fill();
@@ -413,10 +422,11 @@
     x.lineWidth = LW * (2.8); x.strokeStyle = '#000'; x.stroke(path(GI));
     if (w.wnd && w.wnd.lvl > 0 && !fl && typeof drawWounds === 'function') drawWounds(x, w, 'robe');
     // belt + knot + tails
-    fs(x, 'M-13,-24.6 Q0,-21 13,-24.6 L13.4,-20.4 Q0,-16.8 -13.4,-20.4 Z', F('#15121c'), 2);
+    fs(x, 'M-13,-24.6 Q0,-21 13,-24.6 L13.4,-20.4 Q0,-16.8 -13.4,-20.4 Z', F(of ? mul(c[2], .8) : '#15121c'), 2);
     if (!fl) { x.strokeStyle = 'rgba(255,255,255,.25)'; x.lineWidth = LW * (1); x.beginPath(); x.moveTo(-12, -23.4); x.quadraticCurveTo(0, -20, 12, -23.4); x.stroke(); }
-    { const sw2 = Math.sin(t * 4) * .1 + (walk ? Math.sin(t * 9) * .12 : 0); for (const [r0, len] of [[.34, 11.6], [-.06, 13]]) { x.save(); x.translate(-5.4, -19.4); x.rotate(r0 + sw2); fs(x, `M-1.6,0 L-2.4,${len} L1.4,${len - 1.2} L1.6,0 Z`, F('#15121c'), 1.7); if (!fl) { x.strokeStyle = trim; x.lineWidth = LW * (1.1); x.beginPath(); x.moveTo(-2, len - 2.6); x.lineTo(1.4, len - 3.4); x.stroke(); } x.restore(); } x.fillStyle = F('#15121c'); x.strokeStyle = '#000'; x.lineWidth = LW * (1.8); x.beginPath(); x.ellipse(-5.4, -20.6, 2.9, 2.5, 0, 0, 7); x.fill(); x.stroke(); }
+    if (!of) { const sw2 = Math.sin(t * 4) * .1 + (walk ? Math.sin(t * 9) * .12 : 0); for (const [r0, len] of [[.34, 11.6], [-.06, 13]]) { x.save(); x.translate(-5.4, -19.4); x.rotate(r0 + sw2); fs(x, `M-1.6,0 L-2.4,${len} L1.4,${len - 1.2} L1.6,0 Z`, F('#15121c'), 1.7); if (!fl) { x.strokeStyle = trim; x.lineWidth = LW * (1.1); x.beginPath(); x.moveTo(-2, len - 2.6); x.lineTo(1.4, len - 3.4); x.stroke(); } x.restore(); } x.fillStyle = F('#15121c'); x.strokeStyle = '#000'; x.lineWidth = LW * (1.8); x.beginPath(); x.ellipse(-5.4, -20.6, 2.9, 2.5, 0, 0, 7); x.fill(); x.stroke(); }
     // neck + head
+    if (of === 'hoodie') fs(x, 'M-11.4,-41 C-14,-49 -7,-53 1,-52.6 C9,-53 14.4,-48.4 12,-41 Q0,-45 -11.4,-41 Z', F(c[1]), 2.4);   // the hood, bunched behind the neck
     x.fillStyle = F(mul(skin, .86)); x.strokeStyle = '#000'; x.lineWidth = LW * (2); x.beginPath(); x.rect(-2.2, -44.6, 6, 4.4); x.fill();
     x.save(); x.translate(1, -50.4 + (pose === 'weary' ? 2 : 0)); if (pose === 'weary') x.rotate(.16); if (pose === 'hurt') x.rotate(-.12); if (casting) x.rotate(.05);
     sorcHead(x, w, pose, fl, t); x.restore();

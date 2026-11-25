@@ -36,7 +36,14 @@
       if (col) { const gl = g.createRadialGradient(W / 2, W / 2, 6, W / 2, W / 2, 56); gl.addColorStop(0, '#ffffff'); gl.addColorStop(.35, col); gl.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gl; g.beginPath(); g.arc(W / 2, W / 2, 56, 0, 7); g.fill(); }
       else { const gl = g.createConicGradient ? g.createConicGradient(0, W / 2, W / 2) : null; if (gl) { ['#ff5a5a', '#ffd45e', '#5aff8a', '#5ab8ff', '#c48cff', '#ff5a5a'].forEach((cc, i) => gl.addColorStop(i / 5, cc)); g.fillStyle = gl; g.globalAlpha = .85; g.beginPath(); g.arc(W / 2, W / 2, 50, 0, 7); g.fill(); g.globalAlpha = 1; } }
       const im = new Image(); im.onload = () => { g.drawImage(im, W - 54, W - 54, 48, 48); }; im.src = ICON[k]; }); }
-  if (typeof renderWardrobe === 'function') { const _rw = renderWardrobe; window.renderWardrobe = renderWardrobe = function () { const r = _rw.apply(this, arguments); try { if (wCat === 'atk') atkTab(); } catch (e) { try { window.logCrash && logCrash(e, 'atkTab'); } catch (e2) {} } return r; }; }
+  /* (1.0.25) the Attacks tab is gone again: colours are picked on each ability's own page, with the two older attack skins beside them */
+  { const _cf = window.catsFor; window.catsFor = () => (_cf ? _cf() : CATS).filter(c => c[0] !== 'atk'); }
+  window.skinPick = function (id) { const it = (COSMETICS.atk || []).find(q => q.id === id); if (!it) return; if (!ownsItem('atk', it)) return toast((unlockText(it.unlock || {}) || 'Locked') + ' to unlock'); PR.look.atk = PR.look.atk === id ? 'none' : id; try { save(); sfx('ui_click'); } catch (e) {} const el = document.querySelector('#sheetP .sk-row'); if (el) el.outerHTML = skinRow(el.dataset.k); };
+  function skinRow(k) { const id = Object.keys(SKIN_OF).find(q => SKIN_OF[q] === k), it = id && (COSMETICS.atk || []).find(q => q.id === id); if (!it) return ''; const own = ownsItem('atk', it), on = PR.look.atk === id;
+    return `<div class="cw-row sk-row" data-k="${k}"><b>Attack skin</b><div class="cw-sw"><button class="${on ? '' : 'on'}" onclick="${on ? `skinPick('${id}')` : ''}" style="--c:radial-gradient(circle at 35% 30%,#fff,#8a6bff 45%,#000 130%)"><i></i><small>Standard</small></button><button class="${on ? 'on' : ''}${own ? '' : ' lk'}" onclick="skinPick('${id}')" style="--c:${id === 'gilded' ? 'radial-gradient(circle at 35% 30%,#ffd45e,#c9182a 55%,#000 130%)' : 'conic-gradient(#ff5a5a,#ffd45e,#5aff8a,#5ab8ff,#c48cff,#ff5a5a)'}"><i></i><small>${it.n}</small></button></div><p>${own ? (it.note || '') : (unlockText(it.unlock || {}) || 'Locked')}</p></div>`; }
+  if (typeof openSpell === 'function') { const _os = openSpell; window.openSpell = openSpell = function (k) { const r = _os.apply(this, arguments);
+      try { const Pn = $('sheetP'); if (Pn && typeof isUnl === 'function' && isUnl(k)) { const at = Pn.querySelector('.trials') || Pn.lastElementChild; let h = ''; if (window.COLOURWAYS && COLOURWAYS[k] && window.V123 && V123.ok() && !Pn.querySelector('.cw-row:not(.sk-row)')) h += V123.cwHTML(k); if (!Pn.querySelector('.sk-row')) h += skinRow(k); if (h) { if (at) at.insertAdjacentHTML('beforebegin', h); else Pn.insertAdjacentHTML('beforeend', h); } } } catch (e) {}
+      return r; }; }
 
   /* ---------------- cosmetics: hairstyles, hair colours, premium pets ---------------- */
   try { const HS2 = [['pompadour', 'Pompadour', 'rare', 60], ['topknot', 'Top Knot', 'rare', 60], ['afro', 'Big Curls', 'rare', 80], ['sweep', 'Side Sweep', 'epic', 100], ['ponytail', 'Ponytail', 'epic', 100], ['flattop', 'Flat Top', 'rare', 60]];
@@ -49,6 +56,12 @@
   if (typeof drawWiz === 'function') { const _dw = drawWiz; window.drawWiz = drawWiz = function (w) { try { const f = w && w.look && HAIR_ANIM[w.look.beard]; if (f) { const t = performance.now() / 1000; w.beardC = f(t);
           if (w.look.beard === 'flamehair' && w.x !== undefined && typeof ents !== 'undefined' && ents && ents.includes(w) && !w.dead && Math.random() < .25 && typeof P === 'function') P({ x: w.x + rnd(-7, 7), y: w.y - rnd(74, 86) * HS, vx: rnd(-8, 8), vy: -rnd(30, 70), color: Math.random() < .5 ? '#ffb347' : '#fff3b0', size: rnd(1.4, 2.6), life: rnd(.25, .5) }); } } catch (e) {}
       return _dw.apply(this, arguments); }; }
+  // (1.0.25) sorcerer outfits: the gi, a fitted tee, or a hoodie, all over the same baggy trousers and in the colours of the chosen gi
+  try { COSMETICS.outfit = COSMETICS.outfit || [{ id: 'gi', n: 'Gi', r: 'common', unlock: { type: 'free' } }, { id: 'tee', n: 'Fitted Tee', r: 'rare', unlock: { type: 'gems', v: 150 } }, { id: 'hoodie', n: 'Hoodie', r: 'epic', unlock: { type: 'gems', v: 200 } }];
+    if (!CATS.some(c => c[0] === 'outfit')) { const i = CATS.findIndex(c => c[0] === 'robe'); CATS.splice(i + 1, 0, ['outfit', 'Outfit']); }
+    PR.look.outfit = PR.look.outfit || 'gi';
+    { const _cf2 = window.catsFor; window.catsFor = () => { const base = _cf2 ? _cf2() : CATS; return PR.look && PR.look.cls === 'sorc' ? base : base.filter(c => c[0] !== 'outfit'); }; }
+    { const _rl = resolveLook; window.resolveLook = resolveLook = function (look) { const o = _rl.apply(this, arguments); try { o.outfit = (look && look.outfit) || 'gi'; } catch (e) {} return o; }; } } catch (e) {}
   // six premium pets: a familiar shape in a new skin, each with its own effect drawn around it
   const PP = {
     rubyserpent: { base: 'snake', n: 'Ruby Serpent', hue: 'h:350', v: 600, fx: 'embers', cols: ['#ffb347', '#ff5a1f', '#fff3b0'] },
@@ -75,7 +88,8 @@
   #home .cust{top:auto!important;right:12px!important;bottom:60px;width:60px;height:60px;padding:0!important;border-radius:18px!important;overflow:visible;display:block!important}
   #home .cust #custIco,#home .cust #custLbl{display:none!important}#custAva{width:100%;height:100%;border-radius:15px;display:block}
   .hm-brush{position:absolute;right:-7px;bottom:-7px;width:26px;height:26px;border-radius:50%;background:#1a1236;border:2px solid #000;display:grid;place-items:center;box-shadow:0 2px 0 #000}.hm-brush svg{width:16px;height:16px}
-  #home #bellBtn{left:55px!important;top:13px!important}#home #lgBtn{display:none!important}#home #ldBtn{top:127px!important}
+  /* (1.0.25) top row: gear, bell, streak. Then Challenges and Ladder, evenly spaced. Mute sits in the top right corner. */
+  #home #bellBtn{left:52px!important;top:10px!important;height:34px;box-sizing:border-box}#home #stkBtn{left:122px!important;top:10px!important;height:34px;box-sizing:border-box}#home #lgBtn{display:none!important}#home #chBtn{top:92px!important}#home #ldBtn{top:130px!important}#home #ymBtn{top:10px!important;right:10px!important}#home #yardDmg{top:52px!important}
   #bellBtn.hm-due::after{content:"";position:absolute;top:-4px;right:-4px;width:11px;height:11px;border-radius:50%;background:#ff4a5a;border:2px solid #000}
   .hm-login{display:flex;align-items:center;gap:8px;width:100%;margin:8px 0 10px;padding:10px 12px;border-radius:14px;border:2px solid #000;background:linear-gradient(#8a6bff,#5b3bd1);color:#fff;box-shadow:0 3px 0 #000;text-align:left}
   .hm-login b{font:15px 'Lilita One';font-weight:400;letter-spacing:.3px}.hm-login small{flex:1;font:800 11.5px Nunito;color:#e6defc}.hm-login i{font:20px 'Lilita One';font-style:normal}.hm-login.due{background:linear-gradient(#ffe27a,#f0a830);color:#2a1600}.hm-login.due small{color:#5a3a00}
