@@ -78,11 +78,12 @@
   if (typeof startDuel === 'function') { const _sd = startDuel; window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments);
       try { const s = sv(); if (s) { const me = ents[0], fo = ents[1]; fo.svAnchor = 1; fo.petId = 'none'; fo.x = CX; fo.y = F.y0 - 300; me.x = CX; me.y = CY; me.petX = me.x - 30; me.petY = me.y + 8;
           if (M.tgtNow === undefined || M.tgtNow === 'caster') M.tgtNow = 'near'; try { V123.tgHud(); } catch (e) {}   /* in Survival you aim at whatever is nearest by default, and there is no enemy caster to pick */
-          s.t = 0; s.spT = 1.2; s.over = 0; s.seen = new Set(); s.drops = []; s.huE = 0; s.grpT = undefined; s.pts = null;
+          s.t = 0; s.spT = 1.2; s.over = 0; s.seen = new Set(); s.drops = []; s.hearts = [];
+          if (s.boon && s.boon.hp) { me.maxHp += s.boon.hp; me.hp = me.maxHp; } s.huE = 0; s.grpT = undefined; s.pts = null;
           s.hu = s.hu || []; if (!s.endless) { while (s.hu.length < M.score.me) hGain(s); }
           if (s.kind === 'zombie') fo.up = new Set(ZUPS.slice(0, s.endless ? 0 : M.score.me).map(u => 'zombies.' + u));
           if (s.hu.length) setTimeout(() => { try { if (!ended) text(W / 2, H / 2 - 60, 'ENEMY: ' + [...new Set(s.hu)].map(id => HUPS[id][0] + (hn(s, id) > 1 ? ' x' + hn(s, id) : '')).join(', ').toUpperCase(), '#ff9aa6', true); } catch (e) {} }, 1700); s.pc = 0; s.pi = 0; s.P = null;
-          if (s.pt) { const keep = M.foeLook; M.foeLook = s.pt.look || keep; try { s.P = mkWiz('foe'); } finally { M.foeLook = keep; } Object.assign(s.P, { x: CX - 60, y: CY + 40, petId: 'none', svPartner: 1, face: 1, me: false, hp: 150, maxHp: 150, dead: 0 }); if (s.dueDraft) { s.dueDraft = 0; } }
+          if (s.pt) { const keep = M.foeLook; M.foeLook = s.pt.look || keep; try { s.P = mkWiz('foe'); } finally { M.foeLook = keep; } Object.assign(s.P, { x: CX - 60, y: CY + 40, petId: 'none', svPartner: 1, face: 1, me: false, hp: 150 + ((s.boon && s.boon.hp) || 0), maxHp: 150 + ((s.boon && s.boon.hp) || 0), dead: 0 }); if (s.dueDraft) { s.dueDraft = 0; } }
           try { const bar = $('hpF') && $('hpF').parentElement; if (bar) bar.style.visibility = s.pt ? '' : 'hidden'; const n = $('hpnF'); if (n) n.style.visibility = s.pt ? '' : 'hidden'; } catch (e) {} groupBtn();
           // (1.0.30) the top bar shows your partner's actual hand, not hidden question marks; solo, it is empty
           try { const q = $('qF'); if (q) q.innerHTML = s.pt ? s.pt.hand.map(k => `<div class="qi rev" onclick="tipFromQueue(this,'${k}','foe')"><img src="${ICON[k]}"></div>`).join('') : ''; } catch (e) {}
@@ -91,8 +92,8 @@
   if (typeof update === 'function') { const _u = update; window.update = update = function (dt) { const s = sv();
       if (s && typeof ents !== 'undefined' && ents && ents[1] && !ended && !(introT > 0)) { try { const me = ents[0], fo = ents[1], wave = Math.min(2, M.score.me), dur = s.endless ? Infinity : DUR[wave];
           s.t += dt; s.total += dt; const mobs = zombies.filter(z => z.svMob && z.hp > 0);
-          s.seen = s.seen || new Set(); for (const z of s.seen) if (z.hp <= 0) { s.seen.delete(z); s.kills++; if (s.endless) dropRoll(s, z); }
-          dropTick(s, me, dt); for (const z of mobs) s.seen.add(z);
+          s.seen = s.seen || new Set(); for (const z of s.seen) if (z.hp <= 0) { s.seen.delete(z); s.kills++; if (s.endless) dropRoll(s, z); heartRoll(s, z); }
+          dropTick(s, me, dt); heartTick(s, dt); for (const z of mobs) s.seen.add(z);
           // the anchor rides the nearest mob, so every ability aims at it; with nothing alive it waits off the field
           let near = null, nd = 1e9; for (const z of mobs) { if (z.rise < 1) continue; const d = Math.hypot(z.x - me.x, z.y - me.y); if (d < nd) { nd = d; near = z; } }
           if (near) { fo.x = near.x; fo.y = near.y; } else { fo.x = me.x; fo.y = me.y - 150 < F.y0 ? me.y + 150 : me.y - 150; } fo.vx = fo.vy = 0; fo.stunT = .5; fo._immSaid = T; fo.p = 0; fo.ghostT = 0; fo.svNear = near;
@@ -102,11 +103,11 @@
             const size = s.endless ? 2 + Math.floor(s.t / 30) : [2, 4, 6][wave], again = s.endless ? Math.min(6, 2 + Math.floor(s.t / 30)) : [2, 3, 4][wave];
             if (s.grpT === undefined) { s.grpT = 30; for (let i = 0; i < Math.min(8, size); i++) spawnCaster(s, fo, me); }
             s.grpT -= dt * hmul(s, 'swarm', .25); if (!mobs.length && s.grpT > 3) s.grpT = 3;
-            if (s.grpT <= 0) { s.grpT = 30; for (let i = 0; i < again && mobs.length + i < 9; i++) spawnCaster(s, fo, me); } }
+            if (s.grpT <= 0) { s.grpT = 30; for (let i = 0; i < again && mobs.length + i < (s.endless ? 16 : 9); i++) spawnCaster(s, fo, me); } }
           else if (s.kind === 'zombie') {   // zombies pour in from spawn points at the edges: more points each wave, and one more every 8 seconds in Endless. Never more than 25 on the field.
-            s.pts = s.pts || []; const want = s.endless ? Math.min(12, 2 + Math.floor(s.t / 8)) : 2 + wave;   /* 2, 3 then 4 spawn points */ while (s.pts.length < want) { const e = edge(); e.c = rnd(.2, 1.6); s.pts.push(e); }
-            for (const pt of s.pts) { pt.c -= dt * ramp(s.t) * hmul(s, 'swarm', .25); if (pt.c <= 0) { pt.c = rnd(1.3, 2.1); if (mobs.length < 25) { spawnZombie(s, fo, me, pt); mobs.push(0); } } } }
-          else if (s.spT <= 0) { s.spT = 1.45 * rnd(.7, 1.3); if (mobs.length < 25) { spawn(s, fo, me); if (s.t > 40 && Math.random() < .35) spawn(s, fo, me); } }
+            s.pts = s.pts || []; const want = s.endless ? Math.min(24, 3 + Math.floor(s.t / 5)) /* (1.0.32.4) Endless: a new spawn point every 5 s, up to 24 */ : 2 + wave;   /* 2, 3 then 4 spawn points */ while (s.pts.length < want) { const e = edge(); e.c = rnd(.2, 1.6); s.pts.push(e); }
+            for (const pt of s.pts) { pt.c -= dt * ramp(s.t) * hmul(s, 'swarm', .25); if (pt.c <= 0) { pt.c = rnd(1.3, 2.1); if (mobs.length < (s.endless ? 50 : 25)) { spawnZombie(s, fo, me, pt); mobs.push(0); } } } }
+          else if (s.spT <= 0) { s.spT = 1.45 * rnd(.7, 1.3) * (s.endless ? .6 : 1); if (mobs.length < (s.endless ? 50 : 25)) { spawn(s, fo, me); if (s.t > 40 && Math.random() < .35) spawn(s, fo, me); } }
           casters(s, fo, me, dt);
           if (!s.over && s.t >= dur && !me.dead) { s.over = 1; text(W / 2, H / 2, 'WAVE CLEARED', '#7dffa8', true); for (const z of mobs) hurtZ(z, 1e6, null, 'crush'); endRound('me', 900); }
         } catch (e) { try { window.logCrash && logCrash(e, 'svTick'); } catch (e2) {} } }
@@ -124,23 +125,51 @@
      It floats to you; touching it pauses the run and offers three upgrades of that tier for abilities in your hand. Your partner takes one of the same tier.
      So the run is not one long menu: one crystal at a time, and none for 12 seconds after a pick. */
   const DTIER = [null, ['Upgrade', '#bfe6ff', '#3b9bff'], ['Tier 2 upgrade', '#ffc27a', '#e0661a'], ['Signature upgrade', '#ffe27a', '#c9861a']];
+  // (1.0.32.5) hearts for your partner: 6% of defeats drop one (two on the field at most, each lasts 15 s). A hurt partner walks over and picks it up for 20% of its health.
+  function heartRoll(s, z) { if (!s.P) return; s.hearts = s.hearts || []; if (s.hearts.length >= 2 || Math.random() >= .06) return; s.hearts.push({ x: clamp(z.x, F.x0 + 10, F.x1 - 10), y: clamp(z.y, F.y0 + 10, F.y1 - 10), t: 0 }); }
+  function heartTick(s, dt) { if (!s.hearts || !s.hearts.length) return; for (const h of s.hearts) h.t += dt; const Pw = s.P;
+    if (Pw && !Pw.dead) for (const h of s.hearts) if (!h.got && Math.hypot(Pw.x - h.x, Pw.y - h.y) < 18) { h.got = 1; const g = Math.min(Pw.maxHp - Pw.hp, Pw.maxHp * .2); Pw.hp += g; try { text(Pw.x, Pw.y - 90 * HS, '+' + Math.round(g), '#7dffa8', true); burst(h.x, h.y - 20 * HS, 16, ['#ff5a6e', '#ffffff', '#7dffa8'], 150, 4, .45); sfx('ui_coin', { rate: 1.3 }); } catch (e) {} }
+    s.hearts = s.hearts.filter(h => !h.got && h.t < 15); }
   function dropRoll(s, z) { s.drops = s.drops || []; if (s.drops.length || T - (s.lastDraft || -99) < 12) return; const r = Math.random(), tier = r < .05 ? 3 : r < .15 ? 2 : r < .30 ? 1 : 0; if (!tier) return;
     s.drops.push({ x: clamp(z.x, F.x0 + 10, F.x1 - 10), y: clamp(z.y, F.y0 + 10, F.y1 - 10), t: 0, tier }); try { burst(z.x, z.y - 20 * HS, 14, [DTIER[tier][1], '#ffffff'], 160, 4, .45); sfx('ui_deal', { x: z.x, rate: 1.4 }); } catch (e) {} }
   function dropTick(s, me, dt) { for (const d of (s.drops || [])) { d.t += dt; if (d.t > .7) { const dx = me.x - d.x, dy = me.y - d.y, dd = Math.hypot(dx, dy) || 1, sp = Math.min(420, 140 + d.t * 220); d.x += dx / dd * Math.min(dd, sp * dt); d.y += dy / dd * Math.min(dd, sp * dt); if (dd < 18 && !paused) { s.drops = s.drops.filter(q => q !== d); openDrop(s, d.tier); return; } } } }
   const tierFits = (u, k, have, tier) => { if (have.has(k + '.' + u.id)) return false; const reqOk = !u.req || have.has(k + '.' + u.req); if (!reqOk) return false; return tier === 3 ? !!u.sig : tier === 2 ? !u.sig && (!!u.req || !!u.rare) : !u.sig && !u.req && !u.rare; };
   function optionsFor(hand, have, tier) { for (let t = tier; t >= 1; t--) { const L = []; for (const k of new Set(hand)) for (const u of (UPG[k] || [])) if (tierFits(u, k, have, t)) L.push({ k, u, t }); if (L.length) return L.sort(() => Math.random() - .5); } return []; }
-  function openDrop(s, tier) { const ops = optionsFor(M.me.book, M.me.up, tier).slice(0, 3);
-    if (!ops.length) { PR.coins = (PR.coins || 0) + 25; try { save(); text(ents[0].x, ents[0].y - 100 * HS, '+25 GOLD', '#ffd45e', true); sfx('ui_coin'); } catch (e) {} s.lastDraft = T; return; }
+  function openDrop(s, tier) { const down = s.P && s.P.dead; let ops = optionsFor(M.me.book, M.me.up, tier).slice(0, down ? 2 : 3);
+    if (!ops.length && !down) return openBoons(s, tier);
+    if (down) ops = ops.concat([{ revive: 1, t: tier }]);   // (1.0.32.5) your partner is down: one choice brings it back at 25% health
     paused = true; s.dropOps = ops; const b = $('battle'); let el = $('svDrop'); if (!el) { b.insertAdjacentHTML('beforeend', '<div id="svDrop"></div>'); el = $('svDrop'); } const t0 = ops[0].t, tt = DTIER[t0];
-    el.innerHTML = `<div class="svd-box"><div class="svd-h" style="--a:${tt[1]};--b:${tt[2]}">${tt[0]}</div><div class="svd-l">${ops.map((o, i) => `<button onclick="svDropPick(${i})"><img src="${ICON[o.k]}"><span><b>${esc(o.u.n)}</b><small>${esc(SP[o.k].n)}</small><em>${esc(o.u.d)}</em></span></button>`).join('')}</div></div>`;
+    el.innerHTML = `<div class="svd-box"><div class="svd-h" style="--a:${tt[1]};--b:${tt[2]}">${tt[0]}</div><div class="svd-l">${ops.map((o, i) => o.revive ? `<button onclick="svDropPick(${i})"><span class="svd-bi" style="color:#ff7a8a">♥</span><span><b>Revive ${esc(s.pt.n)}</b><em>Bring your partner back with 25% health.</em></span></button>` : `<button onclick="svDropPick(${i})"><img src="${ICON[o.k]}"><span><b>${esc(o.u.n)}</b><small>${esc(SP[o.k].n)}</small><em>${esc(o.u.d)}</em></span></button>`).join('')}</div></div>`;
     el.style.display = 'grid'; try { sfx('ui_unlock'); } catch (e) {} }
-  window.svDropPick = function (i) { const s = sv(); if (!s || !s.dropOps) return; const o = s.dropOps[i]; if (!o) return; M.me.up.add(o.k + '.' + o.u.id); s.dropOps = null; s.lastDraft = T; const el = $('svDrop'); if (el) el.style.display = 'none'; paused = false; try { last = performance.now(); } catch (e) {}
+  // (1.0.32.3) when your hand has no upgrades left at any tier, the crystal offers run boons instead; a bigger crystal gives a bigger boon
+  const BOONS = [['dmg', 'Sharpened', 'Your side deals {v}% more damage to enemies for the rest of the run.', [5, 8, 12]], ['cs', 'Quickened', 'You cast {v}% faster for the rest of the run.', [6, 9, 13]], ['hp', 'Hardy', '+{v} max health for you and your partner, and heals that much now.', [12, 18, 26]]];
+  function openBoons(s, tier) { paused = true; s.boonTier = tier; s.dropOps = null; const b = $('battle'); let el = $('svDrop'); if (!el) { b.insertAdjacentHTML('beforeend', '<div id="svDrop"></div>'); el = $('svDrop'); } const tt = DTIER[tier];
+    if (s.P && s.P.dead) { s.dropOps = [{ revive: 1, t: tier }]; }
+    el.innerHTML = `<div class="svd-box"><div class="svd-h" style="--a:${tt[1]};--b:${tt[2]}">Boon</div><div class="ssub" style="margin:0 0 8px;text-align:center">Every upgrade for your hand is taken. Choose a boon instead.</div><div class="svd-l">${BOONS.map((q, i) => `<button onclick="svBoon(${i})"><span class="svd-bi">${['⚔', '⚡', '♥'][i]}</span><span><b>${q[1]} +${q[3][tier - 1]}${q[0] === 'hp' ? '' : '%'}</b><em>${q[2].replace('{v}', q[3][tier - 1])}</em></span></button>`).join('')}${s.P && s.P.dead ? `<button onclick="svDropPick(0)"><span class="svd-bi" style="color:#ff7a8a">♥</span><span><b>Revive ${esc(s.pt.n)}</b><em>Bring your partner back with 25% health.</em></span></button>` : ''}</div></div>`;
+    el.style.display = 'grid'; try { sfx('ui_unlock'); } catch (e) {} }
+  window.svBoon = function (i) { const s = sv(); if (!s) return; const q = BOONS[i], v = q[3][(s.boonTier || 1) - 1]; s.boon = s.boon || { dmg: 0, cs: 0, hp: 0 }; s.boon[q[0]] += v;
+    if (q[0] === 'hp') { const me = ents[0]; me.maxHp += v; me.hp = Math.min(me.maxHp, me.hp + v); if (s.P && !s.P.dead) { s.P.maxHp += v; s.P.hp = Math.min(s.P.maxHp, s.P.hp + v); } }
+    s.lastDraft = T; const el = $('svDrop'); if (el) el.style.display = 'none'; paused = false; try { last = performance.now(); } catch (e) {}
+    try { text(ents[0].x, ents[0].y - 100 * HS, (q[1] + ' +' + v + (q[0] === 'hp' ? '' : '%')).toUpperCase(), DTIER[s.boonTier || 1][1], true); sfx('ui_pick'); } catch (e) {}
+    try { if (s.P && !s.P.dead && window.emoteSay) emoteSay(s.P, null, q[0] === 'hp' ? 'Feeling sturdier already!' : q[0] === 'dmg' ? 'Let\'s hit them harder!' : 'Faster it is!'); } catch (e) {} };
+  // boons apply for the rest of the run: damage to the horde, your cast speed, and health carried into each attempt
+  if (typeof hurtZ === 'function') { const _hzB = hurtZ; window.hurtZ = hurtZ = function (z, d) { try { const s = sv(); if (s && s.boon && s.boon.dmg && z && z.svMob && d > 0 && d < 1e5) arguments[1] = d * (1 + s.boon.dmg / 100); } catch (e) {} return _hzB.apply(this, arguments); }; }
+  if (typeof castT === 'function') { const _ct = castT; window.castT = castT = function (w) { const t = _ct.apply(this, arguments); try { const s = sv(); if (s && s.boon && s.boon.cs && w && w.me) return t / (1 + s.boon.cs / 100); } catch (e) {} return t; }; }
+  window.svDropPick = function (i) { const s = sv(); if (!s || !s.dropOps) return; const o = s.dropOps[i]; if (!o) return;
+    if (o.revive) { const Pw = s.P, me = ents[0]; s.dropOps = null; s.lastDraft = T; const el0 = $('svDrop'); if (el0) el0.style.display = 'none'; paused = false; try { last = performance.now(); } catch (e) {}
+      if (Pw) { Pw.dead = 0; Pw.hp = Pw.maxHp * .25; Pw.x = clamp(me.x - 40, F.x0 + 10, F.x1 - 10); Pw.y = clamp(me.y + 20, F.y0 + 10, F.y1 - 10); try { burst(Pw.x, Pw.y - 40 * HS, 30, ['#7dffa8', '#ffffff', '#ffd45e'], 220, 5, .6); text(Pw.x, Pw.y - 100 * HS, 'REVIVED', '#7dffa8', true); sfx('ui_unlock'); if (window.emoteSay) setTimeout(() => { try { if (!ended) emoteSay(Pw, null, 'Back on my feet. Thanks!'); } catch (e) {} }, 300); } catch (e) {} }
+      return; }
+    M.me.up.add(o.k + '.' + o.u.id); s.dropOps = null; s.lastDraft = T; const el = $('svDrop'); if (el) el.style.display = 'none'; paused = false; try { last = performance.now(); } catch (e) {}
     try { text(ents[0].x, ents[0].y - 100 * HS, o.u.n.toUpperCase(), DTIER[o.t][1], true); sfx('ui_pick'); } catch (e) {}
     if (s.pt) { const po = optionsFor(s.pt.hand, s.pt.up, o.t); if (po.length) { const q = po[0]; s.pt.up.add(q.k + '.' + q.u.id); s.pt.log.push({ k: q.k, n: q.u.n, t: SP[q.k].n + ' upgrade' });
         // (1.0.32.3) your partner says what it took, in a speech bubble over its head
         const LINES = ['I\'ll take {u}!', '{u} for me!', 'Ooh, {u}. Mine!', 'Grabbing {u}.', '{u}. Let\'s go!'];
         try { if (s.P && !s.P.dead && window.emoteSay) emoteSay(s.P, null, LINES[Math.random() * LINES.length | 0].replace('{u}', q.u.n)); else toast(`${s.pt.n} took ${q.u.n}`); } catch (e) {} } } };
-  function drawDrops() { const s = sv(); if (!s || !s.drops || !s.drops.length) return; const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  function drawHearts(s) { if (!s.hearts || !s.hearts.length) return; const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (const h of s.hearts) { const fade = h.t > 12 ? (Math.sin(h.t * 18) > 0 ? 1 : .35) : 1, bob = Math.sin(h.t * 5) * 2.5, cx = h.x, cy = h.y - 18 * HS + bob; x.globalAlpha = fade; x.globalCompositeOperation = 'lighter'; const g = x.createRadialGradient(cx, cy, 2, cx, cy, 18); g.addColorStop(0, 'rgba(255,90,110,.75)'); g.addColorStop(1, 'rgba(255,90,110,0)'); x.fillStyle = g; x.beginPath(); x.arc(cx, cy, 18, 0, 7); x.fill();
+      x.globalCompositeOperation = 'source-over'; x.fillStyle = '#ff4a5e'; x.strokeStyle = '#000'; x.lineWidth = 2; x.beginPath(); x.moveTo(cx, cy + 7); x.bezierCurveTo(cx - 11, cy - 1, cx - 7, cy - 10, cx, cy - 4); x.bezierCurveTo(cx + 7, cy - 10, cx + 11, cy - 1, cx, cy + 7); x.closePath(); x.fill(); x.stroke(); x.fillStyle = '#ffffff'; x.globalAlpha = fade * .8; x.beginPath(); x.arc(cx - 4, cy - 4, 1.8, 0, 7); x.fill(); }
+    x.restore(); }
+  function drawDrops() { const s = sv(); if (s) drawHearts(s); if (!s || !s.drops || !s.drops.length) return; const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0);
     for (const d of s.drops) { const tt = DTIER[d.tier], bob = Math.sin(d.t * 6) * 3, y = d.y - 24 * HS + bob; x.globalCompositeOperation = 'lighter'; const g = x.createRadialGradient(d.x, y, 2, d.x, y, 22); g.addColorStop(0, tt[1]); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.beginPath(); x.arc(d.x, y, 22, 0, 7); x.fill();
       x.globalCompositeOperation = 'source-over'; x.fillStyle = tt[1]; x.strokeStyle = '#000'; x.lineWidth = 2; x.beginPath(); x.moveTo(d.x, y - 10); x.lineTo(d.x + 7, y); x.lineTo(d.x, y + 10); x.lineTo(d.x - 7, y); x.closePath(); x.fill(); x.stroke(); x.fillStyle = '#ffffff'; x.globalAlpha = .7; x.beginPath(); x.moveTo(d.x - 2, y - 6); x.lineTo(d.x + 2, y - 1); x.lineTo(d.x - 3, y + 1); x.closePath(); x.fill(); x.globalAlpha = 1; }
     x.restore(); }
@@ -168,6 +197,7 @@
     // Regroup: it holds a spot at your side. Split up: it roams, keeping its own distance from whatever is nearest to it.
     let tx, ty; if (s.group || !near) { const ax = me.x - fo.x, ay = me.y - fo.y, ad = Math.hypot(ax, ay) || 1; tx = me.x + ax / ad * 30 - ay / ad * 38; ty = me.y + ay / ad * 30 + ax / ad * 38; if (!s.group && !near) { tx = Pw.hx === undefined ? Pw.x : Pw.hx; ty = Pw.hy === undefined ? Pw.y : Pw.hy; } }
     else { const dx = Pw.x - near.x, dy = Pw.y - near.y, d = Math.hypot(dx, dy) || 1, want = 115; Pw.wa = (Pw.wa || 0) + dt * .6; tx = near.x + dx / d * want + Math.cos(Pw.wa) * 40; ty = near.y + dy / d * want + Math.sin(Pw.wa * 1.3) * 30; const ex = tx - me.x, ey = ty - me.y, ed = Math.hypot(ex, ey) || 1; if (ed < 70) { tx = me.x + ex / ed * 70; ty = me.y + ey / ed * 70; } }
+    if (s.hearts && s.hearts.length && Pw.hp < Pw.maxHp * .9) { let hb = null, hd = 1e9; for (const h of s.hearts) { const d = Math.hypot(h.x - Pw.x, h.y - Pw.y); if (d < hd) { hd = d; hb = h; } } if (hb) { tx = hb.x; ty = hb.y; } }   // hurt: go and get the heart
     tx = clamp(tx, F.x0 + 10, F.x1 - 10); ty = clamp(ty, F.y0 + 10, F.y1 - 10); const mx = tx - Pw.x, my = ty - Pw.y, md = Math.hypot(mx, my) || 1, sp = Math.min(md * 4, 70);
     Pw.vx = mx / md * sp; Pw.vy = my / md * sp; Pw.x += Pw.vx * dt; Pw.y += Pw.vy * dt; Pw.hx = Pw.x; Pw.hy = Pw.y; Pw.t += dt; Pw.face = near ? (near.x > Pw.x ? 1 : -1) : Pw.face; Pw.recoil = Math.max(0, (Pw.recoil || 0) - dt); Pw.flash = Math.max(0, (Pw.flash || 0) - dt);
     // mobs that are nearer to it than to you go for it, and hurt it when they reach it
@@ -263,7 +293,7 @@
   #svGroup{position:absolute;right:6px;top:calc(50% + 78px);z-index:4;font:12px 'Lilita One';letter-spacing:.3px;padding:7px 8px;border-radius:11px;border:2px solid #000;background:#1a1236;color:#d6cbf5;box-shadow:0 2px 0 #000;touch-action:none}#svGroup.on{background:linear-gradient(#ffe27a,#f0a830);color:#2a1600}
   #svDrop{position:absolute;inset:0;z-index:30;display:none;place-items:center;background:#0009;padding:16px;box-sizing:border-box}.svd-box{width:100%;max-width:360px;background:linear-gradient(#2c2150,#150f27);border:3px solid #000;border-radius:20px;padding:14px;box-shadow:0 8px 0 #000}
   .svd-h{font:20px 'Lilita One';text-align:center;letter-spacing:.5px;color:#1a0f00;background:linear-gradient(var(--a),var(--b));border:2px solid #000;border-radius:12px;padding:6px 0;margin-bottom:10px}
-  .svd-l{display:flex;flex-direction:column;gap:8px}.svd-l button{display:flex;gap:10px;align-items:center;text-align:left;padding:9px 10px;border-radius:14px;border:2px solid #000;background:#1a1236;color:#f3ecff;box-shadow:0 3px 0 #000;cursor:pointer}.svd-l img{width:44px;height:44px;border-radius:12px;border:2px solid #000;flex:none}
+  .svd-l{display:flex;flex-direction:column;gap:8px}.svd-l button{display:flex;gap:10px;align-items:center;text-align:left;padding:9px 10px;border-radius:14px;border:2px solid #000;background:#1a1236;color:#f3ecff;box-shadow:0 3px 0 #000;cursor:pointer}.svd-bi{width:44px;height:44px;flex:none;border-radius:12px;border:2px solid #000;background:#3a2d66;display:grid;place-items:center;font-size:22px;color:#ffd45e}.svd-l img{width:44px;height:44px;border-radius:12px;border:2px solid #000;flex:none}
   .svd-l span{display:flex;flex-direction:column;gap:2px;min-width:0}.svd-l b{font:16px 'Lilita One';font-weight:400}.svd-l small{font:800 11px Nunito;color:#b9a9e6}.svd-l em{font:700 12px/1.35 Nunito;font-style:normal;color:#e6defc}
   #svPd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 10px 0;padding:7px 10px;border-radius:12px;border:2px solid #000;background:#171029;position:relative;z-index:3}#svPd b{font:14px 'Lilita One';font-weight:400;color:#ffd45e}#svPd small{font:800 11.5px Nunito;color:#d6cbf5;flex:1 1 100%}#svPd em{font:14px 'Lilita One';font-style:normal;color:#ff9aa6}
   #svHud b{font:13px 'Lilita One';font-weight:400;letter-spacing:.6px;color:#ffd45e}#svHud span{font:15px 'Lilita One';color:#fff;min-width:38px;text-align:center}#svHud i{font-style:normal;color:#ff5a6e;font-size:14px;letter-spacing:1px}#svHud i u{text-decoration:none;color:#ffffff2e}#svHud em{font:800 11px Nunito;font-style:normal;color:#ff9aa6}
