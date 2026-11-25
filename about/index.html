@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wizards vs Sorcerers · Draft spells. Duel rivals.</title>
+<meta name="description" content="A spell-drafting auto-battler for iPhone. Pick Wizard spells or Sorcerer techniques, stack upgrades and outplay AI rivals in fast duels. Free to play, no ads, plays offline.">
+<meta property="og:title" content="Wizards vs Sorcerers">
+<meta property="og:description" content="Draft spells. Duel rivals. A free spell-drafting auto-battler for iPhone.">
+<meta property="og:image" content="https://maxpowerscomic-rgb.github.io/sorcerer-battle/about/img/og.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap">
+<style>
+  :root{--bg:#120c24;--panel:#1d1438;--panel2:#261a4a;--ink:#f3ecff;--mute:#b9a9e0;--gold:#ffd45e;--gold2:#f0a830;--red:#ff6b5e;--line:#000}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:600 17px/1.55 Nunito,system-ui,sans-serif}
+  a{color:var(--gold)}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+  h1,h2,h3{font-family:'Lilita One',system-ui,sans-serif;font-weight:400;letter-spacing:.3px;margin:0}
+  /* hero */
+  .hero{position:relative;background:#0b0718}
+  .hero img{display:block;width:100%;height:auto;max-height:78vh;object-fit:cover}
+  .hero::after{content:"";position:absolute;inset:auto 0 0 0;height:30%;background:linear-gradient(transparent,var(--bg))}
+  .intro{text-align:center;margin-top:8px;position:relative;z-index:1}
+  .intro h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .tag{font:900 clamp(20px,3.2vw,28px)/1.3 Nunito;margin:0 auto 6px;max-width:720px}
+  .sub{color:var(--mute);margin:0 auto 22px;max-width:640px}
+  /* get it */
+  .get{display:flex;gap:18px;justify-content:center;align-items:stretch;flex-wrap:wrap;margin:0 auto 10px}
+  .card{background:var(--panel);border:3px solid var(--line);border-radius:20px;box-shadow:0 5px 0 var(--line);padding:18px}
+  .qr{display:flex;gap:16px;align-items:center;max-width:460px;text-align:left}
+  #qr{flex:none;width:132px;height:132px;background:#fff;border-radius:12px;padding:8px;display:grid;place-items:center}
+  #qr img,#qr canvas{width:116px!important;height:116px!important}
+  .qr b{font:22px 'Lilita One';display:block;margin-bottom:4px}
+  .qr small{color:var(--mute);display:block}
+  .btns{display:flex;flex-direction:column;gap:10px;justify-content:center;min-width:240px}
+  .btn{display:block;text-align:center;font:20px 'Lilita One';color:#2a1600;text-decoration:none;background:linear-gradient(#ffe27a,var(--gold2));border:3px solid var(--line);border-radius:14px;padding:11px 18px;box-shadow:0 4px 0 var(--line)}
+  .btn.alt{background:linear-gradient(#5a3fa8,#33236b);color:#fff}
+  .btn[aria-disabled=true]{opacity:.75;cursor:default}
+  .facts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px 0 0;padding:0;list-style:none}
+  .facts li{background:var(--panel2);border:2px solid var(--line);border-radius:99px;padding:4px 14px;font-weight:900;font-size:14px}
+  /* sections */
+  section{padding:56px 0 8px}
+  section > .wrap > h2{font-size:clamp(28px,4.4vw,40px);text-align:center;margin-bottom:8px}
+  section > .wrap > p.lead{text-align:center;color:var(--mute);max-width:680px;margin:0 auto 26px}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .feat h3{font-size:22px;margin-bottom:6px}
+  .feat h3 span{color:var(--gold)}
+  .feat p{margin:0;color:#ddd2f5}
+  .paths{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .path{border-radius:20px;border:3px solid var(--line);box-shadow:0 5px 0 var(--line);padding:20px}
+  .path.wiz{background:linear-gradient(160deg,#4b2c94,#24154f)}
+  .path.sorc{background:linear-gradient(160deg,#8a1f2a,#3a0c14)}
+  .path h3{font-size:30px}
+  .path p{margin:6px 0 0}
+  /* screenshots */
+  .shots{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 16px;-webkit-overflow-scrolling:touch}
+  .shots img{flex:none;width:min(220px,58vw);height:auto;border-radius:18px;border:3px solid var(--line);box-shadow:0 5px 0 var(--line);scroll-snap-align:center}
+  /* footer */
+  footer{margin-top:56px;padding:28px 0 40px;border-top:2px solid #2c2150;color:var(--mute);font-size:15px;text-align:center}
+  footer nav{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+  footer a{font-weight:900}
+  @media (max-width:560px){.qr{flex-direction:column;text-align:center}.btns{width:100%}}
+</style>
+</head>
+<body>
+<header class="hero"><img src="img/hero.jpg" width="1600" height="900" alt="A wizard and a sorcerer clash spells under the title Wizards vs Sorcerers"></header>
+
+<main>
+  <div class="wrap intro">
+    <h1>Wizards vs Sorcerers</h1>
+    <p class="tag">Draft spells. Stack upgrades. Outplay your rival.</p>
+    <p class="sub">A spell-drafting auto-battler for iPhone. Pick your abilities each round, set their order, and watch your fighter cast them in fast, explosive duels.</p>
+
+    <div class="get">
+      <div class="card qr">
+        <div id="qr" aria-label="QR code"></div>
+        <div><b id="qrTitle">Coming soon to the App Store</b><small id="qrSub">Scan to play the free browser version now. This code will open the App Store once the iPhone app is live.</small></div>
+      </div>
+      <div class="btns">
+        <a class="btn" id="storeBtn" aria-disabled="true">App Store: coming soon</a>
+        <a class="btn alt" href="../">Play free in your browser</a>
+      </div>
+    </div>
+    <ul class="facts"><li>Free to play</li><li>No ads</li><li>No account</li><li>Plays offline</li></ul>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <h2>Two paths. One arena.</h2>
+      <p class="lead">Choose a side, or mix both in one book.</p>
+      <div class="paths">
+        <div class="path wiz"><h3>🪄 Wizards</h3><p>Cast <b>Spells</b> from range: Fireball, Ice Wall, Meteor, Raise Dead, Mirror Image, Spell Cannon and more.</p></div>
+        <div class="path sorc"><h3>✊ Sorcerers</h3><p>Fight with <b>Techniques</b> up close: Dissection slashes, Rushdown combos, the Sanctum dome, Titan Shell and Copy Cast.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>How it plays</h2>
+      <p class="lead">Every round you draft, every duel you adapt.</p>
+      <div class="grid">
+        <div class="card feat"><h3><span>1.</span> Draft</h3><p>Take abilities each round and stack upgrades on them. 41 abilities, 230 upgrades.</p></div>
+        <div class="card feat"><h3><span>2.</span> Plan</h3><p>Set your cast order, what each ability targets, and how close you fight.</p></div>
+        <div class="card feat"><h3><span>3.</span> Duel</h3><p>Your fighter casts on their own. Spells clash mid-air, beams collide, and every build has an answer.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Modes</h2>
+      <div class="grid">
+        <div class="card feat"><h3>Ranked</h3><p>Climb the Rank Road for trophies and new ability tokens.</p></div>
+        <div class="card feat"><h3>The Ladder</h3><p>60 hand-built rivals with signature builds. Beat one to win its ability.</p></div>
+        <div class="card feat"><h3>Survival</h3><p>Hold out against zombie waves, alone or with a partner, or go Endless.</p></div>
+        <div class="card feat"><h3>Fight Club</h3><p>Tough bounties above your level, refreshed every 30 minutes.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Screenshots</h2>
+      <div class="shots" tabindex="0" aria-label="Screenshots, scroll sideways">
+        <img src="img/03-battle.jpg" width="900" height="1956" alt="A duel in progress" loading="lazy">
+        <img src="img/02-draft.jpg" width="900" height="1956" alt="Drafting abilities" loading="lazy">
+        <img src="img/01-home.jpg" width="900" height="1956" alt="Home screen and training yard" loading="lazy">
+        <img src="img/04-abilities.jpg" width="900" height="1956" alt="Abilities and the Battle Hand" loading="lazy">
+        <img src="img/05-wardrobe.jpg" width="900" height="1956" alt="Wardrobe" loading="lazy">
+        <img src="img/06-shop.jpg" width="900" height="1956" alt="Shop" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Make it yours</h2>
+      <div class="grid">
+        <div class="card feat"><h3>154 cosmetics</h3><p>Robes, hats, hair, pets, auras, trails, cannon colours and blood colours.</p></div>
+        <div class="card feat"><h3>Seasons</h3><p>A new 30-day season with a free reward track, daily challenges and free gems.</p></div>
+        <div class="card feat"><h3>Fair by design</h3><p>Optional purchases are gems and a premium season track. Everything that affects a battle can be earned by playing.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <nav><a href="../privacy.html">Privacy Policy</a><a href="../support.html">Support</a><a href="../">Play in browser</a></nav>
+    <div>© 2026 Max Powers · Wizards vs Sorcerers. All opponents are computer-controlled AI rivals.</div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  /* When Apple approves the app: put its App Store link here. The QR code, title and button switch over by themselves. */
+  const APP_STORE_URL = '';
+  const WEB_GAME_URL = 'https://maxpowerscomic-rgb.github.io/sorcerer-battle/';
+  const url = APP_STORE_URL || WEB_GAME_URL;
+  if (APP_STORE_URL) {
+    document.getElementById('qrTitle').textContent = 'Get it on the App Store';
+    document.getElementById('qrSub').textContent = 'Scan with your iPhone camera to open the App Store.';
+    const b = document.getElementById('storeBtn'); b.textContent = 'Download on the App Store'; b.href = APP_STORE_URL; b.removeAttribute('aria-disabled');
+  }
+  try { new QRCode(document.getElementById('qr'), { text: url, width: 232, height: 232, colorDark: '#120c24', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); }
+  catch (e) { document.getElementById('qr').innerHTML = '<small style="color:#120c24;font-weight:900;text-align:center">QR code</small>'; }
+</script>
+</body>
+</html>
