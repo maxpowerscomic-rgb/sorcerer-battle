@@ -14,7 +14,7 @@
   const curtainBusy = () => { const c = $('curtain'); return !!c && c.className !== 'curtain'; };
   setInterval(() => { if (curtainBusy()) curtainIdleAt = 0; else if (!curtainIdleAt) curtainIdleAt = performance.now(); }, 100);
   window.LANDED = () => !curtainBusy() && curtainIdleAt && performance.now() - curtainIdleAt >= 1000 && performance.now() - shownAt >= 1000;
-  if (typeof show === 'function') { const _sh = show; window.show = show = function () { shownAt = performance.now(); return _sh.apply(this, arguments); }; }
+  if (typeof window.show === 'function') { const _sh = window.show; window.show = function () { shownAt = performance.now(); return _sh.apply(this, arguments); }; }   /* window.show: this file has its own tipShow below */
   // the tutorial waits for the landing too
   if (typeof onbStart === 'function') { const _ob = onbStart; window.onbStart = onbStart = function (from) { if (!window.LANDED()) { setTimeout(() => onbStart(from), 250); return; } return _ob.apply(this, arguments); }; }
 
@@ -51,13 +51,13 @@
   let T0 = null;   // { id, i }
   let el = null;
   function build() { if (el) return; el = document.createElement('div'); el.id = 'tipT'; el.className = 'onb'; el.innerHTML = '<div class="spot none"></div><div class="tip-shade"></div><div class="bub"></div>'; document.querySelector('.phone').appendChild(el); }
-  function startTour(id) { if (!TOURS[id] || tours()[id] || tours().__off) return; if (!window.LANDED()) return; /* tried again by the timers below once the screen has landed */ if (window.ONB_ACTIVE || !(PR.onb && PR.onb.done)) return; tours()[id] = 1; try { save(); } catch (e) {} T0 = { id, i: 0 }; build(); show(); }
+  function startTour(id) { if (!TOURS[id] || tours()[id] || tours().__off) return; if (!window.LANDED()) return; /* tried again by the timers below once the screen has landed */ if (window.ONB_ACTIVE || !(PR.onb && PR.onb.done)) return; tours()[id] = 1; try { save(); } catch (e) {} T0 = { id, i: 0 }; build(); tipShow(); }
   function steps() { return (TOURS[T0.id] || []).filter(s => document.querySelector(s[0]) && document.querySelector(s[0]).offsetParent !== null); }
-  function show() { if (!T0) return; const L = steps(); if (T0.i >= L.length) return end(); const [sel, txt] = L[T0.i], last = T0.i === L.length - 1;
+  function tipShow() { if (!T0) return; const L = steps(); if (T0.i >= L.length) return end(); const [sel, txt] = L[T0.i], last = T0.i === L.length - 1;
     el.classList.remove('hide'); el.style.display = 'block'; const bub = el.querySelector('.bub'); bub.innerHTML = '';
     try { bub.appendChild(owlCanvas()); } catch (e) {}
     const say = document.createElement('div'); say.className = 'say'; say.innerHTML = `<b class="who">Hoot</b>${txt}<div class="row"><button class="go" id="tipNext">${last ? 'Got it' : 'Next'}</button><span class="tip-n">${T0.i + 1} / ${L.length}</span><button class="skip" id="tipSkip">Skip</button><button class="skip" id="tipOff">No more tips</button></div>`; bub.appendChild(say);
-    $('tipNext').onclick = e => { e.stopPropagation(); try { sfx('ui_click'); } catch (e2) {} T0.i++; show(); };
+    $('tipNext').onclick = e => { e.stopPropagation(); try { sfx('ui_click'); } catch (e2) {} T0.i++; tipShow(); };
     $('tipSkip').onclick = e => { e.stopPropagation(); end(); };
     $('tipOff').onclick = e => { e.stopPropagation(); tours().__off = 1; try { save(); } catch (e2) {} end(); };
     place(sel); }

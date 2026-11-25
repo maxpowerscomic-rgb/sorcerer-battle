@@ -130,11 +130,15 @@
     const mx = sw > 356 ? (me.x + fo.x) / 2 : 195, cy = (me.y + fo.y) / 2 - 30; Y.camY += (cy - Y.camY) * .08; Y.camX = (Y.camX === undefined ? mx : Y.camX) + (mx - (Y.camX === undefined ? mx : Y.camX)) * .08;
     const sx = Y.camX - sw / 2, sy = Math.max(0, Math.min(H - sh, Y.camY - sh / 2));
     Y.cam = { sx, sy, sc }; g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#1a1228'; g.fillRect(0, 0, c.width, c.height); g.imageSmoothingEnabled = true;
-    // (1.0.33.9) the ground repeats around the arena, mirrored so the edges meet, so a wide view never shows a void
-    try { if (typeof bgImg !== 'undefined' && bgImg.complete && bgImg.naturalWidth) { const oy = (h - sh * sc) / 2 * d2, tw = W * sc * d2, th = H * sc * d2;
-        for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { if (!i && !j) continue; const dx = (i * W - sx) * sc * d2, dy = (j * H - sy) * sc * d2 + oy; if (dx > c.width || dy > c.height || dx + tw < 0 || dy + th < 0) continue;
-          g.save(); g.translate(dx + (i % 2 ? tw : 0), dy + (j % 2 ? th : 0)); g.scale(i % 2 ? -1 : 1, j % 2 ? -1 : 1); g.drawImage(bgImg, 0, 0, tw, th); g.restore(); }
-        g.fillStyle = 'rgba(10,6,20,.28)'; for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { if (!i && !j) continue; g.fillRect((i * W - sx) * sc * d2, (j * H - sy) * sc * d2 + oy, tw, th); } } } catch (e) {}   /* a slight shade keeps the real arena the focus */
+    // (1.0.33.9) the ground repeats around the arena, mirrored so the edges meet, so a wide view never shows a void.
+    // (1.0.33.10) tiles sit in the arena's own space: same cover-fit size and offset as the battle background (render), centre tile included,
+    // so each mirrored neighbour meets the image edge exactly and follows the camera's zoom. No shade: a shade edge read as a seam.
+    try { if (typeof bgImg !== 'undefined' && bgImg.complete && bgImg.naturalWidth) { const oy = (h - sh * sc) / 2 * d2, k = sc * d2, bs = Math.max((W + 30) / bgImg.width, (H + 30) / bgImg.height), bw = bgImg.width * bs, bh = bgImg.height * bs, bx = (W - bw) / 2, by = (H - bh) / 2;
+        for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) { const wx = bx + i * bw, wy = by + j * bh, dx = (wx - sx) * k, dy = (wy - sy) * k + oy, tw = bw * k, th = bh * k; if (dx > c.width || dy > c.height || dx + tw < 0 || dy + th < 0) continue;
+          const fx = i % 2 !== 0, fy = j % 2 !== 0; g.save(); g.translate(dx + (fx ? tw : 0), dy + (fy ? th : 0)); g.scale(fx ? -1 : 1, fy ? -1 : 1); g.drawImage(bgImg, 0, 0, tw + (fx ? 0 : .5), th + (fy ? 0 : .5)); g.restore(); }
+        // the battle canvas tints its ground and darkens it with a vignette (render); the same two layers here, in arena space, so the arena's edge disappears
+        g.save(); g.setTransform(k, 0, 0, k, -sx * k, -sy * k + oy); const L = -3 * W, R0 = 7 * W, T0 = -3 * H, B0 = 7 * H; g.fillStyle = 'rgba(30,15,70,.38)'; g.fillRect(L, T0, R0 - L, B0 - T0);
+        const vg = g.createRadialGradient(W / 2, H / 2, 150, W / 2, H / 2, 480); vg.addColorStop(0, '#0000'); vg.addColorStop(1, '#000a'); g.fillStyle = vg; g.fillRect(L, T0, R0 - L, B0 - T0); g.restore(); } } catch (e) {}
     g.drawImage(cv, 0, sy * dpr, W * dpr, sh * dpr, -sx * sc * d2, (h - sh * sc) / 2 * d2, W * sc * d2, sh * sc * d2); }
   function frame(now) { if (!Y.on) return; Y.raf = requestAnimationFrame(frame); const dt = Math.min(.033, (now - Y.last) / 1000); Y.last = now; if (document.hidden || sheetOn() || !homeOn() || dt <= 0) return;
     try { if (Y.dirty || typeof M === 'undefined' || !M || !M.practice || typeof ents === 'undefined' || !ents || !ents[1] || !ents[1].isDummy) { Y.dirty = 0; build(); } step(dt); blit(); }
@@ -142,7 +146,7 @@
   function start() { if (Y.on || !wanted() || !homeOn()) return; try { build(); } catch (e) { Y.fails++; try { if (window.logCrash) logCrash('yard', e && e.message, '', e && e.stack); } catch (x) {} return; }
     Y.on = true; Y.last = performance.now(); const st = document.querySelector('#home .stage'); if (st) st.classList.add('yard'); canvas(); cancelAnimationFrame(Y.raf); Y.raf = requestAnimationFrame(frame); }
   function stop() { if (!Y.on && !document.querySelector('#home .stage.yard')) return; Y.on = false; cancelAnimationFrame(Y.raf); const st = document.querySelector('#home .stage'); if (st) st.classList.remove('yard'); try { ended = true; running = false; } catch (e) {} }
-  window.yardStart = start; window.yardStop = stop; window.YARD = Y;
+  window.yardStart = start; window.yardStop = stop; window.YARD = Y; Y.blit = () => blit(); Y.step = dt => step(dt);   /* for tests */
   /* ---- damage tracker: the last 30 seconds of the yard, by ability. Icon, damage, casts. Yours on top, the dummy's below. ---- */
   const WIN = 30; let log = [], clk = 0, lastDraw = 0, left = WIN;
   const rec = (s, k, d, c) => { if (!Y.on || !SP[k]) return; log.push({ t: clk, s, k, d: d || 0, c: c || 0 }); if (log.length > 900) log.splice(0, 200); };

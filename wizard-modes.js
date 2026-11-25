@@ -130,6 +130,14 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.10', d: '24 Nov 2026', items: [
+      'Fixed: the tabs at the bottom of the home screen could stop working and leave you stuck on Battle.',
+      'Endless is now one life: fall once and the run is over. Hearts drop for you too, and you can grab one when hurt for 20% of your health.',
+      'A revived partner is invincible for 3 seconds, glowing gold, and flickers as it wears off.',
+      'Spell Cannon: a white impact flash the moment a beam first connects (once per beam), and the rays it throws off take the beam\'s own colour.',
+      'Draw: an orb that just misses the enemy tugs them a little toward it as it passes.',
+      'Every hit on any fighter, summon or zombie now draws blood. A held beam drips steadily.',
+      'Training yard: the ground around the arena joins it without a visible edge, at any zoom.'] },
     { v: '1.0.33.9', d: '24 Nov 2026', items: ['The training yard\'s ground now carries on past the arena in every direction, so the camera never pans into empty space.'] },
     { v: '1.0.33.8', d: '24 Nov 2026', items: ['Spell Cannon burns hotter the longer it stays on a caster: each quarter second without a break hits 0.5 harder. Anything that breaks the beam resets it.'] },
     { v: '1.0.33.7', d: '24 Nov 2026', items: ['Nothing pops up for a second after a screen opens or a curtain clears: tips, the tutorial and the login reward now wait.'] },

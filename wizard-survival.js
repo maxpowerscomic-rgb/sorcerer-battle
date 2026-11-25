@@ -1,7 +1,7 @@
 /* =====================================================================
    WIZARDS VS SORCERERS: Survival (1.0.24)
    A Fight Club tab. The player starts in the middle and mobs rise all around.
-   Waves: survive 30, 60, then 90 seconds with 3 lives. Endless: last as long as you can over 3 lives.
+   Waves: survive 30, 60, then 90 seconds with 3 lives. Endless: last as long as you can on one life (1.0.33.10).
    It runs on the duel engine: a wave is a round (so the draft, and the bonus pick after a loss, are the usual ones),
    the mobs are enemy summons, and the "enemy caster" is an unseen anchor that sits on the nearest mob so every ability aims at it.
    Damage and spawn rate both rise 5% every 10 seconds. An optional AI partner casts beside you.
@@ -48,7 +48,7 @@
     const un = typeof unlockedSpells === 'function' ? unlockedSpells() : PR.hand, avg = Math.max(1, Math.round(un.reduce((a, k) => a + ((PR.spells[k] && PR.spells[k].lvl) || 1), 0) / Math.max(1, un.length)));
     newMatch({ mode: 'casual', name: 'The Horde', survival: 1, lv: Object.fromEntries(Object.keys(SP).map(k => [k, avg])) }); if (typeof M === 'undefined' || !M) return;
     if (pt) { pt.up = new Set(); pt.log = []; pt.hand = pt.hand.slice(0, 4); }
-    M.sv = { kind: c.kind, endless: c.mode === 'endless', total: 0, t: 0, kills: 0, pt, group: 0, hand0: PR.hand.slice() }; M.rival = null; M.foeName = pt ? pt.n : 'The Horde'; if (pt && pt.look) M.foeLook = pt.look; try { WIN = 3; } catch (e) {} };
+    M.sv = { kind: c.kind, endless: c.mode === 'endless', total: 0, t: 0, kills: 0, pt, group: 0, hand0: PR.hand.slice() }; M.rival = null; M.foeName = pt ? pt.n : 'The Horde'; if (pt && pt.look) M.foeLook = pt.look; try { WIN = M.sv.endless ? 1 : 3; /* (1.0.33.10) Endless ends at the first fall */ } catch (e) {} };
 
   /* ---------------- the round ---------------- */
   // (1.0.28) enemies come in from off screen: a point just outside one of the four edges
@@ -127,9 +127,12 @@
      So the run is not one long menu: one crystal at a time, and none for 12 seconds after a pick. */
   const DTIER = [null, ['Upgrade', '#bfe6ff', '#3b9bff'], ['Tier 2 upgrade', '#ffc27a', '#e0661a'], ['Signature upgrade', '#ffe27a', '#c9861a']];
   // (1.0.32.5) hearts for your partner: 6% of defeats drop one (two on the field at most, each lasts 15 s). A hurt partner walks over and picks it up for 20% of its health.
-  function heartRoll(s, z) { if (!s.P) return; s.hearts = s.hearts || []; if (s.hearts.length >= 2 || Math.random() >= .06) return; s.hearts.push({ x: clamp(z.x, F.x0 + 10, F.x1 - 10), y: clamp(z.y, F.y0 + 10, F.y1 - 10), t: 0 }); }
+  function heartRoll(s, z) { if (!s.P && !s.endless) return; s.hearts = s.hearts || []; if (s.hearts.length >= 2 || Math.random() >= .06) return; s.hearts.push({ x: clamp(z.x, F.x0 + 10, F.x1 - 10), y: clamp(z.y, F.y0 + 10, F.y1 - 10), t: 0 }); }
   function heartTick(s, dt) { if (!s.hearts || !s.hearts.length) return; for (const h of s.hearts) h.t += dt; const Pw = s.P;
     if (Pw && !Pw.dead) for (const h of s.hearts) if (!h.got && Math.hypot(Pw.x - h.x, Pw.y - h.y) < 18) { h.got = 1; const g = Math.min(Pw.maxHp - Pw.hp, Pw.maxHp * .2); Pw.hp += g; try { text(Pw.x, Pw.y - 90 * HS, '+' + Math.round(g), '#7dffa8', true); burst(h.x, h.y - 20 * HS, 16, ['#ff5a6e', '#ffffff', '#7dffa8'], 150, 4, .45); sfx('ui_coin', { rate: 1.3 }); } catch (e) {} }
+    // (1.0.33.10) in Endless you can take a heart too, when you're hurt: 20% of your health
+    const me = s.endless && typeof ents !== 'undefined' && ents && ents[0];
+    if (me && !me.dead && me.hp < me.maxHp) for (const h of s.hearts) if (!h.got && Math.hypot(me.x - h.x, me.y - h.y) < 22) { h.got = 1; const g = Math.min(me.maxHp - me.hp, me.maxHp * .2); me.hp += g; try { text(me.x, me.y - 90 * HS, '+' + Math.round(g), '#7dffa8', true); burst(h.x, h.y - 20 * HS, 16, ['#ff5a6e', '#ffffff', '#7dffa8'], 150, 4, .45); sfx('ui_coin', { rate: 1.3 }); } catch (e) {} }
     s.hearts = s.hearts.filter(h => !h.got && h.t < 15); }
   function dropRoll(s, z) { s.drops = s.drops || []; if (s.drops.length || T - (s.lastDraft || -99) < 12) return; const r = Math.random(), tier = r < .05 ? 3 : r < .15 ? 2 : r < .30 ? 1 : 0; if (!tier) return;
     s.drops.push({ x: clamp(z.x, F.x0 + 10, F.x1 - 10), y: clamp(z.y, F.y0 + 10, F.y1 - 10), t: 0, tier }); try { burst(z.x, z.y - 20 * HS, 14, [DTIER[tier][1], '#ffffff'], 160, 4, .45); sfx('ui_deal', { x: z.x, rate: 1.4 }); } catch (e) {} }
@@ -158,7 +161,7 @@
   if (typeof castT === 'function') { const _ct = castT; window.castT = castT = function (w) { const t = _ct.apply(this, arguments); try { const s = sv(); if (s && s.boon && s.boon.cs && w && w.me) return t / (1 + s.boon.cs / 100); } catch (e) {} return t; }; }
   window.svDropPick = function (i) { const s = sv(); if (!s || !s.dropOps) return; const o = s.dropOps[i]; if (!o) return;
     if (o.revive) { const Pw = s.P, me = ents[0]; s.dropOps = null; s.lastDraft = T; const el0 = $('svDrop'); if (el0) el0.style.display = 'none'; paused = false; try { last = performance.now(); } catch (e) {}
-      if (Pw) { Pw.dead = 0; Pw.hp = Pw.maxHp * .25; Pw.x = clamp(me.x - 40, F.x0 + 10, F.x1 - 10); Pw.y = clamp(me.y + 20, F.y0 + 10, F.y1 - 10); try { burst(Pw.x, Pw.y - 40 * HS, 30, ['#7dffa8', '#ffffff', '#ffd45e'], 220, 5, .6); text(Pw.x, Pw.y - 100 * HS, 'REVIVED', '#7dffa8', true); sfx('ui_unlock'); if (window.emoteSay) setTimeout(() => { try { if (!ended) emoteSay(Pw, null, 'Back on my feet. Thanks!'); } catch (e) {} }, 300); } catch (e) {} }
+      if (Pw) { Pw.dead = 0; Pw.hp = Pw.maxHp * .25; Pw.invT = T + 3; /* (1.0.33.10) 3 s of invincibility */ Pw.x = clamp(me.x - 40, F.x0 + 10, F.x1 - 10); Pw.y = clamp(me.y + 20, F.y0 + 10, F.y1 - 10); try { burst(Pw.x, Pw.y - 40 * HS, 30, ['#7dffa8', '#ffffff', '#ffd45e'], 220, 5, .6); text(Pw.x, Pw.y - 100 * HS, 'REVIVED', '#7dffa8', true); sfx('ui_unlock'); if (window.emoteSay) setTimeout(() => { try { if (!ended) emoteSay(Pw, null, 'Back on my feet. Thanks!'); } catch (e) {} }, 300); } catch (e) {} }
       return; }
     M.me.up.add(o.k + '.' + o.u.id); s.dropOps = null; s.lastDraft = T; const el = $('svDrop'); if (el) el.style.display = 'none'; paused = false; try { last = performance.now(); } catch (e) {}
     try { text(ents[0].x, ents[0].y - 100 * HS, o.u.n.toUpperCase(), DTIER[o.t][1], true); sfx('ui_pick'); } catch (e) {}
@@ -223,7 +226,7 @@
       const keep = { x: me.x, y: me.y, face: me.face, i: me.i, p: me.p, castN: me.castN, lastK: me.lastK, lv: me.lv[k], up: me.up, fx: fo.x, fy: fo.y, tg: M.tgtNow };
       try { me.x = Pw.x; me.y = Pw.y; me.face = Pw.face; me.up = s.pt.up; fo.x = near.x; fo.y = near.y; M.tgtNow = null; if (!me.lv[k]) me.lv[k] = Math.max(1, Math.round(me.book.reduce((a, q) => a + (me.lv[q] || 1), 0) / Math.max(1, me.book.length))); cast(me, k); Pw.recoil = .25; }
       catch (e) {} finally { me.x = keep.x; me.y = keep.y; me.face = keep.face; me.i = keep.i; me.p = keep.p; me.castN = keep.castN; me.lastK = keep.lastK; me.up = keep.up; fo.x = keep.fx; fo.y = keep.fy; M.tgtNow = keep.tg; if (keep.lv === undefined && !me.book.includes(k)) delete me.lv[k]; } } }
-  function phurt(s, d) { const Pw = s.P; if (!Pw || Pw.dead) return; Pw.hp -= d; Pw.flash = .12; try { text(Pw.x + rnd(-8, 8), Pw.y - 75 * HS, Math.round(d), '#ffb0b0'); } catch (e) {}
+  function phurt(s, d) { const Pw = s.P; if (!Pw || Pw.dead) return; if (Pw.invT > T) { Pw.flash = .05; return; } Pw.hp -= d; Pw.flash = .12; try { text(Pw.x + rnd(-8, 8), Pw.y - 75 * HS, Math.round(d), '#ffb0b0'); } catch (e) {}
     if (Pw.hp <= 0) { Pw.hp = 0; Pw.dead = .001; try { text(Pw.x, Pw.y - 100 * HS, (s.pt.n || 'Partner').toUpperCase() + ' IS DOWN', '#ff9aa6', true); burst(Pw.x, Pw.y - 35 * HS, 30, ['#ffffff', '#ff9aa6'], 220, 6, .9); sfx('ko', { x: Pw.x, vol: .7 }); } catch (e) {} } }
   // the partner drafts for itself between attempts: an upgrade for something it holds, or a fifth ability
   function pDraft(s) { const pt = s.pt; if (!pt) return null; const ups = []; for (const k of pt.hand) for (const u of (UPG[k] || [])) if (!u.sig && !u.req && !pt.up.has(k + '.' + u.id)) ups.push([k, u]);
@@ -246,15 +249,18 @@
       let r; try { r = _r.apply(this, arguments); } finally { if (hid) { hid.fo.x = hid.x; hid.fo.y = hid.y; hid.fo.stunT = hid.st; } }
       try { if ($('battle').classList.contains('on')) drawDrops(); } catch (e) {}
       try { const s1 = sv(), q = $('qF'); if (s1 && s1.pt && q) { const n = s1.pt.hand.length, cur = s1.pi % n, k = s1.pt.hand[cur], need = (SP[k].t || 1.5) * 1.25; if (q.children.length !== n) q.innerHTML = s1.pt.hand.map(k2 => `<div class="qi rev" onclick="tipFromQueue(this,'${k2}','foe')"><img src="${ICON[k2]}"></div>`).join(''); for (let i = 0; i < q.children.length; i++) { q.children[i].style.opacity = s1.P && s1.P.dead ? '.4' : '1'; q.children[i].classList.toggle('now', i === cur && !(s1.P && s1.P.dead)); if (i === cur) q.children[i].style.setProperty('--p', Math.min(1, s1.pc / need)); } } } catch (e) {}
-      try { const s = sv(); if (s && s.P && $('battle').classList.contains('on') && !(s.P.dead > 1.2)) { const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0); drawWiz(s.P); x.restore(); } } catch (e) {}
+      try { const s = sv(); if (s && s.P && $('battle').classList.contains('on') && !(s.P.dead > 1.2)) { const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0); const iv = (s.P.invT || 0) - T;
+          if (iv > 0 && !s.P.dead) { const cy = s.P.y - 40 * HS, pu = .5 + .5 * Math.sin(T * 9); x.save(); x.globalCompositeOperation = 'lighter'; const g = x.createRadialGradient(s.P.x, cy, 8, s.P.x, cy, 46 * HS + 10); g.addColorStop(0, 'rgba(255,230,140,0)'); g.addColorStop(.7, `rgba(255,220,120,${.18 + .14 * pu})`); g.addColorStop(1, 'rgba(255,220,120,0)'); x.fillStyle = g; x.beginPath(); x.arc(s.P.x, cy, 46 * HS + 10, 0, 7); x.fill(); x.restore();
+            if (iv < 1) x.globalAlpha = Math.sin(T * 40) > 0 ? 1 : .25; }   // the last second flickers so you know it's ending
+          drawWiz(s.P); x.restore(); } } catch (e) {}
       return r; }; }
 
   /* ---------------- battle HUD chip ---------------- */
   function hud() { const s = sv(), b = $('battle'); if (!b) return; let h = $('svHud'); if (!s) { if (h) h.style.display = 'none'; return; }
     // the top bar is the partner's health (the anchor itself can never be hurt or killed)
     try { if (s.P) { const f = Math.max(0, s.P.hp / s.P.maxHp) * 100 + '%', a = $('hpF'), l = $('lagF'), n = $('hpnF'); if (a && a.style.width !== f) a.style.width = f; if (l && l.style.width !== f) l.style.width = f; const tx = String(Math.ceil(Math.max(0, s.P.hp))); if (n && n.textContent !== tx) n.textContent = tx; } } catch (e) {}
-    if (!h) { b.insertAdjacentHTML('beforeend', '<div id="svHud"></div>'); h = $('svHud'); } const lives = Math.max(0, 3 - M.score.foe), wave = Math.min(2, M.score.me);
-    const txt = `<b>${s.endless ? 'ENDLESS' : 'WAVE ' + (wave + 1) + ' / 3'}</b><span>${s.endless ? fmt(s.total) : fmt(Math.max(0, DUR[wave] - s.t))}</span><i>${'♥'.repeat(lives)}<u>${'♥'.repeat(3 - lives)}</u></i><em>+${Math.round((ramp(s.t) - 1) * 100)}%</em>`;
+    if (!h) { b.insertAdjacentHTML('beforeend', '<div id="svHud"></div>'); h = $('svHud'); } const LV = s.endless ? 1 : 3, lives = Math.max(0, LV - M.score.foe), wave = Math.min(2, M.score.me);
+    const txt = `<b>${s.endless ? 'ENDLESS' : 'WAVE ' + (wave + 1) + ' / 3'}</b><span>${s.endless ? fmt(s.total) : fmt(Math.max(0, DUR[wave] - s.t))}</span><i>${'♥'.repeat(lives)}<u>${'♥'.repeat(LV - lives)}</u></i><em>+${Math.round((ramp(s.t) - 1) * 100)}%</em>`;
     if (h._t !== txt) { h._t = txt; h.innerHTML = txt; } h.style.display = ''; }
 
   /* ---------------- leaderboard ---------------- */
@@ -278,7 +284,7 @@
     const opt = (pt, pi, label, sub, ic) => `<button class="sv-opt ${c.pt === pt && (pt === 'none' || pt === 'random' || c.pi === pi) ? 'on' : ''}" onclick="svSet('pt','${pt}',${pi})">${ic || ''}<b>${label}</b><small>${sub}</small></button>`;
     const hand = h => `<span class="sv-h">${(h || []).map(k => ICON[k] ? `<img src="${ICON[k]}">` : '').join('')}</span>`;
     const rows = m => { const L = B.filter(e => e.m === m); return L.length ? L.map((e, i) => `<div class="sv-row"><i>${i + 1}</i><b>${m === 'waves' ? e.w + '/3 · ' : ''}${fmt(e.t)}</b>${hand(e.h)}<small>${(KINDS[e.kd || 'zodiac'] || KINDS.zodiac)[0]} · ${e.k} defeated${e.p ? ' · with ' + esc(e.p) : ''}</small></div>`).join('') : '<div class="ssub" style="margin:4px 0">No runs yet.</div>'; };
-    return `<div class="ssub">Mobs rise all around you. Their damage and numbers grow 5% every 10 seconds. You have 3 lives, and you draft between attempts with a bonus pick after a fall.</div>
+    return `<div class="ssub">Mobs rise all around you. Their damage and numbers grow 5% every 10 seconds. ${c.mode === 'endless' ? 'Endless gives you one life: fall once and the run is over.' : 'You have 3 lives, and you draft between attempts with a bonus pick after a fall.'}</div>
       <div class="sv-modes"><button class="${c.mode === 'waves' ? 'on' : ''}" onclick="svSet('mode','waves')"><b>3 Waves</b><small>Survive 30s, 60s, 90s</small></button><button class="${c.mode === 'endless' ? 'on' : ''}" onclick="svSet('mode','endless')"><b>Endless</b><small>How long can you last?</small></button></div>
       <div class="lbl" style="margin-top:12px">Enemy</div>
       <div class="sv-kinds">${Object.keys(KINDS).map(k => `<button class="${c.kind === k ? 'on' : ''}" onclick="svSet('kind','${k}')">${KINDS[k][0]}</button>`).join('')}</div><div class="ssub" style="margin:6px 0 0">${KINDS[c.kind][1]}.</div>

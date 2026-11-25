@@ -109,8 +109,8 @@
     rays = rays.filter(r => !r.sb || (cannons.includes(r.c) && !(r.c.t >= r.c.dur) && r.c.bdP && T - r.c.bdT < .2));   // rays off a struck caster end when the beam leaves them                                // dome rays end with the beam or the dome
     for (const r of rays) { const c = r.c, g = c.g; if (!g || !(g.bnd || (r.sh && g.shl) || (r.sd && c.dmP) || (r.sb && c.bdP && T - c.bdT < .2))) { r.live = 0; continue; } r.live = 1; r.va += rnd(-60, 60) * dt; r.va = clamp(r.va, -7, 7); r.off += r.va * dt; if (Math.abs(r.off) > 2.7 || Math.abs(r.off) < .35) { r.va = -r.va; r.off = clamp(Math.abs(r.off), .36, 2.69) * Math.sign(r.off || 1); }
       const a = c.ang + r.off, E0 = r.sb ? c.bdP : r.sd ? c.dmP : r.sh ? g.shlP : g.E, far = { x: E0.x + Math.cos(a) * 520, y: E0.y + Math.sin(a) * 520 * .8 }, E = typeof clipToField === 'function' ? clipToField(E0, far) : far; r.x0 = E0.x; r.y0 = E0.y; r.x1 = E.x; r.y1 = E.y;
-      r.sc -= dt; if (r.sc <= 0) { r.sc = .16; try { beamTrails.push({ O: { x: E0.x, y: E0.y }, E: { x: E.x, y: E.y }, t: 0, w: .45 }); } catch (e) {} }
-      if (Math.random() < .5) P({ x: E.x, y: E.y - 20 * HS, vx: rnd(-90, 90), vy: rnd(-120, 10), color: Math.random() < .5 ? '#ffffff' : '#4fe3ff', size: rnd(2, 3.6), life: .35 });
+      r.sc -= dt; if (r.sc <= 0) { r.sc = .16; try { beamTrails.push({ O: { x: E0.x, y: E0.y }, E: { x: E.x, y: E.y }, t: 0, w: .45, foe: !!(c.o && !c.o.me) }); } catch (e) {} }
+      if (Math.random() < .5) P({ x: E.x, y: E.y - 20 * HS, vx: rnd(-90, 90), vy: rnd(-120, 10), color: Math.random() < .5 ? '#ffffff' : (c.o && !c.o.me ? '#ff7a86' : '#4fe3ff'), size: rnd(2, 3.6), life: .35 });
       // the wild rays still burn whatever they sweep across, the beam's own caster included, but lightly
       if (r.sh || r.sd || r.sb) continue;   /* off a Titan Shell, a Sanctum or a struck caster the wild rays are only light: the shell is taking the beam, nothing else is burned */
       SRC = 'beam'; for (const e of [c.o].concat(ents.filter(q => q !== c.o && q !== g.bnd))) if (!e.dead && e.ghostT <= 0) { const q = closestOn(E0, E, e.x, e.y); if (Math.hypot(e.x - q.x, e.y - q.y) < 14 && Math.hypot(q.x - E0.x, q.y - E0.y) > 30) { e.hp = Math.max(1, e.hp - 9 * dt); e.flash = .05; } } }
@@ -244,7 +244,7 @@
     // a beam breaking on Boundary: a hard blue wall of light where it stops, and the wild rays whipping off it
     for (const r0 of rays) { if (!r0.live || r0.x0 === undefined) continue; x.save(); x.globalCompositeOperation = 'lighter'; x.lineCap = 'round';
       const n = 7, pts = []; for (let i = 0; i <= n; i++) { const u = i / n, jx = i && i < n ? rnd(-7, 7) : 0, jy = i && i < n ? rnd(-5, 5) : 0; pts.push([r0.x0 + (r0.x1 - r0.x0) * u + jx, r0.y0 + (r0.y1 - r0.y0) * u + jy]); }
-      for (const [lw, col] of [[9, 'rgba(79,227,255,.42)'], [2.6, 'rgba(255,255,255,.95)']]) { x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.stroke(); }
+      for (const [lw, col] of [[9, r0.c.o && !r0.c.o.me ? 'rgba(255,122,134,.42)' : 'rgba(79,227,255,.42)'], [2.6, 'rgba(255,255,255,.95)']])   /* (1.0.33.10) rays take the beam's own colour */ { x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.stroke(); }
       x.restore(); }
     const seen = new Set(); for (const r0 of rays) { if (!r0.live || seen.has(r0.c) || r0.x0 === undefined) continue; seen.add(r0.c); const f = r0.c.g && r0.c.g.bnd; if (!f) continue; x.save(); x.globalCompositeOperation = 'lighter'; x.translate(r0.x0, r0.y0);
       const g = x.createRadialGradient(0, 0, 2, 0, 0, 34); g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(.4, 'rgba(120,200,255,.6)'); g.addColorStop(1, 'rgba(79,227,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, 34 + Math.sin(T * 40) * 4, 0, 7); x.fill();
