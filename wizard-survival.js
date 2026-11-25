@@ -76,6 +76,7 @@
     hurtZ(z, 1e6, null, 'fire'); }
   if (typeof startDuel === 'function') { const _sd = startDuel; window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments);
       try { const s = sv(); if (s) { const me = ents[0], fo = ents[1]; fo.svAnchor = 1; fo.petId = 'none'; fo.x = CX; fo.y = F.y0 - 300; me.x = CX; me.y = CY; me.petX = me.x - 30; me.petY = me.y + 8;
+          if (M.tgtNow === undefined || M.tgtNow === 'caster') M.tgtNow = 'near'; try { V123.tgHud(); } catch (e) {}   /* in Survival you aim at whatever is nearest by default, and there is no enemy caster to pick */
           s.t = 0; s.spT = 1.2; s.over = 0; s.seen = new Set(); s.huE = 0;
           s.hu = s.hu || []; if (!s.endless) { while (s.hu.length < M.score.me) hGain(s); }
           if (s.kind === 'zombie') fo.up = new Set(ZUPS.slice(0, s.endless ? 0 : M.score.me).map(u => 'zombies.' + u));
@@ -157,7 +158,10 @@
   window.svGroup = function () { const s = sv(); if (!s) return; s.group = s.group ? 0 : 1; groupBtn(); try { sfx('ui_click'); const me = ents[0]; text(me.x, me.y - 100 * HS, s.group ? 'REGROUP' : 'SPLIT UP', '#ffe08a'); } catch (e) {} };
   function groupBtn() { const s = sv(), b = $('battle'); if (!b) return; let g = $('svGroup'); if (!s || !s.pt) { if (g) g.style.display = 'none'; return; }
     if (!g) { b.insertAdjacentHTML('beforeend', '<button id="svGroup"></button>'); g = $('svGroup'); g.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); svGroup(); }); } g.style.display = ''; g.textContent = s.group ? 'Split up' : 'Regroup'; g.classList.toggle('on', !!s.group); }
-  if (typeof render === 'function') { const _r = render; window.render = render = function () { const r = _r.apply(this, arguments);
+  if (typeof render === 'function') { const _r = render; window.render = render = function () {
+      // (1.0.27) the unseen anchor is moved off the field while the frame is drawn, so nothing that follows a caster around (aura, stun stars, glow) shows up on the mob it is riding
+      let hid = null; try { const s0 = sv(), fo = s0 && typeof ents !== 'undefined' && ents && ents[1]; if (fo && fo.svAnchor) { hid = { fo, x: fo.x, y: fo.y, st: fo.stunT }; fo.x = -4000; fo.y = -4000; fo.stunT = 0; } } catch (e) {}
+      let r; try { r = _r.apply(this, arguments); } finally { if (hid) { hid.fo.x = hid.x; hid.fo.y = hid.y; hid.fo.stunT = hid.st; } }
       try { const s = sv(); if (s && s.P && $('battle').classList.contains('on') && !(s.P.dead > 1.2)) { const x = ctx; x.save(); x.setTransform(dpr, 0, 0, dpr, 0, 0); drawWiz(s.P); x.restore(); } } catch (e) {}
       return r; }; }
 

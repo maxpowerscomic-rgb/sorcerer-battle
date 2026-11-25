@@ -54,10 +54,10 @@
   ];
   function tgHud() { const b = $('battle'); if (!b) return; let h = $('tgHud');
     if (!h) { b.insertAdjacentHTML('beforeend', `<div id="tgHud">${TG.map(t => `<button data-t="${t[0]}" aria-label="${t[1]}"><svg viewBox="0 0 24 24">${t[2]}</svg></button>`).join('')}</div>`); h = $('tgHud');
-      h.addEventListener('pointerdown', e => { e.stopPropagation(); const bt = e.target.closest('button'); if (!bt || typeof M === 'undefined' || !M) return; e.preventDefault(); const t = bt.dataset.t; M.tgtNow = M.tgtNow === t ? null : t; tgPaint();
+      h.addEventListener('pointerdown', e => { e.stopPropagation(); const bt = e.target.closest('button'); if (!bt || typeof M === 'undefined' || !M) return; e.preventDefault(); const t = bt.dataset.t; M.tgtNow = M.tgtNow === t ? (M.sv ? 'near' : null) : t; tgPaint();
         try { sfx('ui_click'); } catch (e2) {} const me = typeof ents !== 'undefined' && ents && ents[0]; if (me && !ended) text(me.x, me.y - 100 * HS, M.tgtNow ? 'TARGET: ' + TG.find(q => q[0] === t)[1].toUpperCase() : 'TARGET: AUTO', '#ffe08a'); }); }
     tgPaint(); }
-  function tgPaint() { const h = $('tgHud'); if (!h) return; const cur = typeof M !== 'undefined' && M ? M.tgtNow : null; h.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === cur)); h.style.display = (typeof M !== 'undefined' && M && M.practice && window.YARD && YARD.on) ? 'none' : ''; }
+  function tgPaint() { const h = $('tgHud'); if (!h) return; const cur = typeof M !== 'undefined' && M ? M.tgtNow : null; h.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === cur)); h.style.display = (typeof M !== 'undefined' && M && M.practice && window.YARD && YARD.on) ? 'none' : ''; const cb = h.querySelector('button[data-t="caster"]'); if (cb) cb.style.display = (typeof M !== 'undefined' && M && M.sv) ? 'none' : ''; }
   if (typeof startDuel === 'function') { const _sd = startDuel; window.startDuel = startDuel = function () { const r = _sd.apply(this, arguments); try { tgHud(); } catch (e) {} return r; }; }
 
   /* ---------------- colourways ---------------- */

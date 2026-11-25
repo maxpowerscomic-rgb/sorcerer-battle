@@ -85,6 +85,8 @@
 
   const css = document.createElement('style');
   css.textContent = `
+  /* (1.0.27) the pause menu scrolls when it is taller than the screen */
+  .pzb{max-height:calc(100% - 48px);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;box-sizing:border-box}.pzb>*{flex-shrink:0}
   #home .cust{top:auto!important;right:12px!important;bottom:60px;width:60px;height:60px;padding:0!important;border-radius:18px!important;overflow:visible;display:block!important}
   #home .cust #custIco,#home .cust #custLbl{display:none!important}#custAva{width:100%;height:100%;border-radius:15px;display:block}
   .hm-brush{position:absolute;right:-7px;bottom:-7px;width:26px;height:26px;border-radius:50%;background:#1a1236;border:2px solid #000;display:grid;place-items:center;box-shadow:0 2px 0 #000}.hm-brush svg{width:16px;height:16px}

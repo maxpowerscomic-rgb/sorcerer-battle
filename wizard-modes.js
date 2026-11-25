@@ -130,6 +130,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.27', d: '24 Nov 2026', items: ['The pause menu now scrolls when it is taller than the screen.', 'Survival: you and your partner aim at the nearest enemy by default, and the enemy caster target button is hidden there.', 'Survival: removed the grey outline that appeared behind some enemies.'] },
     { v: '1.0.26', d: '24 Nov 2026', items: ['Survival enemies now improve too: every wave you clear gives them one upgrade (Swift, Tough, Vicious or Swarming), shown on your draft screen. In Endless they gain one every 45 seconds.',
       'Zombie hordes also pick up Frenzy, then Grave Grip. Enemy casters get an upgrade for their own abilities per wave cleared.',
       'Enemy casters now pick you or your partner at random.',
