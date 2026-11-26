@@ -97,7 +97,7 @@ Object.assign(UPG, {
   earthm:     [{ id: 'pillars', n: 'Stone Pillars', d: '10 stone pillars rise at random spots in the mud. They block shots.' }, { id: 'mudwall', n: 'Mud Wall', d: 'A mud wall in three breakable sections rises at the edge of the mud.' },
                { id: 'quag', n: 'Quagmire', d: 'Deeper mud: enemies in it are 65% slower and take 2 damage a second.' },
                { id: 'fortify', n: 'Fortified Mud Wall', d: 'The mud wall is one solid structure with 60% more health.', req: 'mudwall' }],
-  chosen:     [{ id: 'awaken', n: 'Awakening', d: 'The cast speed bonus doubles.' }, { id: 'fate', n: 'Not Yet', d: "Survive one killing blow a round. You can't fall until your next hit: a crit." }],
+  chosen:     [{ id: 'unbound', n: 'Unbound Flow', d: 'Your next ability starts casting right away, even while the last one is still going (a beam firing, a combo, a barrage).' }, { id: 'awaken', n: 'Awakening', d: 'The cast speed bonus doubles.' }, { id: 'fate', n: 'Not Yet', d: "Survive one killing blow a round. You can't fall until your next hit: a crit." }],
   copycast:   [{ id: 'perfect', n: 'Perfect Copy', d: 'Your copies are cast 2 levels higher than the original.' }, { id: 'twice', n: 'Second Sight', d: 'Stays armed for 2 copies.' }],
   bloodoath:  [{ id: 'fleet', n: 'Fleet Foot', d: 'You move 30% faster.' }, { id: 'more', n: 'Four Cuts', d: '+2 slashes in every string.' }, { id: 'linger', n: 'Unbroken Edge', d: 'After the string, keep slashing for 1 second at 35% damage.' },
                { id: 'flying', n: 'Flying Cuts', d: 'Every slash also throws a cut that flies on to the next enemy for 60% damage.' }, { id: 'free', n: 'Unbound', d: 'Enemy Sanctums cannot trap or slow you, and their sure hits miss you.' },

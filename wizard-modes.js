@@ -130,6 +130,10 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.31', d: '26 Nov 2026', items: [
+      'Your next ability only starts casting once the current attack is over: a Spell Cannon beam, a Rushdown combo, a Meteor barrage, a Draw orb hauling its catch, and the like.',
+      'New Chosen One upgrade, Unbound Flow: your next ability starts casting right away, even while the last one is still going.',
+      'The sorcerer\'s auto-attack jab now throws a real punch, the same as Rushdown\'s.'] },
     { v: '1.0.33.30', d: '26 Nov 2026', items: [
       'Sorcerers wearing the Crown or the Void Crown now wear an actual crown, not a thin circlet.',
       'Starfire Cannon (Season Pass): a gold beam with a white-hot core, streaming stars and a starburst where it lands. When you unlock it, the game tells you where to switch it on.',

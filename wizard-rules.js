@@ -25,6 +25,8 @@
     if (X.slashes.some(s => s.o === w && s.vivi && s.life > 0)) return true;                                    // Vivisection
     if (typeof cannons !== 'undefined' && cannons.some(c => c.o === w && c.t < c.dur)) return true;             // Spell Cannon firing
     if (B().bloods.some(b => b.o === w && b.k === 'blob' && !b.dead)) return true;                              // Bloodburst in the air
+    if (typeof meteors !== 'undefined' && meteors.some(m => m.o === w && m.t < m.fall)) return true;           // (1.0.33.31) a Meteor barrage until its last meteor lands
+    if (X.orbsC.some(c => c.o === w && c.draw && c.life > 0 && !c.fused)) return true;                       // (1.0.33.31) a Draw orb out or hauling its catch back
     return false;
   }
   window.castBusy = busy;
@@ -206,8 +208,13 @@
   const _up = update;
   window.update = update = function (dt) {
     // cast lock: the bar fills, but nothing new fires while a move of yours is still playing out
-    if (typeof ents !== 'undefined' && ents && !ended) for (const w of ents) { if (w.dead || !w.book || !w.book.length) continue; w.busyT = busy(w) ? (w.busyT || 0) + dt : 0; if (w.busyT > 0 && w.busyT < 6) { const ct = castT(w, w.book[w.i]); w.p = Math.min(w.p, ct - .13); } }
+    // (1.0.33.31) the next ability doesn't start charging until the current attack is over (the bar holds where it is);
+    // Chosen One's Unbound Flow lets it charge and fire while the last one is still going.
+    const held = [];
+    if (typeof ents !== 'undefined' && ents && !ended) for (const w of ents) { if (w.dead || !w.book || !w.book.length) continue; w.busyT = busy(w) ? (w.busyT || 0) + dt : 0;
+      if (w.busyT > 0 && w.busyT < 8 && !(w.book.includes('chosen') && U(w, 'chosen', 'unbound'))) held.push([w, w.p || 0]); }
     const r = _up.apply(this, arguments);
+    for (const [w, p] of held) if (!w.dead && busy(w) && w.p > p) w.p = p;
     if (typeof ents === 'undefined' || !ents || !ents.length || ended) return r;
     boundaryUpdate(dt); for (const e of erases) e.t += dt; erases = erases.filter(e => e.t < .55);
     for (const w of ents) if (!w.dead && (w.fate || w.finalBoost)) { if (Math.random() < dt * 26) P({ x: w.x + rnd(-16, 16), y: w.y - rnd(0, 20) * HS, vx: rnd(-8, 8), vy: -rnd(70, 170), color: Math.random() < .75 ? '#ffffff' : '#fff3c8', size: rnd(1.8, 3.4), life: rnd(.5, .9) }); }

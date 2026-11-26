@@ -23,13 +23,16 @@
   function hit(w, t, dmg, col) { const s0 = SRC; SRC = 'auto';
     try { if (t.k === 'wiz') damage(t.e, dmg, (t.e.x - w.x) * .4, (t.e.y - w.y) * .4, col); else hurtCreature(t.e, t.k, dmg, 'auto'); } finally { SRC = s0; }
     // tempo: a landed auto shaves 3% off the current cast
-    try { const k = w.book[w.i], ct = castT(w, k); if (ct > 0) w.p = Math.min(ct * .97, (w.p || 0) + ct * TEMPO); } catch (e) {} }
+    try { const lock = window.castBusy && castBusy(w) && !(w.book.includes('chosen') && U(w, 'chosen', 'unbound')); if (!lock) { const k = w.book[w.i], ct = castT(w, k); if (ct > 0) w.p = Math.min(ct * .97, (w.p || 0) + ct * TEMPO); } } catch (e) {} }   // no tempo while the last attack is still going
   function tick(dt) { if (window.AUTO_OFF || !on() || ended || introT > 0) return;
     for (const w of ents) { if (!w || w.dead || w.svAnchor || w.isDummy || !(w.book && w.book.length)) continue; w.autoCd = (w.autoCd || 0) - dt;
       if (w.autoCd > 0 || w.stunT > 0 || w.frozen > 0 || (w.rush && w.rush.ph !== 'back') || w.ghostT > 0) continue;
       const list = targets(w);
       if (isSorc(w)) { const t = near(w, list, JAB.reach + 6); if (!t) continue; if (typeof wallBetween === 'function' && wallBetween(w, w, t.e)) continue;
-        w.autoCd = JAB.cd; w.face = t.e.x < w.x ? -1 : 1; { const dx = t.e.x - w.x, dy = t.e.y - w.y, d = Math.hypot(dx, dy) || 1, step = Math.min(16, Math.max(0, d - 30)); try { const q = inArena(w.x + dx / d * step, w.y + dy / d * step); w.x = q.x; w.y = q.y; } catch (e) {} } jabs.push({ x: (w.x + t.e.x) / 2, y: (w.y + t.e.y) / 2, a: Math.atan2(t.e.y - w.y, t.e.x - w.x), t: 0, o: w }); w.jabT = .14; hit(w, t, JAB.dmg, '#ffd6c8');
+        w.autoCd = JAB.cd; w.face = t.e.x < w.x ? -1 : 1; w.jabSide = -(w.jabSide || 1); { const dx = t.e.x - w.x, dy = t.e.y - w.y, d = Math.hypot(dx, dy) || 1, step = Math.min(16, Math.max(0, d - 30)); try { const q = inArena(w.x + dx / d * step, w.y + dy / d * step); w.x = q.x; w.y = q.y; } catch (e) {} } { const dx = t.e.x - w.x, dy = t.e.y - w.y, dd = Math.hypot(dx, dy) || 1, vx2 = dx / dd, vy2 = dy / dd, side = w.jabSide, stop = Math.min(30, dd);
+          const px = w.x + vx2 * (stop - 8) - vy2 * side * 6, py = w.y - (40 + side * 7) * HS + vy2 * 10, X = window.TECH_DEBUG;   // the same punch Rushdown throws
+          w.recoil = .07; try { X.addFx({ k: 'punch', x: px, y: py, life: .18, a: Math.random() * 6.28, s: .8 }); X.addFx({ k: 'jab', x: w.x, y: w.y - 40 * HS, x2: px, y2: py, life: .12, side }); } catch (e) {} }
+        hit(w, t, JAB.dmg, '#ffd6c8');
         try { sfx('hit', { x: w.x, vol: .25, rate: 1.4 }); } catch (e) {} }
       else { const t = near(w, list, BOLT.range); if (!t) continue; w.autoCd = BOLT.cd; const a = Math.atan2(t.e.y - w.y, t.e.x - w.x), c = (typeof auraOf === 'function' ? auraOf(w) : ['#bff', '#8fd8ff']);
         bolts.push({ o: w, x: w.x + Math.cos(a) * 14, y: w.y + Math.sin(a) * 14, vx: Math.cos(a) * BOLT.speed, vy: Math.sin(a) * BOLT.speed, left: BOLT.range, c, tr: [] });
