@@ -26,9 +26,12 @@
   const iap = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iap;
   if (typeof buyPack === 'function') {
     const grant = buyPack;
-    window.SB_IAP_DONE = function (id, ok, msg) { if (ok) { if (!(window.grantGems && grantGems(id))) grant(id); } else if (msg) toast(msg); };
+    window.SB_IAP_DONE = function (id, ok, msg, ms) {
+      // (1.0.33.30) the Season Pass unlocks premium here (its own hook loaded too early to attach, so a purchase only showed after a restart)
+      if (id === 'pass') { if (ok) { try { window.PASS_GRANT && PASS_GRANT(ms || Date.now()); } catch (e) {} } else if (msg) toast(msg); return; }
+      if (ok) { if (!(window.grantGems && grantGems(id))) grant(id); } else if (msg) toast(msg); };
     window.buyPack = function (id) { if (iap) iap.postMessage({ action: 'buy', id }); else toast('Purchases are only available in the app.'); };
-    window.SB_IAP_PRICES = function (map) { try { PACKS.forEach(p => { if (map[p.id]) p.price = map[p.id]; }); (window.GEM_PACKS || []).forEach(p => { if (map[p.id]) p.price = map[p.id]; }); if (typeof renderShop === 'function' && document.getElementById('shop')?.classList.contains('on')) renderShop(); } catch (e) {} };
+    window.SB_IAP_PRICES = function (map) { try { if (map && map.pass) window.PASS_PRICE = map.pass; } catch (e) {} try { PACKS.forEach(p => { if (map[p.id]) p.price = map[p.id]; }); (window.GEM_PACKS || []).forEach(p => { if (map[p.id]) p.price = map[p.id]; }); if (typeof renderShop === 'function' && document.getElementById('shop')?.classList.contains('on')) renderShop(); } catch (e) {} };
     if (iap) iap.postMessage({ action: 'prices' });
   }
 })();

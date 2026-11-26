@@ -59,7 +59,7 @@
   if (typeof damage === 'function') { const _d = damage;
     window.damage = damage = function (t, d) { const h0 = t ? t.hp : 0, src = SRC, r = _d.apply(this, arguments);
       try { if (live() && t && t.foe && h0 > t.hp) { const lost = h0 - t.hp, a = t.foe, own = src && t.book && t.book.includes(src) && !(a.book && a.book.includes(src));
-          if (!own) { const s = side(a), k = src && SP[src] ? src : '?', q = row(s, k); q.d += lost; R[s].dealt += lost; if (q.last) q.last.d += lost; if (q.open) { q.open = 0; q.h++; } else if (!q.c) q.h = 0; } } } catch (e) {}
+          if (!own) { const s = side(a), k = src === 'auto' ? 'auto' : src && SP[src] ? src : '?', q = row(s, k); q.d += lost; R[s].dealt += lost; if (q.last) q.last.d += lost; if (q.open) { q.open = 0; q.h++; } else if (!q.c) q.h = 0; } } } catch (e) {}
       return r; }; }
   if (typeof text === 'function') { const _t = text;
     window.text = text = function (x, y, s) { try { if (live() && typeof s === 'string' && /^[A-Z][A-Z !']+$/.test(s) && !SKIP.has(s) && !ABN().has(s.trim())) { let best = null, bd = 1e9; if (s === 'CAUGHT' || s === 'STOPPED' || s === 'BOUNDARY') { best = ents.find(w => w.bndWin > 0) || null; if (best) bd = 0; } if (!best) for (const w of ents) { const d = Math.hypot(w.x - x, w.y - y); if (d < bd) { bd = d; best = w; } } if (best && bd < 190) { const ev = R[side(best)].ev; ev[s] = (ev[s] || 0) + 1; note(side(best), null, pretty(s)); } } } catch (e) {} return _t.apply(this, arguments); }; }
@@ -78,7 +78,7 @@
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   function colHTML(S, who) { S.abs = S.abs || {}; for (const k in S.abs) if (!S.ab[k] && SP[k]) S.ab[k] = { c: 0, h: 0, d: 0 }; const ks = Object.keys(S.ab).sort((a, b) => S.ab[b].d - S.ab[a].d || S.ab[b].c - S.ab[a].c);
-    const rows = ks.map(k => { const q = S.ab[k], nm = SP[k] ? SP[k].n : 'Other', ic = SP[k] && typeof ICON !== 'undefined' && ICON[k] ? `<img src="${ICON[k]}">` : '<i></i>', d = Math.round(q.d);
+    const rows = ks.map(k => { const q = S.ab[k], nm = SP[k] ? SP[k].n : k === 'auto' ? 'Auto-attacks' : 'Other', ic = SP[k] && typeof ICON !== 'undefined' && ICON[k] ? `<img src="${ICON[k]}">` : '<i></i>', d = Math.round(q.d);
       const line = q.c ? (d > 0 ? `${Math.min(q.h, q.c)} of ${q.c} landed · <b>${d}</b> dmg` : `${q.c} cast${q.c > 1 ? 's' : ''}${typeof TYPE_OF !== 'undefined' && ['proj', 'melee'].includes(TYPE_OF[k]) ? ' · none landed' : ''}`) : `<b>${d}</b> dmg from earlier casts`;
       const ab = Math.round(S.abs[k] || 0), soak = ab > 0 ? ` · absorbed <b class="ab">${ab}</b>` : '';
       return `<div class="txr">${ic}<span><em>${esc(nm)}</em><small>${q.c || d > 0 ? line : 'still standing from an earlier cast'}${soak}</small></span></div>`; }).join('');

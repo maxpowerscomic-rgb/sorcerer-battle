@@ -57,6 +57,8 @@
   const premium = () => st().prem === st().s;
   function claimable() { const p = st(), t = tierOf(p); let n = 0; for (let i = 1; i <= t; i++) { if (!p.f.includes(i)) n++; if (premium() && !p.p.includes(i)) n++; } return n; }
   window.PASS = { st, tierOf, claimable, premium, freeR, premR, TIERS, PER, seasonOf };
+  // (1.0.33.30) the shared localized price (set by whichever price hook runs; the screen reads it at draw time)
+  window.PASS_PRICE = window.PASS_PRICE || '$4.99';
   // the pass fills with the same XP as your player level
   function trackXp() { const p = st(), now = totXp(); if (p.last === undefined) p.last = now; const d = now - p.last; if (d > 0 && d < 5000) { const before = tierOf(p); p.xp += d; p.last = now; try { save(); } catch (e) {} if (tierOf(p) > before) try { toast(`Season Pass: tier ${tierOf(p)} reached`); } catch (e) {} } else if (d !== 0) { p.last = now; } paintBtn(); }
   setInterval(() => { try { trackXp(); } catch (e) {} }, 1500);
@@ -72,6 +74,7 @@
   window.passBuy = function () { if (premium()) return; const I = iap(); if (!I) return toast('The Season Pass can be bought in the iOS app.'); try { I.postMessage({ action: 'buy', id: 'pass' }); } catch (e) {} };
   window.passRestore = function () { const I = iap(); if (!I) return toast('Restore works in the iOS app.'); try { I.postMessage({ action: 'restore' }); toast('Checking your purchases…'); } catch (e) {} };
   function grantPass(ms) { const s = seasonOf(ms || Date.now()), p = st(); if (s !== p.s) return false; if (p.prem === s) return true; p.prem = s; try { save(); sfx('ui_unlock'); toast('Premium pass unlocked for this season!'); } catch (e) {} if ($('spSheet')) openPass(true); paintBtn(); return true; }
+  window.PASS_GRANT = grantPass;   // (1.0.33.30) called from the release purchase handler, whatever the script order
   if (window.SB_IAP_DONE) { const _d = SB_IAP_DONE; window.SB_IAP_DONE = function (id, ok, msg, ms) { if (id === 'pass') { if (ok) grantPass(ms); else if (msg) toast(msg); return; } return _d.apply(this, arguments); }; }
   // purchases Apple still has on record (a reinstall, a new phone): only this season's counts
   window.SB_PASS_ENT = function (list) { let got = false; for (const ms of list || []) if (grantPass(ms)) got = true; if ($('spSheet') && !got) toast(premium() ? 'Premium pass is active.' : 'No Season Pass for this season found.'); };
@@ -88,7 +91,7 @@
     const n = claimable();
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh" id="spSheet">Season ${p.s + 1} Pass</div>
       <div class="sp-head"><div class="sp-tier"><b>Tier ${T}</b><span>/ ${TIERS}</span></div><div class="sp-bar"><i style="width:${T >= TIERS ? 100 : into / PER * 100}%"></i></div><small>${T >= TIERS ? 'Every tier reached!' : `${into} / ${PER} XP to tier ${T + 1}`} · Ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'} (${fmtD(end)})</small></div>
-      ${prem ? '<div class="sp-prem on">★ Premium pass active this season</div>' : `<div class="sp-buy"><button class="sp-bb" onclick="passBuy()"><b>Unlock Premium</b><span>${PRICE}</span></button><p>Premium rewards for Season ${p.s + 1}, until ${fmtD(end)}: 8 exclusive cosmetics (a robe, trail, cannon skin, aura, crown and 3 blood colours), 15,000 gold, 100 Echo Runes and 650 gems. A one-time purchase for this season only; it does not renew.${daysLeft <= 3 ? ` <b class="sp-warn">This season ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}.</b>` : ''}</p><div class="sp-links"><button onclick="passRestore()">Restore purchases</button><button onclick="passLink('terms')">Terms of Use</button><button onclick="passLink('privacy')">Privacy</button></div></div>`}
+      ${prem ? '<div class="sp-prem on">★ Premium pass active this season</div>' : `<div class="sp-buy"><button class="sp-bb" onclick="passBuy()"><b>Unlock Premium</b><span>${window.PASS_PRICE || PRICE}</span></button><p>Premium rewards for Season ${p.s + 1}, until ${fmtD(end)}: 8 exclusive cosmetics (a robe, trail, cannon skin, aura, crown and 3 blood colours), 15,000 gold, 100 Echo Runes and 650 gems. A one-time purchase for this season only; it does not renew.${daysLeft <= 3 ? ` <b class="sp-warn">This season ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}.</b>` : ''}</p><div class="sp-links"><button onclick="passRestore()">Restore purchases</button><button onclick="passLink('terms')">Terms of Use</button><button onclick="passLink('privacy')">Privacy</button></div></div>`}
       <div class="sp-cols"><span></span><span>Free</span><span class="pm">Premium</span></div>
       ${n ? `<button class="upbtn sp-all" onclick="passClaimAll()">Claim all (${n})</button>` : ''}
       <div class="sp-list">${Array.from({ length: TIERS }, (_, i) => row(i + 1)).join('')}</div>`;

@@ -26,14 +26,15 @@ function wpart(x, n, ox, oy, bw, bh, white) {
   x.drawImage(white ? wwhite(n, im) : im, ox - (W - bw) / 2, oy - (H - bh) / 2, W, H); return true;
 }
 const wframe = (x, n, white) => wpart(x, n, -30, -96, 60, 100, white);
-// preload every part so the first battle frame is complete
-(function preload() {
+// (1.0.33.29) the game draws fighters with the HD code renderer (ART_STYLE 'hd'), so this sprite set is unused: it is no
+// longer preloaded at startup (that fetched 83 images, 60 of which don't exist). wimg() still loads parts on demand if 'v3' is ever chosen.
+function wizPreloadV3() {
   const robes = COSMETICS.robe.map(r => r.id), names = ['boot', 'hat_mushroom', 'hat_crown', 'mouth_smile', 'mouth_open', 'mouth_flat', 'beard_white', 'beard_brown', 'beard_ginger', 'beard_long'];
   robes.forEach(r => names.push('body_' + r, 'arm_' + r, 'hat_pointy_' + r, 'hat_witch_' + r, 'hat_feathered_' + r, 'hood_back_' + r, 'hood_front_' + r));
   COSMETICS.skin.forEach(s => names.push('head_' + s.id)); COSMETICS.staff.forEach(s => names.push('staff_' + s.id));
   ['idle', 'blink', 'cast', 'hurt', 'tired', 'stun', 'ko'].forEach(f => names.push('face_' + f));
   names.forEach(wimg);
-})();
+}
 
 function drawWizV3(w, X, ava) {
   const lk = w.look || {}, robe = lk.robe || 'azure';

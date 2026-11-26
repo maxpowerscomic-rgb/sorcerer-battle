@@ -57,7 +57,7 @@
   }
   const _dm = damage;
   window.damage = damage = function (t, d) {
-    if (d > 0 && t && (t.boundary || t.bndWin > 0) && !t.dead && !ended && t.foe && !t.foe.dead && !catchHit.back && SRC && !DOT_SRC.has(SRC) && !(t.book.includes(SRC) && !t.foe.book.includes(SRC))) { catchHit(t, d, arguments[4]); return; }
+    if (d > 0 && t && (t.boundary || t.bndWin > 0) && !t.dead && !ended && t.foe && !t.foe.dead && !catchHit.back && SRC && SRC !== 'auto' && !DOT_SRC.has(SRC) && !(t.book.includes(SRC) && !t.foe.book.includes(SRC))) { catchHit(t, d, arguments[4]); return; }
     return _dm.apply(this, arguments);
   };
   // blood does not come back: it bursts into high-pressure jets that gouge the floor where they land

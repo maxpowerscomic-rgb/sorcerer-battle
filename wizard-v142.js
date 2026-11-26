@@ -67,7 +67,7 @@
     if (r.k === 'rune') return { cls: 'rune', icon: ICON.rune(), amt: fmt(r.n), name: r.n > 1 ? 'Echo Runes' : 'Echo Rune', say: `${r.n} Echo Rune${r.n > 1 ? 's' : ''}` };
     if (r.k === 'sp') return { cls: 'sp', icon: ICON.sp(), amt: '+' + r.n, name: 'Skill Points', say: `${r.n} Skill Points for each ability in your hand` };
     if (r.k === 'blood') { const b = BLOOD[r.id] || {}; return { cls: 'leg', icon: ICON.blood(r.id), amt: '', name: (b.n || r.id) + ' Blood', tag: 'Blood colour', say: `${b.n || r.id} Blood colour` }; }
-    if (r.k === 'cos') { const kind = COS_KIND[r.cat] || 'aura'; return { cls: 'leg', icon: kind === 'avatar' ? `<canvas width="120" height="120" data-cos="${r.cat}.${r.id}"></canvas>` : ICON[kind](), amt: '', name: r.n, tag: { robe: 'Outfit', hat: 'Hat', trail: 'Trail', beam: 'Cannon skin', aurastyle: 'Aura' }[r.cat] || 'Cosmetic', say: r.n }; }
+    if (r.k === 'cos') { const kind = COS_KIND[r.cat] || 'aura'; return { cls: 'leg', icon: kind === 'avatar' ? `<canvas width="120" height="120" data-cos="${r.cat}.${r.id}"></canvas>` : ICON[kind](), amt: '', name: r.n, tag: { robe: 'Outfit', hat: 'Hat', trail: 'Trail', beam: 'Cannon skin', aurastyle: 'Aura' }[r.cat] || 'Cosmetic', sub: r.cat === 'beam' ? 'for Spell Cannon' : '', say: r.n }; }
     return { cls: 'gold', icon: '', amt: '', name: '', say: '' };
   }
   // a tile: the first reward is the hero, any others ride along as small chips
@@ -104,7 +104,7 @@
         <p class="pp-how">Fill the pass with the XP from every match. Ends ${fmtD(end)}.</p></div>
       ${prem ? '<div class="pp-active">★ Premium pass active this season</div>' : `<div class="pp-buy"><div class="pp-bh"><b>Premium Pass</b><span>Season ${p.s + 1} only</span></div>${preview}
         <ul class="pp-val"><li><i>${ICON.gold()}</i>15,000 Gold</li><li><i>${ICON.gems()}</i>650 Gems</li><li><i>${ICON.rune()}</i>100 Echo Runes</li><li><i>${ICON.aura()}</i>8 exclusive cosmetics</li></ul>
-        <button class="pp-bb" onclick="passBuy()"><b>Unlock Premium</b><span>${PRICE}</span></button>
+        <button class="pp-bb" onclick="passBuy()"><b>Unlock Premium</b><span>${window.PASS_PRICE || PRICE}</span></button>
         <p class="pp-fine">Unlocks the premium rewards for Season ${p.s + 1} until ${fmtD(end)}, including tiers already reached. A one-time purchase for this season only; it does not renew.${daysLeft <= 3 ? ` <b class="sp-warn">This season ends in ${daysLeft} day${daysLeft === 1 ? '' : 's'}.</b>` : ''}</p>
         <div class="sp-links"><button onclick="passRestore()">Restore purchases</button><button onclick="passLink('terms')">Terms of Use</button><button onclick="passLink('privacy')">Privacy</button></div></div>`}
       <div class="pp-cols"><span>Free</span><span></span><span class="pm">Premium</span></div>

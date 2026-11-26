@@ -130,6 +130,15 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.30', d: '26 Nov 2026', items: [
+      'Sorcerers wearing the Crown or the Void Crown now wear an actual crown, not a thin circlet.',
+      'Starfire Cannon (Season Pass): a gold beam with a white-hot core, streaming stars and a starburst where it lands. When you unlock it, the game tells you where to switch it on.',
+      'Buying the Season Pass unlocks premium straight away (before, it could need a restart), and the pass shows your local price.',
+      'The wizard\'s auto-attack is now a spinning star bolt with a comet tail and sparkles.'] },
+    { v: '1.0.33.29', d: '26 Nov 2026', items: [
+      'Auto-attacks: between casts, wizards fire a short-range Magic Bolt (stopped by walls) and sorcerers throw a lunging Jab up close. Each one that lands speeds up your current cast a little.',
+      'The Gilded skin is now a proper gold.',
+      'Faster start-up: the game no longer loads 83 unused character images.'] },
     { v: '1.0.33.28', d: '26 Nov 2026', items: ['The white chunk on a health bar after a hit now clears in about a second.'] },
     { v: '1.0.33.27', d: '26 Nov 2026', items: [
       'Overtime: if the deciding round runs out of time with both fighters standing, it goes on for 15 more seconds and every hit deals double damage.',

@@ -366,7 +366,16 @@
       return;
     }
     if (masked || gear === 'feathered') return;
-    if (gear === 'crown') { fs(x, BAND, fl ? '#fff' : GVC ? vgrad(x, -7, 0, '#d9c2ff', '#4a1a9a') : vgrad(x, -7, 0, '#fff3b0', '#e39a14'), 1.7); if (!fl) { x.fillStyle = GVC ? '#ffd45e' : '#ff4a5a'; x.strokeStyle = '#000'; x.lineWidth = LW * (1.1); x.beginPath(); x.moveTo(3.4, -8.4); x.lineTo(5.6, -5.2); x.lineTo(3.4, -2.4); x.lineTo(1.2, -5.2); x.closePath(); x.fill(); x.stroke(); } return; }
+    if (gear === 'crown') {   // (1.0.33.30) a real crown on top of the head (it used to be a thin circlet), golden or Void violet-and-black
+      const CR = 'M-10.4,-9.6 L-11.6,-19 L-6.6,-14.6 L-3.2,-22.4 L.6,-15.4 L4.4,-22.2 L7.6,-14.4 L12.4,-18.6 L11.2,-9.4 Q.4,-7.4 -10.4,-9.6 Z';
+      x.save(); x.rotate(-.06);
+      fs(x, CR, fl ? '#fff' : GVC ? vgrad(x, -22, -8, '#d9c2ff', '#4a1a9a') : vgrad(x, -22, -8, '#fff3b0', '#e39a14'), 2.2);
+      if (!fl) { within(x, CR, () => { x.fillStyle = GVC ? '#1e0a40' : '#b8760e'; x.globalAlpha = .45; x.fillRect(4, -24, 10, 16); x.globalAlpha = 1; x.fillRect(-12, -12.2, 25, 1.3); x.strokeStyle = '#fff8'; x.lineWidth = LW * (1.1); x.beginPath(); x.moveTo(-9.2, -16.4); x.lineTo(-8.6, -10.8); x.stroke(); });
+        const gem = (gx, gy, r, col) => { x.fillStyle = col; x.strokeStyle = '#000'; x.lineWidth = LW * (1.1); x.beginPath(); x.arc(gx, gy, r, 0, 7); x.fill(); x.stroke(); x.fillStyle = '#fff'; x.beginPath(); x.arc(gx - r * .3, gy - r * .35, r * .32, 0, 7); x.fill(); };
+        const g1 = GVC ? '#ffd45e' : '#ff4a5a', g2 = GVC ? '#6fffe0' : '#5cc8ff', g3 = GVC ? '#c48cff' : '#fff3d0';
+        gem(.4, -12.6, 2.1, g1); gem(-5.6, -11.4, 1.4, g2); gem(6, -11.2, 1.4, g2); gem(-3.2, -22, 1.5, g3); gem(4.4, -21.8, 1.5, g3); gem(-11.4, -18.6, 1.3, g3); gem(12.2, -18.2, 1.3, g3);
+        if (GVC) { x.globalCompositeOperation = 'lighter'; for (const [gx, gy] of [[.4, -12.6], [-3.2, -22], [4.4, -21.8]]) { const g = x.createRadialGradient(gx, gy, 0, gx, gy, 6); g.addColorStop(0, 'rgba(214,170,255,.55)'); g.addColorStop(1, 'rgba(214,170,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(gx, gy, 6, 0, 7); x.fill(); } x.globalCompositeOperation = 'source-over'; } }
+      x.restore(); return; }
     // headband with fluttering tails
     for (const [dy, r] of [[0, flut], [2.6, -flut * .8 + .16]]) { x.save(); x.translate(-8.6, -2); x.rotate(r); fs(x, `M0,${-1.4 + dy * .2} C-5,-3.4 -8.6,.6 -13.4,-1.8 L-12.6,1.6 C-8.6,3.6 -4.6,.4 0,${1.6 + dy * .2} Z`, F2(fl, dy ? mul(trim, .8) : trim), 1.6); x.restore(); }
     fs(x, BAND, F2(fl, trim), 1.8); if (!fl) { x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = LW * (.9); x.beginPath(); x.moveTo(-8.4, -1.6); x.bezierCurveTo(-4, -5, 5, -5.4, 9.6, -2); x.stroke(); }

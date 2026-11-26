@@ -1313,14 +1313,14 @@ function drawBeamTrails(x){if(!beamTrails.length&&!cannons.length)return;x.save(
  x.globalCompositeOperation='lighter';
  for(const b of beamTrails){const f=b.t/1.4;x.globalAlpha=Math.max(0,1-f)*.55;x.strokeStyle=f<.2?'#ffffff':b.col?b.col:b.foe?(f<.5?'#ffd0d5':'#ff7a86'):(f<.5?'#bff6ff':'#4fe3ff');x.lineWidth=(3.2-f*2)*b.w;x.beginPath();x.moveTo(b.O.x,b.O.y);x.lineTo(b.E.x,b.E.y);x.stroke();}
  // live trench right under the beam, this frame
- for(const c of cannons)if(c.g&&c.t<c.dur&&!c.clashT){const E=clipToField(c.g.O,c.g.E),w=c.wide?1.4:1;x.globalAlpha=.5;x.strokeStyle='#4fe3ff';x.lineWidth=14*w;x.beginPath();x.moveTo(c.g.O.x,c.g.O.y);x.lineTo(E.x,E.y);x.stroke();x.globalAlpha=.95;x.strokeStyle='#ffffff';x.lineWidth=4*w;x.stroke();
+ for(const c of cannons)if(c.g&&c.t<c.dur&&!c.clashT){const E=clipToField(c.g.O,c.g.E),w=c.wide?1.4:1;x.globalAlpha=.5;x.strokeStyle=window.beamCol?beamCol(c):'#4fe3ff';x.lineWidth=14*w;x.beginPath();x.moveTo(c.g.O.x,c.g.O.y);x.lineTo(E.x,E.y);x.stroke();x.globalAlpha=.95;x.strokeStyle='#ffffff';x.lineWidth=4*w;x.stroke();
   if(Math.random()<.6){const u=Math.random();P({x:c.g.O.x+(E.x-c.g.O.x)*u,y:c.g.O.y+(E.y-c.g.O.y)*u,vx:rnd(-40,40),vy:rnd(-90,-30),color:['#bff6ff','#ffffff','#4fe3ff'][Math.random()*3|0],size:2,life:.35,grav:300});}}
  x.restore();}
 function drawGroundLights(x){drawBeamTrails(x);x.save();x.globalCompositeOperation='lighter';
  for(const l of lights){const f=l.t/l.life;glowAt(x,l.x,l.y,l.r*(1+f*.3),l.c,(1-f)*.75);}
  for(const p of projs)glowAt(x,p.x,p.y+40*HS,34,'#ff8a3a',.35);
  for(const m of meteors)if(m.t>=0&&!m.done)glowAt(x,m.tx,m.ty,m.r*1.6,'#ff7a2a',.15+.45*Math.min(1,m.t/m.fall));
- for(const c of cannons)if(c.g&&c.g.O&&c.g.E){const O=c.g.O,E=c.g.E,n=8;for(let i=0;i<=n;i++){const f=i/n;glowAt(x,O.x+(E.x-O.x)*f,O.y+(E.y-O.y)*f,44,'#4fe3ff',.3);}}
+ for(const c of cannons)if(c.g&&c.g.O&&c.g.E){const O=c.g.O,E=c.g.E,n=8;for(let i=0;i<=n;i++){const f=i/n;glowAt(x,O.x+(E.x-O.x)*f,O.y+(E.y-O.y)*f,44,window.beamCol?beamCol(c):'#4fe3ff',.3);}}
  for(const r of runes)glowAt(x,r.x,r.y,22,'#b06bff',.25);
  for(const g of gales)glowAt(x,g.o.x,g.o.y,60,'#9ff5e0',.15);
  for(const q of totems)if(q.glow>0)glowAt(x,q.x,q.y,60,'#ffd23a',q.glow);
@@ -2141,5 +2141,7 @@ nav('home');
 <script src="wizard-v142.js"></script>
 <script src="wizard-v143.js"></script>
 <script src="wizard-v144.js"></script>
+<script src="wizard-v145.js"></script>
+<script src="wizard-v146.js"></script>
 <script src="wizard-release.js"></script>
 </body></html>

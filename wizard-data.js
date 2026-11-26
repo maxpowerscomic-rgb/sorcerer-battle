@@ -1,6 +1,6 @@
 /* The version shown at the bottom of Options. Bump the last number with every update pushed live (1.0 -> 1.0.1 -> 1.0.2);
    bump the middle number for a big content drop. */
-const GAME_VERSION = '1.0.33.28';
+const GAME_VERSION = '1.0.33.30';
 /* =====================================================================
    SPELLBINDER: GAME DATA
    Pure data, no rendering. Port these tables straight into the real build.
@@ -237,7 +237,7 @@ const COSMETICS = {
     { id: 'ashen',  n: 'Ashen',  r: 'rare',   c: '#b8b4c0', unlock: { type: 'coins', v: 200 } },
     { id: 'moonlit', n: 'Moonlit', r: 'rare', c: '#d6dcff', unlock: { type: 'coins', v: 225 } },
     { id: 'emberskin', n: 'Ember-touched', r: 'epic', c: '#e8735a', unlock: { type: 'title', v: 'special' } },
-    { id: 'gilded', n: 'Gilded', r: 'legendary', c: '#f2c95a', unlock: { type: 'title', v: 'warlock' } },
+    { id: 'gilded', n: 'Gilded', r: 'legendary', c: '#e2a72a' /* (1.0.33.29) a clear gold, not peach */, unlock: { type: 'title', v: 'warlock' } },
   ],
   pet: [
     { id: 'none',   n: 'No Pet',       r: 'common',    unlock: { type: 'free' } },

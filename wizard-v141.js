@@ -77,7 +77,7 @@
   const isJugg = z => z && z.beast && z.beast.boss;
   function adaptBook(owner) { const rd = (typeof M !== 'undefined' && M && M.round) || 0; if (!owner.adapt || owner.adapt.rd !== rd) owner.adapt = { rd, n: {} }; return owner.adapt; }
   if (typeof hurtZ === 'function') { const _hz = hurtZ; window.hurtZ = hurtZ = function (z, d, by, kind) {
-      try { if (isJugg(z) && z.hp > 0 && z.o && d > 0 && U(z.o, 'zodiac', 'adapt')) {
+      try { if (isJugg(z) && z.hp > 0 && z.o && d > 0 && SRC !== 'auto' && U(z.o, 'zodiac', 'adapt')) {
           const key = (typeof SRC !== 'undefined' && SRC) || kind || 'hit', book = adaptBook(z.o), n = book.n[key] || 0;
           d *= Math.pow(ADAPT_MUL, Math.min(n, ADAPT_MAX)); book.n[key] = n + 1;
           z.adaptShow = { key, n: Math.min(n + 1, ADAPT_MAX), col: colOf(key), t: 0 };   // orbs count the hits: the third Fireball fills three
