@@ -1100,6 +1100,7 @@
       if (c.repel) {
         const f = c.o.foe, sp = Math.hypot(c.vx, c.vy) || 1, ux = c.vx / sp, uy = c.vy / sp;
         if (!c.bounced) {   // first pass: everything it touches is hurt once and shoved along its path; enemy shots are turned around
+          if (window.repelDetonate && window.repelDetonate(c)) continue;   // (1.0.33.22) it bursts on the first caster or summon it touches; walls it crosses are hit, never stop it
           if (!f.dead && !ghosted(f) && !c.hit.has(f) && Math.hypot(f.x - c.x, f.y - c.y) < 28 * (c.big || 1)) { c.hit.add(f); damage(f, c.dmg, ux * 520 * c.str, uy * 520 * c.str, '#ffb0b0'); addFx({ k: 'repel', x: f.x, y: f.y, life: .35, r: 60 }); shake = Math.max(shake, 7); joltHit(c.o, f, 'wiz'); }
           for (const e of enemyCreatures(c.o)) if (e.e.x !== undefined && !c.hit.has(e.e) && Math.hypot(e.e.x - c.x, e.e.y - c.y) < 26 * (c.big || 1)) { c.hit.add(e.e); hurtCreature(e.e, e.k, c.dmg * .6, 'crush'); if (window.bowl) bowl(e.e, e.k, ux, uy, 300 * c.str); else { const q = inArena(e.e.x + ux * 70 * c.str, e.e.y + uy * 70 * c.str); e.e.x = q.x; e.e.y = q.y; } joltHit(c.o, e.e, e.k); }
           for (const p of projs) if (p.o !== c.o && p.life > 0 && Math.hypot(p.x - c.x, p.y + 40 * HS - c.y) < 26) { p.vx = ux * 300; p.vy = uy * 300; p.o = c.o; p.tgt = null; }
@@ -1968,5 +1969,5 @@
     return true;
   };
   window.TECHX = { addFx, addBleed, dazeW, ghosted, anchored, inArena, sanctumEcho, shatterDome, rushPick, rushWall, tPos, tAlive, wallBetween: (typeof wallBetween === 'function' ? wallBetween : null), get domes() { return domes; }, get impacts() { return impacts; }, get clashes() { return clashes; }, get orbsC() { return orbsC; }, get slashes() { return slashes; }, get cleaves() { return cleaves; }, get tarrows() { return tarrows; }, drawInkAura, isCopying: () => copying };
-  window.TECH_DEBUG = { get muds() { return muds; }, castEarth, addBleed, get cleaves() { return cleaves; }, get springs() { return springs; }, get slashes() { return slashes; }, get domes() { return domes; }, get orbs() { return orbsC; }, get fx() { return fx; }, eyeFlash, doSwap, drawSorc };
+  window.TECH_DEBUG = { joltHit, addFx, get muds() { return muds; }, castEarth, addBleed, get cleaves() { return cleaves; }, get springs() { return springs; }, get slashes() { return slashes; }, get domes() { return domes; }, get orbs() { return orbsC; }, get fx() { return fx; }, eyeFlash, doSwap, drawSorc };
 })();

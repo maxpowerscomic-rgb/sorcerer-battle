@@ -130,6 +130,13 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.23', d: '25 Nov 2026', items: ['The Season Pass has a new look: every reward is a card with its own art, amount and name, a tier path runs down the middle, and claiming tells you exactly what you got.'] },
+    { v: '1.0.33.22', d: '25 Nov 2026', items: [
+      'Fixed: a rare freeze where both fighters stopped moving mid-duel while their walk animation kept playing. The duel now recovers on its own.',
+      'Polarity Draw: a near miss pulls the enemy caster, and now their summons, much harder.',
+      'Polarity Repel bursts on the first caster or summon it touches. Walls no longer stop it, but every wall it crosses takes the hit.',
+      'Zodiac Juggernaut: 15% more health.',
+      'New Zodiac upgrade, Adaptation: each repeat hit from the same ability deals 15% less to your Juggernaut (up to 7 times) for the rest of the round, even after it falls. Seven orbs on its chest fill in that ability\'s colour.'] },
     { v: '1.0.33.21', d: '25 Nov 2026', items: ['Sorcerers\' mouths now sit under their eyes, where they belong, instead of down on the chin.'] },
     { v: '1.0.33.20', d: '25 Nov 2026', items: [
       'Fight Club: bounties now read as an entry fee and a prize (15 gems in, 25 for a win). Nothing about the rules changed.',
