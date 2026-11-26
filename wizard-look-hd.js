@@ -64,7 +64,9 @@
     }
     // mouth (hidden by a beard or a mask)
     if (o.mouth) {
-      const mx = 2.6, my = ey + 5.6; x.strokeStyle = '#000'; x.lineWidth = LW * (1.4);
+      // window.FACE_TUNE = { mx, dy } previews another mouth spot on sorcerers (o.sharp); unset = the shipped look
+      // (1.0.33.21) sorcerers' mouths sit higher and centred under the eyes (was 2.6 / +5.6, on the chin line)
+      const FT = o.sharp && window.FACE_TUNE || null, mx = FT && FT.mx !== undefined ? FT.mx : o.sharp ? 1.5 : 2.6, my = ey + (FT && FT.dy !== undefined ? FT.dy : o.sharp ? 4.3 : 5.6); x.strokeStyle = '#000'; x.lineWidth = LW * (1.4);
       if (pose === 'cast') { x.fillStyle = '#5a1420'; x.beginPath(); x.ellipse(mx + .4, my + .3, 2, 2.3, 0, 0, 7); x.fill(); x.stroke(); x.fillStyle = '#ff7a8a'; x.beginPath(); x.ellipse(mx + .4, my + 1.5, 1.2, .8, 0, 0, 7); x.fill(); }
       else if (pose === 'cheer') { x.fillStyle = '#5a1420'; x.beginPath(); x.moveTo(mx - 2.6, my - .8); x.quadraticCurveTo(mx + .4, my + 4.4, mx + 3.2, my - .8); x.closePath(); x.fill(); x.stroke(); }
       else if (pose === 'hurt' || pose === 'ko') { x.beginPath(); x.moveTo(mx - 2.4, my + .6); x.quadraticCurveTo(mx - 1.2, my - .9, mx, my + .5); x.quadraticCurveTo(mx + 1.2, my + 1.8, mx + 2.6, my + .3); x.stroke(); }

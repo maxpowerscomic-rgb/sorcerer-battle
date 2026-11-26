@@ -130,6 +130,7 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.21', d: '25 Nov 2026', items: ['Sorcerers\' mouths now sit under their eyes, where they belong, instead of down on the chin.'] },
     { v: '1.0.33.20', d: '25 Nov 2026', items: [
       'Fight Club: bounties now read as an entry fee and a prize (15 gems in, 25 for a win). Nothing about the rules changed.',
       'Your first coached duel is a Casual match: it never changes your trophies, even when you replay the tutorial.',

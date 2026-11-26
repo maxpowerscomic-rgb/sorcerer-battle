@@ -1122,16 +1122,18 @@
 
 /* ---------------- App Store screenshot mode (only when the DEBUG iOS build sets window.SB_SHOT) ---------------- */
 (function () {
-  const shot = window.SB_SHOT; if (!shot) return;
+  // (1.0.33.21) the dev server can also ask for a shot: wizard-mockup.html?shot=duel (fills the screen like the iOS app)
+  const shot = window.SB_SHOT || ((/[?&]shot=(\w+)/.exec(location.search) || [])[1]); if (!shot) return; window.SB_SHOT = shot;
+  if (!window.webkit) { const st = document.createElement('style'); st.textContent = '.phone{position:fixed!important;top:0;bottom:0;left:0;right:0;width:auto!important;aspect-ratio:auto!important;border:0!important;border-radius:0!important}'; document.head.appendChild(st); }
   setTimeout(() => {
     try {
       window.ONB_ACTIVE = false; document.documentElement.classList.remove('onb-on'); document.querySelectorAll('.onb, #onbSkipAll').forEach(e => e.style.display = 'none'); try { if (typeof ONB !== 'undefined') { ONB.i = -1; } } catch (e) {}
-      Object.assign(PR, { name: 'Starweaver', lvl: 14, trophies: 620, coins: 2450, gems: 180, onbDone: 1, title: 'flawless' });
+      Object.assign(PR, { name: 'Starweaver', lvl: 14, trophies: 620, coins: 2450, gems: 180, onbDone: 1, title: 'flawless' }); PR.noStart = 0; PR.onb = { done: 1, gifted: 1 };
       PR.stats = Object.assign(PR.stats || {}, { matches: 60, wins: 42, flawless: 3, wizW: 22, sorcW: 20, streak: 2, best: 6 });
       PR.chosen = ['meteor', 'mirror', 'rush', 'dissect', 'sanctum', 'polarity', 'storm', 'beam', 'titan', 'zodiac'].filter(k => SP[k]);
       PR.unlocked = Array.from(new Set((PR.unlocked || []).concat(PR.chosen)));
       for (const k in PR.spells) { PR.spells[k].lvl = Math.max(PR.spells[k].lvl, 3 + (k.length % 5)); PR.spells[k].cards = 12; }
-      PR.look = Object.assign({}, PR.look, { cls: shot === 'battle' || shot === 'abilities' ? 'sorc' : 'wiz', robe: 'amethyst', hat: 'pointy', beard: 'white', aura: 'violet', pet: 'owl' });
+      PR.look = Object.assign({}, PR.look, { cls: ['battle', 'abilities', 'duel', 'survival'].includes(shot) ? 'sorc' : 'wiz', robe: 'amethyst', hat: 'pointy', beard: 'white', aura: 'violet', pet: 'owl' });
       PR.hand = shot === 'battle' ? ['dissect', 'rush', 'sanctum', 'polarity'] : ['fireball', 'meteor', 'mirror', 'storm'];
       PR.login = { day: new Date().toISOString().slice(0, 10), streak: 4 };
       refreshMeta();
@@ -1141,6 +1143,19 @@
       else if (shot === 'wardrobe') { nav('wardrobe'); }
       else if (shot === 'shop') { nav('shop'); setTimeout(() => { try { const el = document.getElementById('packs'); if (el) el.scrollIntoView({ block: 'center' }); } catch (e) {} }, 700); }
       else if (shot === 'draft') { newMatch({ arena: 'castle', mode: 'ranked' }); M.round = 3; M.me.book = ['fireball', 'meteor']; M.me.up = new Set(['fireball.twin']); show('draft'); try { M.offer = genOffer(M.me, 3); renderDraft(); } catch (e) {} }
+      else if (shot === 'survival') { PR.svCfg = { mode: 'waves', pt: 'none', pi: 0, kind: 'zombie' }; PR.hand = ['dissect', 'rush', 'polarity', 'sanctum'].filter(k => SP[k]); PR.look.cls = 'sorc'; try { svStart(); } catch (e) { console.log('sv ' + e.message); }
+        // skip ahead to the wave: take the first card each pick, then begin
+        let k = 0; const adv = setInterval(() => { try { if (++k > 60) return clearInterval(adv); if (document.getElementById('draft').classList.contains('on')) { const c = document.querySelector('#cards > *'); if (c) c.click(); } else if (document.getElementById('order').classList.contains('on')) { const b = [...document.querySelectorAll('#order button')].find(b => /Begin/.test(b.textContent)); if (b) b.click(); } else if (document.getElementById('battle').classList.contains('on')) clearInterval(adv); } catch (e) {} }, 700); }
+      else if (shot === 'ladder') { nav('home'); setTimeout(() => { try { document.getElementById('ldBtn').click(); } catch (e) {} }, 300); }
+      else if (shot === 'pass') { nav('home'); setTimeout(() => { try { PR.pass = Object.assign(PR.pass || {}, { xp: 80 * 9 + 40 }); openPass(); } catch (e) {} }, 300); }
+      else if (shot === 'duel') {
+        newMatch({ arena: 'castle', mode: 'ranked' }); M.round = 5; M.score = { me: 2, foe: 2 };
+        M.me.book = ['dissect', 'rush', 'polarity', 'sanctum', 'dissect']; M.me.up = new Set(['dissect.triple', 'rush.flow', 'polarity.collapse']);
+        M.foe.book = ['fireball', 'meteor', 'icewall', 'storm', 'beam']; M.foe.up = new Set(['fireball.twin', 'meteor.shower']);
+        M.foeLv = Object.fromEntries(Object.keys(SP).map(k => [k, 7]));
+        const _show = show; window.show = show = function (sc) { if (sc !== 'battle') return; return _show.apply(this, arguments); };
+        _show('battle'); startDuel(); introT = 0; const ri = document.getElementById('rintro'); if (ri) ri.style.display = 'none';
+      }
       else if (shot === 'battle') {
         newMatch({ arena: 'frost', mode: 'ranked' }); M.round = 4; M.score = { me: 2, foe: 1 };
         M.me.book = ['dissect', 'rush', 'polarity', 'dissect']; M.me.up = new Set(['dissect.triple', 'rush.flow', 'polarity.collapse']);
@@ -1151,7 +1166,7 @@
       }
     } catch (e) { console.log('shot error ' + e.message); }
     // no reward pop-ups in screenshots
-    const clean = () => { try { if (typeof MQ !== 'undefined') MQ.length = 0; mOpen = false; ['upm', 'lvup', 'chestOv'].forEach(id => { const e = document.getElementById(id); if (e) { e.classList.remove('on'); e.style.display = 'none'; } }); if (shot !== 'abilities') { const sh = document.getElementById('sheet'); if (sh) sh.classList.remove('on'); } } catch (e) {} };
+    const clean = () => { try { if (typeof MQ !== 'undefined') MQ.length = 0; mOpen = false; ['upm', 'lvup', 'chestOv'].forEach(id => { const e = document.getElementById(id); if (e) { e.classList.remove('on'); e.style.display = 'none'; } }); if (!['abilities', 'ladder', 'pass'].includes(shot)) { const sh = document.getElementById('sheet'); if (sh) sh.classList.remove('on'); } } catch (e) {} };
     clean(); let n = 0; const iv = setInterval(() => { clean(); if (++n > 40) clearInterval(iv); }, 150);
   }, 2500);
 })();
