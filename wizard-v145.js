@@ -23,7 +23,7 @@
   function hit(w, t, dmg, col) { const s0 = SRC; SRC = 'auto';
     try { if (t.k === 'wiz') damage(t.e, dmg, (t.e.x - w.x) * .4, (t.e.y - w.y) * .4, col); else hurtCreature(t.e, t.k, dmg, 'auto'); } finally { SRC = s0; }
     // tempo: a landed auto shaves 3% off the current cast
-    try { const lock = window.castBusy && castBusy(w) && !(w.book.includes('chosen') && U(w, 'chosen', 'unbound')); if (!lock) { const k = w.book[w.i], ct = castT(w, k); if (ct > 0) w.p = Math.min(ct * .97, (w.p || 0) + ct * TEMPO); } } catch (e) {} }   // no tempo while the last attack is still going
+    try { const lock = window.castBusy && castBusy(w) && !(w.book.includes('chosen') && U(w, 'chosen', 'unbound')); if (!lock) { const k = w.book[w.i], ct = castT(w, k); if (ct > 0 && ct < 1e8) w.p = Math.min(ct * .97, (w.p || 0) + ct * TEMPO); } } catch (e) {} }   // no tempo while the last attack is still going
   function tick(dt) { if (window.AUTO_OFF || !on() || ended || introT > 0) return;
     for (const w of ents) { if (!w || w.dead || w.svAnchor || w.isDummy || !(w.book && w.book.length)) continue; w.autoCd = (w.autoCd || 0) - dt;
       if (w.autoCd > 0 || w.stunT > 0 || w.frozen > 0 || (w.rush && w.rush.ph !== 'back') || w.ghostT > 0) continue;

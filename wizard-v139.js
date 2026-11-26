@@ -13,14 +13,19 @@
   const tokLeft = () => (PR.tokens || 0) + (PR.tokS || 0);
 
   /* ---------------- 5. toasts ---------------- */
-  const TOAST_MS = 3500;
+  const TOAST_MS = 3500, RING_LEN = 75.4;   // 2πr for r = 12
   function toastV139(t) {
     const e = $('toast'); if (!e) return;
-    e.innerHTML = `<span class="tst-t"></span><button class="tst-x" aria-label="Dismiss"><svg viewBox="0 0 28 28"><circle class="tst-r0" cx="14" cy="14" r="12"/><circle class="tst-r" cx="14" cy="14" r="12" style="animation-duration:${TOAST_MS}ms"/><path d="M10 10l8 8M18 10l-8 8"/></svg></button>`;
+    e.innerHTML = `<span class="tst-t"></span><button class="tst-x" aria-label="Dismiss"><svg viewBox="0 0 28 28"><circle class="tst-r0" cx="14" cy="14" r="12"/><path class="tst-r" d="M14 2a12 12 0 1 1 0 24a12 12 0 1 1 0-24"/><path class="tst-xx" d="M10 10l8 8M18 10l-8 8"/></svg></button>`;
     e.querySelector('.tst-t').textContent = t;
     e.querySelector('.tst-x').onclick = ev => { ev.stopPropagation(); clearTimeout(e._t); e.classList.remove('on'); };
     e.classList.remove('on'); void e.offsetWidth; e.classList.add('on');
     clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('on'), TOAST_MS);
+    // the ring drains from the toast's own clock, frame by frame (WebKit does not reliably repaint a CSS-animated SVG stroke)
+    const ring = e.querySelector('.tst-r'), t0 = performance.now(), my = e._n = (e._n || 0) + 1;
+    const step = now => { if (e._n !== my || !e.classList.contains('on')) return; const k = Math.min(1, Math.max(0, (now - t0) / TOAST_MS));
+      ring.style.strokeDashoffset = (RING_LEN * k).toFixed(2); ring.style.opacity = k >= .995 ? '0' : '1'; if (k < 1) requestAnimationFrame(step); };
+    step(t0); requestAnimationFrame(step);
   }
   // run the existing chain (it logs the toast), then rebuild the element with the ✕ and the longer timer
   if (typeof window.toast === 'function') { const _prevToast = window.toast; window.toast = function (t) { const r = _prevToast.apply(this, arguments); try { toastV139(t); } catch (e) {} return r; };
@@ -120,16 +125,17 @@
   /* Hoot's floating button sits above the tab bar on every screen but Home: let lists scroll their last row clear of him */
   #shop > .mc,#spells > .mc,#ranks > .mc,#wardrobe > .mc,#friends > .mc{padding-bottom:160px}
   .v139-none{grid-column:1/-1;padding:14px;text-align:center;font:800 13px Nunito;color:#d8cdee}
+  /* sheet titles keep clear of the ✕ on both sides (so they stay centred) and wrap when long, on small phones too */
+  #sheetP > .sh{padding:0 40px;text-wrap:balance}
   #toast.toast{box-sizing:border-box;white-space:normal;text-align:center;width:max-content;max-width:calc(100% - 24px);display:none;align-items:center;gap:8px;padding:7px 8px 7px 14px;line-height:1.2;pointer-events:auto}
   #toast.toast.on{display:flex;animation:tstPop .3s}
   @keyframes tstPop{from{transform:translateX(-50%) scale(.6);opacity:0}}
   #toast .tst-t{flex:1;min-width:0;overflow-wrap:anywhere}
-  #toast .tst-x{flex:none;width:28px;height:28px;padding:0;border:none;background:none;cursor:pointer}
+  #toast .tst-x{flex:none;position:relative;width:28px;height:28px;padding:0;border:none;background:none;cursor:pointer}#toast .tst-x::before{content:'';position:absolute;inset:-8px}
   #toast .tst-x svg{width:28px;height:28px;display:block}
   #toast .tst-r0{fill:#ffffff1c;stroke:#ffffff33;stroke-width:2.5}
-  #toast .tst-r{fill:none;stroke:#ffd45e;stroke-width:2.5;stroke-linecap:round;stroke-dasharray:75.4;stroke-dashoffset:0;transform:rotate(-90deg);transform-origin:14px 14px;animation-name:tstRing;animation-timing-function:linear;animation-fill-mode:forwards}
-  #toast .tst-x path{stroke:#fff;stroke-width:2.6;stroke-linecap:round}
-  @keyframes tstRing{to{stroke-dashoffset:75.4}}`;
+  #toast .tst-r{fill:none;stroke:#ffd45e;stroke-width:2.5;stroke-linecap:round;stroke-dasharray:75.4 80;stroke-dashoffset:0}
+  #toast .tst-x .tst-xx{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round}`;
   document.head.appendChild(css);
   window.V139 = { toast: toastV139, firstLocked };
 })();

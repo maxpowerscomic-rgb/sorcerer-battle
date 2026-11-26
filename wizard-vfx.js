@@ -129,7 +129,7 @@
       const f = cl(w.p / (typeof castT === 'function' ? castT(w, k) : SP[k].t), 0, 1), c = COL[SP[k].el] || ['#fff', '#a36bff'], ups = upsOf(w, k), tier = tierOf(w, k);
       hexAt(x, w.x, w.y, { R: 34, t: w.t, f, l: c[0], m: c[1], ups, tier, alpha: .55 + .45 * f });
       if (f > .35 && Math.random() < f * .22 && !ended) { const a = rnd(0, TAU), R = 34 * (ups >= 1 ? 1.3 : 1); P({ x: w.x + Math.cos(a) * R, y: w.y + Math.sin(a) * R * .42, vx: rnd(-6, 6), vy: -rnd(22, 52), color: Math.random() < .3 ? '#ffffff' : c[0], size: rnd(1.3, 2.4), life: rnd(.4, .85), drag: .96 }); } }
-    for (const f of vfx) if (f.k === 'hexb') { const k = f.t / f.life, e = 1 - Math.pow(1 - k, 3);
+    for (const f of vfx) if (f.k === 'hexb') { const k = Math.min(1, Math.max(0, f.t / f.life)), e = 1 - Math.pow(1 - k, 3);
       hexAt(x, f.x, f.y, { R: 34 * (1 + e * .5), t: f.t0 + k * 2.4, f: 1, l: f.l, m: f.m, ups: f.ups, tier: f.tier, alpha: Math.pow(1 - k, 1.4), hot: Math.max(0, 1 - k * 2.2) });
       x.save(); x.translate(f.x, f.y); x.scale(1, .42); x.globalCompositeOperation = 'lighter'; x.strokeStyle = '#ffffff'; x.globalAlpha = (1 - k) * .9; x.lineWidth = 5 * (1 - k) + .6; x.beginPath(); x.arc(0, 0, 34 * (1 + e * 1.7), 0, TAU); x.stroke();
       x.strokeStyle = f.l; x.globalAlpha = (1 - k) * .6; x.lineWidth = 9 * (1 - k) + 1; x.beginPath(); x.arc(0, 0, 34 * (1 + e * 1.25), 0, TAU); x.stroke(); x.restore(); }

@@ -67,10 +67,24 @@
   let lastTouch = performance.now();
   const wake = () => { lastTouch = performance.now(); if (document.body.classList.contains('idle')) document.body.classList.remove('idle'); window.__idle = 0; };
   ['pointerdown', 'touchstart', 'keydown', 'wheel'].forEach(ev => document.addEventListener(ev, wake, { capture: true, passive: true }));
-  setInterval(() => { try { const inBattle = !!document.querySelector('.screen.on#battle'), idle = !inBattle && performance.now() - lastTouch > 15000; document.body.classList.toggle('idle', idle); window.__idle = idle ? 1 : 0; } catch (e) {} }, 1000);
+  // (1.0.33.32) Only endless decorative loops pause, never an entrance (a sheet sliding up, a reward popping in): the old blanket
+  // CSS pause froze sheets off-screen whenever one opened without a fresh touch, e.g. right after a battle played hands-free.
+  // A screen, sheet or popup opening also counts as activity (not #battle: the training yard flips it every frame).
+  const looping = () => document.getAnimations().filter(a => { try { const t = a.effect && a.effect.target; return a.effect.getTiming().iterations === Infinity && t && !t.closest('#battle'); } catch (e) { return false; } });
+  let held = [];
+  const pauseLoops = () => { for (const a of looping()) if (a.playState === 'running') { a.pause(); held.push(a); } };
+  const playLoops = () => { for (const a of held) try { a.play(); } catch (e) {} held = []; };
+  const wake0 = wake; window.__wake = () => { wake0(); playLoops(); };
+  ['pointerdown', 'touchstart', 'keydown', 'wheel'].forEach(ev => document.addEventListener(ev, playLoops, { capture: true, passive: true }));
+  try { const mo = new MutationObserver(() => window.__wake()); const watch = () => { document.querySelectorAll('.screen:not(#battle), #sheet, #lvup, #upm, #chestOv, #rep, #pause').forEach(e => mo.observe(e, { attributes: true, attributeFilter: ['class'] })); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch); else watch(); } catch (e) {}
+  setInterval(() => { try { const inBattle = !!document.querySelector('.screen.on#battle');
+      if (inBattle) lastTouch = performance.now();   // leaving a battle starts the idle clock fresh
+      const idle = performance.now() - lastTouch > 15000; document.body.classList.toggle('idle', idle); window.__idle = idle ? 1 : 0;
+      if (idle) pauseLoops(); } catch (e) {} }, 1000);
 
   const css = document.createElement('style');
-  css.textContent = `body.idle .screen:not(#battle) *,body.idle .screen:not(#battle) *::before,body.idle .screen:not(#battle) *::after,body.idle #sheet *,body.idle #hhBtn,body.idle #hhBtn *{animation-play-state:paused!important}#timer.ot{color:#ff8a96!important;text-shadow:0 0 10px #ff4a5a;animation:otPulse .6s ease-in-out infinite}@keyframes otPulse{50%{transform:scale(1.12)}}`;
+  css.textContent = `#timer.ot{color:#ff8a96!important;text-shadow:0 0 10px #ff4a5a;animation:otPulse .6s ease-in-out infinite}@keyframes otPulse{50%{transform:scale(1.12)}}`;
   document.head.appendChild(css);
   window.V144 = { decider };
 })();

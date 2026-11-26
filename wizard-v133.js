@@ -94,11 +94,11 @@
     for (const k of sh(pool)) { if (out.length >= 4) break; if (!clash(k)) out.push(k); }
     let topped = 0; if (out.length < 4 && fill) for (const k of sh(fill)) { if (out.length >= 4) break; if (!out.includes(k) && !clash(k)) { out.push(k); topped++; } }
     return { out, topped }; }
-  window.openRandomHand = function () { const n = m => poolFor(m).length, row = (m, t, d) => `<button class="hh-rh" onclick="randomHand('${m}')"><b>${t}</b><small>${d} · ${n(m)} unlocked</small><i>🎲</i></button>`;
-    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Randomize my hand</div><div class="ssub" style="margin:0 0 10px">Deal a random battle hand of 4 from what you have unlocked.</div>
+  window.openRandomHand = function () { const n = m => poolFor(m).length, none = !n('all'), row = (m, t, d) => `<button class="hh-rh" onclick="randomHand('${m}')" ${none ? 'disabled style="opacity:.45"' : ''}><b>${t}</b><small>${d} · ${n(m)} unlocked</small><i>🎲</i></button>`;
+    $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Randomize my hand</div><div class="ssub" style="margin:0 0 10px">Deal a random battle hand of 4 from what you have unlocked.</div>${none ? '<div class="ssub" style="margin:0 0 10px;color:#ffd45e">Unlock an ability first: spend a token on any ability on this page.</div>' : ''}
       ${row('all', 'Everything', 'Spells and techniques')}${row('spells', 'Spells only', 'Wizard abilities')}${row('tech', 'Techniques only', 'Sorcerer abilities')}`;
     $('sheet').classList.add('on'); try { sfx('ui_click'); } catch (e) {} };
-  window.randomHand = function (m) { const pool = poolFor(m), { out, topped } = pick4(pool, m === 'all' ? null : poolFor('all')); if (!out.length) return;
+  window.randomHand = function (m) { const pool = poolFor(m), { out, topped } = pick4(pool, m === 'all' ? null : poolFor('all')); if (!out.length) return toast('Unlock an ability first: spend a token on any ability on the Abilities page.');
     PR.hand = out; try { save(); sfx('ui_deal'); } catch (e) {} try { closeSheet(); refreshMeta(); if ($('spells').classList.contains('on')) renderSpells(); } catch (e) {}
     toast(topped ? `Only ${4 - topped} ${m === 'tech' ? 'techniques' : 'spells'} unlocked: topped up with ${topped} more` : 'New hand: ' + out.map(k => SP[k].n).join(', ')); };
   function rhBtn() { const d = document.querySelector('#spells .decks'); if (!d || d.querySelector('.hh-rhb')) return; const lbl = d.querySelector('.dkl'); (lbl || d).insertAdjacentHTML(lbl ? 'afterend' : 'afterbegin', '<button class="dk add hh-rhb" onclick="openRandomHand()">🎲 Randomize</button>'); }

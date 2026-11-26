@@ -130,6 +130,13 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.32', d: '26 Nov 2026', items: [
+      'The opening splash: WIZARDS and SORCERERS now ride in on their curtains and meet in the middle.',
+      'Fixed: menus and popups could stay hidden after a battle you played without touching the screen.',
+      'Fixed: a Mirror shatter or a spell clash could stutter the battle and show an error message.',
+      'The countdown ring on messages now drains every time and sits centred on the ✕, which is also easier to tap.',
+      'Small phones: long titles no longer run under the ✕. The Wardrobe keeps your character clear of your name and title.',
+      'Randomize Hand and switched-off options now look switched off and say why.'] },
     { v: '1.0.33.31', d: '26 Nov 2026', items: [
       'Your next ability only starts casting once the current attack is over: a Spell Cannon beam, a Rushdown combo, a Meteor barrage, a Draw orb hauling its catch, and the like.',
       'New Chosen One upgrade, Unbound Flow: your next ability starts casting right away, even while the last one is still going.',

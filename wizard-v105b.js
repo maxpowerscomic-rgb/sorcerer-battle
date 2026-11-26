@@ -187,10 +187,12 @@
   (function () { const c = $('curtain'); if (!c || !c.classList.contains('splash')) return; try { if (typeof setLogo === 'function') setLogo(); } catch (e) {}
     try { const v = $('splVer'); if (v && typeof GAME_VERSION !== 'undefined') v.textContent = 'VERSION ' + GAME_VERSION; } catch (e) {}
     if (window.SB_SHOT) { c.className = 'curtain'; return; }
-    const t0 = performance.now(), open = () => { if (!c.classList.contains('splash')) return; c.className = 'curtain opening spl'; setTimeout(() => { if (c.className === 'curtain opening spl') c.className = 'curtain'; }, 560); };
-    const go = () => setTimeout(open, Math.max(0, 2550 - (performance.now() - t0)));
-    let fired = false; const once = () => { if (fired) return; fired = true; go(); };
-    try { (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => { if (document.readyState === 'complete') once(); else addEventListener('load', once); }); } catch (e) { once(); }
-    setTimeout(once, 3500); })();
+    const open = () => { if (!c.classList.contains('splash')) return; c.className = 'curtain opening spl'; setTimeout(() => { if (c.className === 'curtain opening spl') c.className = 'curtain'; }, 560); };
+    // (1.0.33.32) start the close only once the page is painting (fonts in, two frames drawn), then hold the logo ~1.7 s and open
+    let fired = false; const close = () => { if (fired) return; fired = true; requestAnimationFrame(() => requestAnimationFrame(() => { c.classList.add('go'); setTimeout(open, 2300); })); };
+    // after everything has loaded, so the phone is idle and the slide runs smoothly (it stuttered while scripts were still loading)
+    const ready = () => { try { (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(close); } catch (e) { close(); } };
+    if (document.readyState === 'complete') ready(); else addEventListener('load', ready);
+    setTimeout(close, 2500); })();
   window.V105B = { rateHand, streakGold, decks };
 })();

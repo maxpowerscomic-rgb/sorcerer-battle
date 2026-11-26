@@ -105,9 +105,9 @@
   function openDummy() { const C = cfg(), sch = k => (typeof SCHOOL_OF === 'function' ? SCHOOL_OF(k) : 'wiz');
     const grid = id => pool().filter(k => sch(k) === id).map(k => { const n = C.book.indexOf(k); return `<button class="${n >= 0 ? 'on' : ''}" onclick="dummyPick('${k}')" title="${SP[k].n}"><img src="${ICON[k]}">${n >= 0 ? `<b>${n + 1}</b>` : ''}</button>`; }).join('');
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Sparring dummy</div>
-      <div class="ssub" style="margin:0">Pick up to 4 abilities for the dummy to cast on a loop. Nobody has health here: the fight never ends, you just watch the numbers.</div>
+      <div class="ssub" style="margin:10px 0 0">Pick up to 4 abilities for the dummy to cast on a loop. Nobody has health here: the fight never ends, you just watch the numbers.</div>
       <div class="dmrow">${[0, 1, 2, 3].map(i => C.book[i] ? `<span onclick="dummyPick('${C.book[i]}')"><img src="${ICON[C.book[i]]}"><small>${SP[C.book[i]].n}</small></span>` : '<span class="em"></span>').join('')}</div>
-      <div class="dmopt"><label class="opt"><span>It walks and keeps its distance like a rival</span><input type="checkbox" ${C.walk ? 'checked' : ''} ${C.book.length ? '' : 'disabled'} onchange="dummySet('walk',this.checked)"><i></i></label>
+      <div class="dmopt"><label class="opt"><span>It walks and keeps its distance like a rival</span><input type="checkbox" ${C.walk ? 'checked' : ''} ${C.book.length ? '' : 'disabled'} onchange="dummySet('walk',this.checked)"><i></i></label>${C.book.length ? '' : '<div class="dmhint">Give the dummy an ability below to let it walk.</div>'}
       <label class="opt"><span>My hits move it</span><input type="checkbox" ${PR.yardMove === true || (C.walk && C.book.length) ? 'checked' : ''} ${C.walk && C.book.length ? 'disabled' : ''} onchange="dummySet('move',this.checked)"><i></i></label></div>
       <div class="dml">Map</div><div class="ym-row">${ARENAS.map(a => `<button class="ym-b${(PR.yardArena || 'bog') === a ? ' on' : ''}" onclick="yardMap('${a}')" style="background-image:url(art/arena-${a}.png)"><span>${(typeof ARENA_NAMES !== 'undefined' && ARENA_NAMES[a]) || a}</span></button>`).join('')}</div>
       <div class="dml">Spells</div><div class="dmgrid">${grid('wiz')}</div><div class="dml">Techniques</div><div class="dmgrid">${grid('sorc')}</div>
@@ -191,7 +191,7 @@
   #yardTip button{width:42px;height:42px;padding:7px;border-radius:50%;border:2px solid #000;background:linear-gradient(#4a3a80,#2b2050);color:#b9a6ee;box-shadow:0 3px 0 #000;cursor:pointer;-webkit-tap-highlight-color:transparent}#yardTip button.free{background:linear-gradient(#ffd45e,#d99a14);color:#fff}#yardTip svg{width:100%;height:100%;display:block}
   .dmrow{display:flex;justify-content:center;gap:8px;margin:10px 0}.dmrow span{width:66px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}.dmrow img{width:46px;height:46px;border-radius:12px;background:#0007;border:2px solid #ffd45e}.dmrow small{font:800 10px/1.1 Nunito;color:#d9cdfa;text-align:center}.dmrow .em{height:46px;width:46px;margin:0 10px;border-radius:12px;border:2px dashed #ffffff40;cursor:default}
   .dml{font:12px 'Lilita One';color:#b9a6ee;letter-spacing:.4px;margin:8px 0 4px}.dmgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}.dmgrid button{all:unset;cursor:pointer;position:relative;aspect-ratio:1;display:grid;place-items:center;border-radius:10px;background:#0007;border:2px solid #000}.dmgrid img{width:86%;height:86%}.dmgrid button.on{border-color:#ffd45e;box-shadow:0 0 8px #ffd45e88}.dmgrid b{position:absolute;top:-5px;right:-4px;width:16px;height:16px;border-radius:50%;background:#ffd45e;color:#2a1a00;font:11px/16px 'Lilita One';font-weight:400;text-align:center;border:1.5px solid #000}
-  .dmopt{margin:4px 0}`;
+  .dmopt{margin:4px 0}.opt:has(input:disabled){opacity:.5}.dmhint{font:800 12px Nunito;color:#ffd45e;margin:-2px 0 6px}`;
   document.head.appendChild(css);
   setTimeout(() => { try { if (homeOn()) start(); } catch (e) {} }, 1200);
 })();
