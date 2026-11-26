@@ -143,7 +143,11 @@
         g.save(); g.setTransform(k, 0, 0, k, -sx * k, -sy * k + oy); const L = -3 * W, R0 = 7 * W, T0 = -3 * H, B0 = 7 * H; g.fillStyle = 'rgba(30,15,70,.38)'; g.fillRect(L, T0, R0 - L, B0 - T0);
         const vg = g.createRadialGradient(W / 2, H / 2, 150, W / 2, H / 2, 480); vg.addColorStop(0, '#0000'); vg.addColorStop(1, '#000a'); g.fillStyle = vg; g.fillRect(L, T0, R0 - L, B0 - T0); g.restore(); } } catch (e) {}
     g.drawImage(cv, 0, sy * dpr, W * dpr, sh * dpr, -sx * sc * d2, (h - sh * sc) / 2 * d2, W * sc * d2, sh * sc * d2); }
-  function frame(now) { if (!Y.on) return; Y.raf = requestAnimationFrame(frame); const dt = Math.min(.033, (now - Y.last) / 1000); Y.last = now; if (document.hidden || sheetOn() || !homeOn() || dt <= 0) return;
+  // (1.0.33.25) battery: the yard is a backdrop, so it runs at 30 fps, and at 12 fps once nobody has touched the screen for 20 s
+  let lastTouch = performance.now(); ['pointerdown', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, () => { lastTouch = performance.now(); }, { capture: true, passive: true }));
+  function frame(now) { if (!Y.on) return; const gap = now - lastTouch > 20000 ? 1000 / 12 : 1000 / 30;
+    // sleep until the next frame is due instead of waking 60 times a second (that alone keeps an iPhone's display at full rate)
+    const wait = gap - (now - Y.last); if (wait > 4) { clearTimeout(Y.sleep); Y.sleep = setTimeout(() => { if (Y.on) Y.raf = requestAnimationFrame(frame); }, wait - 3); return; } Y.raf = requestAnimationFrame(frame); const dt = Math.min(.09, (now - Y.last) / 1000); Y.last = now; if (document.hidden || sheetOn() || !homeOn() || dt <= 0) return;
     try { if (Y.dirty || typeof M === 'undefined' || !M || !M.practice || typeof ents === 'undefined' || !ents || !ents[1] || !ents[1].isDummy) { Y.dirty = 0; build(); } step(dt); blit(); }
     catch (e) { Y.fails++; try { if (window.logCrash) logCrash('yard', e && e.message, '', e && e.stack); } catch (x) {} stop(); } }
   function start() { if (Y.on || !wanted() || !homeOn()) return; try { build(); } catch (e) { Y.fails++; try { if (window.logCrash) logCrash('yard', e && e.message, '', e && e.stack); } catch (x) {} return; }

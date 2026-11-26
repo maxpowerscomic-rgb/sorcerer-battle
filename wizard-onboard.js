@@ -55,7 +55,7 @@ function onbAskSkip() {
 function owlCanvas() {
   const c = document.createElement('canvas'); c.width = c.height = 148; c.className = 'owl';
   const x = c.getContext('2d'); let t = 0;
-  const draw = () => { if (!c.isConnected) return; t += 1 / 60; x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, 148, 148); x.translate(74, 136 + Math.sin(t * 2.4) * 2); x.scale(2.75, 2.75); try { drawPet(x, 'owl', t, 1); } catch (e) {} requestAnimationFrame(draw); };
+  const draw = () => { if (!c.isConnected) return; if (!c.offsetParent || document.hidden) { setTimeout(() => requestAnimationFrame(draw), 500); return; }   /* (1.0.33.25) a hidden bubble's owl stops drawing */ t += 1 / 60; x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, 148, 148); x.translate(74, 136 + Math.sin(t * 2.4) * 2); x.scale(2.75, 2.75); try { drawPet(x, 'owl', t, 1); } catch (e) {} requestAnimationFrame(draw); };
   requestAnimationFrame(draw); return c;
 }
 /* keep what the tour is pointing at on screen: scroll its scrolling parent so the target sits in view,

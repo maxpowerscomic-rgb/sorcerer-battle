@@ -59,7 +59,7 @@
   let sayT = 0, pend = null; function say(t) { pend = t; }
   function sayNow(t) { const s = $('hhSay') || (btn(), $('hhSay')); if (!s) return; s.textContent = t; s.classList.add('on'); clearTimeout(sayT); sayT = setTimeout(() => s.classList.remove('on'), 5200); }
   function face() { const b = $('hhBtn'); if (!b || b.style.display === 'none') return; const c = b.querySelector('canvas'); try { const x = c.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, 96, 96); x.translate(48, 104); x.scale(2, 2); drawPet(x, 'owl', performance.now() / 1000, 1); } catch (e) {} }
-  (function loop() { try { face(); } catch (e) {} requestAnimationFrame(loop); })();
+  setInterval(() => { try { if (!document.hidden) face(); } catch (e) {} }, 83);   // (1.0.33.25) a light 12 fps timer, not a 60 fps frame loop; face() skips when the button is hidden
   setInterval(() => { try { checkUnlocks(); paintDot(); } catch (e) {} }, 700);
   // the Hoot bubble sits by whichever Hoot button is showing
   setInterval(() => { try { if (pend) { const tg = want() ? $('hhBtn') : $('hgBtn'); if (tg && tg.offsetParent && !document.querySelector('#sheet.on') && !window.ONB_ACTIVE && (!window.LANDED || LANDED())) { sayNow(pend); pend = null; } } const s = $('hhSay'); if (!s || !s.classList.contains('on')) return; const tgt = want() ? $('hhBtn') : $('hgBtn'); const ph = document.querySelector('.phone').getBoundingClientRect(); if (!tgt || !tgt.offsetParent) { s.classList.remove('on'); return; } const r = tgt.getBoundingClientRect(); s.style.right = (ph.right - r.left + 8) + 'px'; s.style.top = (r.top - ph.top + r.height / 2) + 'px'; } catch (e) {} }, 120);

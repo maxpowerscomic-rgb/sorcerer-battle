@@ -128,10 +128,10 @@
       return r; }; }
 
   /* ---------------- 3. cast rings on the home loadout while the yard runs ---------------- */
-  function rings() { try { const hm = $('home'); if (!hm || !hm.classList.contains('on')) { requestAnimationFrame(rings); return; }   /* nothing to draw off the home screen */ const lo = $('loadout'); if (!lo) return; const on = window.YARD && YARD.on && typeof ents !== 'undefined' && ents && ents[0] && ents[0].book, me = on && ents[0], els = lo.children;
+  function rings() { if (!(window.YARD && YARD.on) || document.hidden) return; try { const hm = $('home'); if (!hm || !hm.classList.contains('on')) { return; }   /* nothing to draw off the home screen */ const lo = $('loadout'); if (!lo) return; const on = window.YARD && YARD.on && typeof ents !== 'undefined' && ents && ents[0] && ents[0].book, me = on && ents[0], els = lo.children;
       for (let i = 0; i < els.length; i++) { const now = !!me && i === me.i && !me.dead; els[i].classList.toggle('now', now); if (now) els[i].style.setProperty('--p', Math.max(0, Math.min(1, me.p / (castT(me, me.book[me.i]) || 1))).toFixed(3)); else if (els[i].style.getPropertyValue('--p')) els[i].style.removeProperty('--p'); } } catch (e) {}
-    requestAnimationFrame(rings); }
-  requestAnimationFrame(rings);
+  }
+  setInterval(rings, 66);   // (1.0.33.25) 15 updates a second, and only while the yard runs
 
   /* ---------------- 4. ability icons are earned: win 3 matches with the ability (its first Wins trial step) ---------------- */
   const ICON_WINS = 3, winsOf = k => (PR.trial && PR.trial[k] && PR.trial[k].wins) || 0;

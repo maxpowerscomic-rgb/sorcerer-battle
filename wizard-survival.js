@@ -102,7 +102,7 @@
           s.seen = s.seen || new Set(); for (const z of s.seen) if (z.hp <= 0) { s.seen.delete(z); s.kills++; if (s.endless) dropRoll(s, z); heartRoll(s, z); }
           dropTick(s, me, dt); heartTick(s, dt); for (const z of mobs) s.seen.add(z);
           // the anchor rides the nearest mob, so every ability aims at it; with nothing alive it waits off the field
-          let near = null, nd = 1e9; for (const z of mobs) { if (z.rise < 1) continue; const d = Math.hypot(z.x - me.x, z.y - me.y); if (d < nd) { nd = d; near = z; } }
+          const near = stickyNear(s, 'lockMe', mobs.filter(z => z.rise >= 1), me.x, me.y);
           if (near) { fo.x = near.x; fo.y = near.y; } else { fo.x = me.x; fo.y = me.y - 150 < F.y0 ? me.y + 150 : me.y - 150; } fo.vx = fo.vy = 0; fo.stunT = .5; fo._immSaid = T; fo.p = 0; fo.ghostT = 0; fo.svNear = near;
           fo.hp = fo.maxHp; fo.lag = fo.hp;   /* the top bar is the partner's health; solo, it is hidden */ try { clock = s.endless ? 99 : Math.max(.5, dur - s.t); } catch (e) {}
           s.spT -= dt * (s.endless ? 1 : WAVE_MUL[wave]) * ramp(s.t) * hmul(s, 'swarm', .25);
@@ -131,6 +131,13 @@
      A defeated enemy may drop an upgrade crystal: 15% a basic upgrade, 10% a tier 2 upgrade, 5% a signature (tier 3) upgrade.
      It floats to you; touching it pauses the run and offers three upgrades of that tier for abilities in your hand. Your partner takes one of the same tier.
      So the run is not one long menu: one crystal at a time, and none for 12 seconds after a pick. */
+  /* (1.0.33.26) sticky targets: once a target is picked it is kept for at least 1 s, then only swapped when another mob is
+     clearly closer (20% and 15 px), so near-ties don't flip back and forth every frame. A dead or gone target is replaced at once. */
+  function stickyNear(holder, key, mobs, px, py) { const now = typeof T === 'number' ? T : performance.now() / 1000, cur = holder[key], since = holder[key + 'T'] || -9;
+    let best = null, bd = 1e9; for (const z of mobs) { const d = Math.hypot(z.x - px, z.y - py); if (d < bd) { bd = d; best = z; } }
+    const curOk = cur && cur.hp > 0 && mobs.includes(cur);
+    if (curOk && best !== cur) { const cd = Math.hypot(cur.x - px, cur.y - py); if (now - since < 1 || !(bd < cd * .8 && cd - bd > 15)) return cur; }
+    if (best !== cur) { holder[key] = best; holder[key + 'T'] = now; } return best; }
   const DTIER = [null, ['Upgrade', '#bfe6ff', '#3b9bff'], ['Tier 2 upgrade', '#ffc27a', '#e0661a'], ['Signature upgrade', '#ffe27a', '#c9861a']];
   // (1.0.32.5) hearts for your partner: 6% of defeats drop one (two on the field at most, each lasts 15 s). A hurt partner walks over and picks it up for 20% of its health.
   function heartRoll(s, z) { if (!s.P && !s.endless) return; s.hearts = s.hearts || []; if (s.hearts.length >= 2 || Math.random() >= .06) return; s.hearts.push({ x: clamp(z.x, F.x0 + 10, F.x1 - 10), y: clamp(z.y, F.y0 + 10, F.y1 - 10), t: 0 }); }
@@ -144,12 +151,16 @@
     s.drops.push({ x: clamp(z.x, F.x0 + 10, F.x1 - 10), y: clamp(z.y, F.y0 + 10, F.y1 - 10), t: 0, tier }); try { burst(z.x, z.y - 20 * HS, 14, [DTIER[tier][1], '#ffffff'], 160, 4, .45); sfx('ui_deal', { x: z.x, rate: 1.4 }); } catch (e) {} }
   function dropTick(s, me, dt) { for (const d of (s.drops || [])) { d.t += dt; if (d.t > .7) { const dx = me.x - d.x, dy = me.y - d.y, dd = Math.hypot(dx, dy) || 1, sp = Math.min(420, 140 + d.t * 220); d.x += dx / dd * Math.min(dd, sp * dt); d.y += dy / dd * Math.min(dd, sp * dt); if (dd < 18 && !paused) { s.drops = s.drops.filter(q => q !== d); openDrop(s, d.tier); return; } } } }
   const tierFits = (u, k, have, tier) => { if (have.has(k + '.' + u.id)) return false; const reqOk = !u.req || have.has(k + '.' + u.req); if (!reqOk) return false; return tier === 3 ? !!u.sig : tier === 2 ? !u.sig && (!!u.req || !!u.rare) : !u.sig && !u.req && !u.rare; };
-  function optionsFor(hand, have, tier) { for (let t = tier; t >= 1; t--) { const L = []; for (const k of new Set(hand)) for (const u of (UPG[k] || [])) if (tierFits(u, k, have, t)) L.push({ k, u, t }); if (L.length) return L.sort(() => Math.random() - .5); } return []; }
-  function openDrop(s, tier) { const down = s.P && s.P.dead; let ops = optionsFor(M.me.book, M.me.up, tier).slice(0, down ? 2 : 3);
+  function optionsFor(hand, have, tier) {   // (1.0.33.25) the crystal's own tier first, then lower tiers, then higher, so it can always fill three slots
+    const order = [tier]; for (let t = tier - 1; t >= 1; t--) order.push(t); for (let t = tier + 1; t <= 3; t++) order.push(t); const out = [], seen = new Set();
+    for (const t of order) { const L = []; for (const k of new Set(hand)) for (const u of (UPG[k] || [])) if (tierFits(u, k, have, t) && !seen.has(k + '.' + u.id)) L.push({ k, u, t }); for (const q of L.sort(() => Math.random() - .5)) { seen.add(q.k + '.' + q.u.id); out.push(q); } }
+    return out; }
+  function openDrop(s, tier) { const down = s.P && s.P.dead; const want = down ? 2 : 3; let ops = optionsFor(M.me.book, M.me.up, tier).slice(0, want);
     if (!ops.length && !down) return openBoons(s, tier);
+    for (let i = 0; ops.length < want && i < BOONS.length; i++) ops.push({ boon: i, t: tier });   // (1.0.33.25) never fewer than three choices: boons fill any gap
     if (down) ops = ops.concat([{ revive: 1, t: tier }]);   // (1.0.32.5) your partner is down: one choice brings it back at 25% health
     paused = true; s.dropOps = ops; const b = $('battle'); let el = $('svDrop'); if (!el) { b.insertAdjacentHTML('beforeend', '<div id="svDrop"></div>'); el = $('svDrop'); } const t0 = ops[0].t, tt = DTIER[t0];
-    el.innerHTML = `<div class="svd-box"><div class="svd-h" style="--a:${tt[1]};--b:${tt[2]}">${tt[0]}</div><div class="svd-l">${ops.map((o, i) => o.revive ? `<button onclick="svDropPick(${i})"><span class="svd-bi" style="color:#ff7a8a">♥</span><span><b>Revive ${esc(s.pt.n)}</b><em>Bring your partner back with 25% health.</em></span></button>` : `<button onclick="svDropPick(${i})"><img src="${ICON[o.k]}"><span><b>${esc(o.u.n)}</b><small>${esc(SP[o.k].n)}</small><em>${esc(o.u.d)}</em></span></button>`).join('')}</div></div>`;
+    el.innerHTML = `<div class="svd-box"><div class="svd-h" style="--a:${tt[1]};--b:${tt[2]}">${tt[0]}</div><div class="svd-l">${ops.map((o, i) => o.boon != null ? `<button onclick="svDropPick(${i})"><span class="svd-bi">${['⚔️', '⚡', '♥'][o.boon]}</span><span><b>${BOONS[o.boon][1]}</b><small>Run boon</small><em>${BOONS[o.boon][2].replace('{v}', BOONS[o.boon][3][(o.t || 1) - 1])}</em></span></button>` : o.revive ? `<button onclick="svDropPick(${i})"><span class="svd-bi" style="color:#ff7a8a">♥</span><span><b>Revive ${esc(s.pt.n)}</b><em>Bring your partner back with 25% health.</em></span></button>` : `<button onclick="svDropPick(${i})"><img src="${ICON[o.k]}"><span><b>${esc(o.u.n)}</b><small>${esc(SP[o.k].n)}</small><em>${esc(o.u.d)}</em></span></button>`).join('')}</div></div>`;
     el.style.display = 'grid'; try { sfx('ui_unlock'); } catch (e) {} }
   // (1.0.32.3) when your hand has no upgrades left at any tier, the crystal offers run boons instead; a bigger crystal gives a bigger boon
   const BOONS = [['dmg', 'Sharpened', 'Your side deals {v}% more damage to enemies for the rest of the run.', [5, 8, 12]], ['cs', 'Quickened', 'You cast {v}% faster for the rest of the run.', [6, 9, 13]], ['hp', 'Hardy', '+{v} max health for you and your partner, and heals that much now.', [12, 18, 26]]];
@@ -166,6 +177,7 @@
   if (typeof hurtZ === 'function') { const _hzB = hurtZ; window.hurtZ = hurtZ = function (z, d) { try { const s = sv(); if (s && s.boon && s.boon.dmg && z && z.svMob && d > 0 && d < 1e5) arguments[1] = d * (1 + s.boon.dmg / 100); } catch (e) {} return _hzB.apply(this, arguments); }; }
   if (typeof castT === 'function') { const _ct = castT; window.castT = castT = function (w) { const t = _ct.apply(this, arguments); try { const s = sv(); if (s && s.boon && s.boon.cs && w && w.me) return t / (1 + s.boon.cs / 100); } catch (e) {} return t; }; }
   window.svDropPick = function (i) { const s = sv(); if (!s || !s.dropOps) return; const o = s.dropOps[i]; if (!o) return;
+    if (o.boon != null) { s.dropOps = null; s.boonTier = o.t; return window.svBoon(o.boon); }
     if (o.revive) { const Pw = s.P, me = ents[0]; s.dropOps = null; s.lastDraft = T; const el0 = $('svDrop'); if (el0) el0.style.display = 'none'; paused = false; try { last = performance.now(); } catch (e) {}
       if (Pw) { Pw.dead = 0; Pw.hp = Pw.maxHp * .25; Pw.invT = T + 3; /* (1.0.33.10) 3 s of invincibility */ Pw.x = clamp(me.x - 40, F.x0 + 10, F.x1 - 10); Pw.y = clamp(me.y + 20, F.y0 + 10, F.y1 - 10); try { burst(Pw.x, Pw.y - 40 * HS, 30, ['#7dffa8', '#ffffff', '#ffd45e'], 220, 5, .6); text(Pw.x, Pw.y - 100 * HS, 'REVIVED', '#7dffa8', true); sfx('ui_unlock'); if (window.emoteSay) setTimeout(() => { try { if (!ended) emoteSay(Pw, null, 'Back on my feet. Thanks!'); } catch (e) {} }, 300); } catch (e) {} }
       return; }
@@ -203,7 +215,7 @@
   /* ---------------- the partner ---------------- */
   function partner(s, dt) { const Pw = s.P; if (!Pw || introT > 0) return; const me = ents[0], fo = ents[1];
     if (Pw.dead) { Pw.dead += dt; return; } if (ended) return;
-    const mobs = zombies.filter(z => (z.svMob || z.o === fo) && z.hp > 0 && z.rise >= 1); let near = null, nd = 1e9; for (const z of mobs) { const d = Math.hypot(z.x - Pw.x, z.y - Pw.y); if (d < nd) { nd = d; near = z; } }
+    const mobs = zombies.filter(z => (z.svMob || z.o === fo) && z.hp > 0 && z.rise >= 1); const near = stickyNear(s, 'lockP', mobs, Pw.x, Pw.y);
     // Regroup: it holds a spot at your side. Split up: it roams, keeping its own distance from whatever is nearest to it.
     let tx, ty; if (s.group || !near) { const ax = me.x - fo.x, ay = me.y - fo.y, ad = Math.hypot(ax, ay) || 1; tx = me.x + ax / ad * 30 - ay / ad * 38; ty = me.y + ay / ad * 30 + ax / ad * 38; if (!s.group && !near) { tx = Pw.hx === undefined ? Pw.x : Pw.hx; ty = Pw.hy === undefined ? Pw.y : Pw.hy; } }
     else { const dx = Pw.x - near.x, dy = Pw.y - near.y, d = Math.hypot(dx, dy) || 1, want = 115; Pw.wa = (Pw.wa || 0) + dt * .6; tx = near.x + dx / d * want + Math.cos(Pw.wa) * 40; ty = near.y + dy / d * want + Math.sin(Pw.wa * 1.3) * 30; const ex = tx - me.x, ey = ty - me.y, ed = Math.hypot(ex, ey) || 1; if (ed < 70) { tx = me.x + ex / ed * 70; ty = me.y + ey / ed * 70; } }

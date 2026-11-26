@@ -9,13 +9,14 @@ const AU = { ctx: null, man: null, buf: {}, loading: {}, g: {}, last: {}, mus: n
 fetch('audio/manifest.json').then(r => r.ok ? r.json() : null).then(m => { AU.man = m; if (AU.ctx) auPreload(); }).catch(() => {});
 
 function auInit() {
-  if (AU.ctx) { if (AU.ctx.state === 'suspended') AU.ctx.resume(); return; }
+  if (AU.ctx) { if (AU.ctx.state !== 'running' && AU.ctx.state !== 'closed' && !document.hidden) AU.ctx.resume().catch(() => {}); return; }
   const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
   const c = AU.ctx = new C(), comp = c.createDynamicsCompressor();
   comp.threshold.value = -14; comp.ratio.value = 4; comp.connect(c.destination);
   AU.g.master = c.createGain(); AU.g.master.connect(comp);
   for (const k of ['ui', 'sfx', 'jingle', 'music']) { AU.g[k] = c.createGain(); AU.g[k].connect(AU.g.master); }
   auVol(); if (AU.man) auPreload();
+  c.onstatechange = () => { if (c.state !== 'running' && c.state !== 'closed' && !document.hidden) setTimeout(() => { try { c.resume().catch(() => {}); } catch (e) {} }, 300); };
 }
 function auVol() {
   if (!AU.ctx) return; const o = (typeof SET === 'function') ? SET() : { sfx: 80, music: 70 }, s = o.sfx / 100, m = o.music / 100;
@@ -24,11 +25,11 @@ function auVol() {
 }
 function auLoad(f) {
   if (AU.buf[f] || AU.loading[f]) return AU.loading[f];
-  return AU.loading[f] = fetch(f).then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(a => AU.ctx.decodeAudioData(a)).then(b => (AU.buf[f] = b)).catch(() => { AU.buf[f] = null; });
+  return AU.loading[f] = fetch(f).then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(a => AU.ctx.decodeAudioData(a)).then(b => (AU.buf[f] = b)).catch(() => { AU.buf[f] = null; delete AU.loading[f]; setTimeout(() => { if (AU.buf[f] === null) delete AU.buf[f]; }, 4000); });   // a failed load can be retried later
 }
 function auPreload() {
-  const ids = Object.keys(AU.man), first = ids.filter(k => AU.man[k].kind !== 'music'), mus = ids.filter(k => AU.man[k].kind === 'music');
-  first.concat(mus).forEach(k => AU.man[k].files.forEach(auLoad));
+  const ids = Object.keys(AU.man), first = ids.filter(k => AU.man[k].kind !== 'music');
+  first.forEach(k => AU.man[k].files.forEach(auLoad));   // (1.0.33.24) music is decoded only when it plays: decoding all 15 tracks at once needed several hundred MB and starved phones
   if (AU.want) { const w = AU.want; AU.musId = null; music(w); }
 }
 function sfx(id, o = {}) {
@@ -56,6 +57,31 @@ function music(id) {
 }
 // phones only allow audio after a tap
 ['pointerdown', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, auInit, { capture: true, passive: true }));
-document.addEventListener('visibilitychange', () => { if (!AU.ctx) return; document.hidden ? AU.ctx.suspend() : AU.ctx.resume(); });
+document.addEventListener('visibilitychange', () => { if (!AU.ctx) return; if (document.hidden) { AU.ctx.suspend().catch(() => {}); return; }
+  AU.ctx.resume().catch(() => {}).then(() => { if (AU.want && !AU.mus) { const w = AU.want; AU.musId = null; music(w); } }); });
+window.addEventListener('pageshow', () => { try { if (AU.ctx && AU.ctx.state !== 'running') AU.ctx.resume().catch(() => {}); } catch (e) {} });
 // every button press clicks
 document.addEventListener('click', e => { const t = e.target.closest && e.target.closest('button,.btn,[onclick],.tab,.chip'); if (t) sfx('ui_click'); }, true);
+
+/* (1.0.33.27) battery: silence really is silent.
+   - Music at 0%: the track is stopped, not played at zero volume; it starts again when the slider comes back up.
+   - Music off and nothing played for 4 s: the audio system suspends, so the phone's audio hardware can sleep.
+     The next sound wakes it first and then plays, so no effect is lost. */
+(function () {
+  let lastSfx = 0, sleeping = false;
+  const musicOff = () => { try { return (typeof SET === 'function' ? SET().music : 70) <= 0; } catch (e) { return false; } };
+  const _vol = auVol;
+  auVol = function () { const r = _vol.apply(this, arguments); try {
+      if (musicOff() && AU.mus) { const old = AU.mus; AU.mus = null; AU.musId = null; try { old.src.stop(); } catch (e) {} }
+      else if (!musicOff() && !AU.mus && AU.want && AU.ctx && AU.ctx.state === 'running') { const w = AU.want; AU.musId = null; music(w); } } catch (e) {} return r; };
+  const _sfx = sfx;
+  sfx = function (id, o) { lastSfx = performance.now();
+    if (sleeping && AU.ctx && AU.ctx.state === 'suspended' && !document.hidden) { sleeping = false; const a = arguments, self = this; AU.ctx.resume().then(() => { try { _sfx.apply(self, a); } catch (e) {} }).catch(() => {}); return; }
+    return _sfx.apply(this, arguments); };
+  setInterval(() => { try { guard(); if (!AU.ctx || document.hidden || sleeping) return; if (musicOff() && !AU.mus && AU.ctx.state === 'running' && performance.now() - lastSfx > 4000) { sleeping = true; AU.ctx.suspend().catch(() => {}); } } catch (e) {} }, 1000);
+  // the "interrupted" auto-resume (above) must not fight a deliberate sleep: guard whichever context exists
+  function guard() { const c = AU.ctx; if (!c || c._sleepGuard) return; c._sleepGuard = 1; const prev = c.onstatechange; c.onstatechange = function () { if (sleeping) return; if (prev) prev.apply(this, arguments); }; }
+  // a tap while asleep with music back on wakes it (the tap listeners call the original auInit, so this runs alongside)
+  ['pointerdown', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, () => { try { guard(); if (sleeping && !musicOff() && AU.ctx) { sleeping = false; AU.ctx.resume().catch(() => {}); } } catch (e) {} }, { capture: true, passive: true }));
+  window.AU_SLEEP = { get sleeping() { return sleeping; } };
+})();

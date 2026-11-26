@@ -130,6 +130,29 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.28', d: '26 Nov 2026', items: ['The white chunk on a health bar after a hit now clears in about a second.'] },
+    { v: '1.0.33.27', d: '26 Nov 2026', items: [
+      'Overtime: if the deciding round runs out of time with both fighters standing, it goes on for 15 more seconds and every hit deals double damage.',
+      'Sanctum: damage its caster takes inside it hits the dome twice over, so pressing a sorcerer in their domain can collapse it.',
+      'Zodiac: the Pig is a damage sponge (more health, shrugs off a quarter of every hit), the Rooster runs wide loops, and the Monkey hops from point to point.',
+      'Ability level-ups give 10 player XP.',
+      'Battery: menus pause their decorative animations after 15 seconds untouched, the battle HUD only redraws what changed, and with music off the audio system sleeps between sounds.'] },
+    { v: '1.0.33.26', d: '26 Nov 2026', items: ['Survival: you and your partner keep a target for at least a second instead of flicking between mobs that are about the same distance away.'] },
+    { v: '1.0.33.25', d: '26 Nov 2026', items: [
+      'Battery: the Home screen\'s training yard runs at a calmer frame rate and slows right down when you put the phone down; idle menus no longer redraw 60 times a second.',
+      'Drafts always offer three different cards: no repeats, never only two. Survival crystals always offer three choices too.',
+      'A screen\'s Hoot lesson now plays the first time you open it (Survival included). Every step can be skipped.',
+      'Enemy casters fight back when your summons swarm them.',
+      'Zodiac: the Dragon hunts summons first, sweeping out in a spiral, with 40% more health. Rats come as a pack of three, each dealing half damage.',
+      'New Zodiac upgrade, Wallbreaker: the Juggernaut walks straight through enemy walls and pillars.',
+      'Hitting ice walls, mud walls and pillars throws up smoke and shards.',
+      'Ladder first wins pay more as you climb: +5 gems every five rivals, up to 50.',
+      'The results screen\'s level ring updates when you upgrade an ability there.',
+      'Sanctum-boosted hits no longer draw a ring on the ground under the target.'] },
+    { v: '1.0.33.24', d: '26 Nov 2026', items: [
+      'Sound is steadier: music loads one track at a time (it used to load every track at once and could starve the phone), and audio comes back on its own after a call, Siri or another app interrupts it.',
+      'The pause button no longer covers your name in the battle and Survival bars; names now sit above the round pips.',
+      'On smaller phones your coins and gems always stay on screen at the top.'] },
     { v: '1.0.33.23', d: '25 Nov 2026', items: ['The Season Pass has a new look: every reward is a card with its own art, amount and name, a tier path runs down the middle, and claiming tells you exactly what you got.'] },
     { v: '1.0.33.22', d: '25 Nov 2026', items: [
       'Fixed: a rare freeze where both fighters stopped moving mid-duel while their walk animation kept playing. The duel now recovers on its own.',

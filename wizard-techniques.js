@@ -94,9 +94,12 @@
   window.TGT_ABLE = TGT_ABLE;
   // (1.0.23) the battle's target buttons override every ability's own setting while one is lit
   const TGNOW = { caster: 'caster', struct: 'struct', summon: 'strong', near: 'near' };
-  function tgtPref(w, k) { if (w && w.me && typeof M !== 'undefined' && M && M.tgtNow && TGNOW[M.tgtNow]) return TGNOW[M.tgtNow]; return w && w.me && typeof PR !== 'undefined' && PR.tgt && PR.tgt[k] || 'auto'; }
+  function tgtPref(w, k) { if (w && !w.me && w.swarmed) return 'swarm';   // (1.0.33.25) an AI caster under attack by summons fights them
+    if (w && w.me && typeof M !== 'undefined' && M && M.tgtNow && TGNOW[M.tgtNow]) return TGNOW[M.tgtNow]; return w && w.me && typeof PR !== 'undefined' && PR.tgt && PR.tgt[k] || 'auto'; }
   window.tgtPref = tgtPref;
-  function prefMob(w, k) { const p = tgtPref(w, k); if (p !== 'strong' && p !== 'weak') return null;
+  function prefMob(w, k) { const p = tgtPref(w, k);
+    if (p === 'swarm') { let best = null, bd = 170; for (const c of enemyCreatures(w)) if (SUMMON_K.has(c.k) && c.e.x !== undefined) { const d = Math.hypot(c.e.x - w.x, c.e.y - w.y); if (d < bd) { bd = d; best = c.e; } } return best; }
+    if (p !== 'strong' && p !== 'weak') return null;
     const mobs = enemyCreatures(w).filter(c => SUMMON_K.has(c.k) && c.e.x !== undefined); if (!mobs.length) return null;
     return mobs.reduce((a, b) => (p === 'strong' ? b.e.hp > a.e.hp : b.e.hp < a.e.hp) ? b : a).e; }
   /* Leaving a Titan Shell does not break it: its plates let go one by one, drift apart and fade. */
@@ -743,7 +746,7 @@
   function domainBlast(w, k, sn) {
     const o = w.foe, st = STATS[k], base = st.dmg ? S(w, k, 'dmg') : S(w, k, 'dps') * 1.5, R = 105 * sn.vast, dmg = base * .8;
     const [l, m] = COL[SP[k].el] || COL.ward;
-    addFx({ k: 'domain', x: o.x, y: o.y, life: .8, r: R, c: m, l, sure: sn.sure });
+    // (1.0.33.25) no ground ring under the target any more: it read as a separate effect and confused the hit
     text(o.x, o.y - 100 * HS, sn.sure ? 'SURE HIT' : 'SANCTUM BLAST', sn.sure ? '#ffe08a' : '#bcd2ff', true); shake = Math.max(shake, 8);
     SRC = 'sanctum';
     const insideNow = domes.some(d => d.o === w && d.t < d.dur && (d.open || Math.hypot(o.x - d.x, (o.y - d.y) * 1.4) < d.r));
@@ -772,7 +775,7 @@
     w.zn = (w.zn || 0) + 1;
     if (U(w, k, 'mend')) { const full = U(w, k, 'mend2'); for (const q of zombies) if (q.o === w && q.beast && q.hp > 0 && q.hp < q.mx) { q.hp = full ? q.mx : Math.min(q.mx, q.hp + q.mx * .5); text(q.x, q.y - 50 * HS, full ? 'MENDED' : '+50%', '#7dffa8'); burst(q.x, q.y - 20 * HS, 8, ['#7dffa8', '#fff'], 100, 3, .4); } }
     const dome = domes.find(d => d.o === w && d.t < d.dur);
-    const o = w.foe, a = Math.atan2(o.y - w.y, o.x - w.x), n = !b.crim && b.id === 'rabbit' ? (U(w, k, 'warren') ? 7 : 4) /* (1.0.30) rabbits come as a litter */ : !b.crim && b.id === 'snake' ? (U(w, k, 'snakepit') ? 3 : 1) * (dome ? 2 : 1) : (U(w, k, 'pack') && ['rat', 'rooster'].includes(b.id) ? 2 : 1) * (dome && !b.boss ? 2 : 1);
+    const o = w.foe, a = Math.atan2(o.y - w.y, o.x - w.x), n = !b.crim && b.id === 'rabbit' ? (U(w, k, 'warren') ? 7 : 4) /* (1.0.30) rabbits come as a litter */ : !b.crim && b.id === 'snake' ? (U(w, k, 'snakepit') ? 3 : 1) * (dome ? 2 : 1) : !b.crim && b.id === 'rat' ? (U(w, k, 'pack') ? 6 : 3) * (dome ? 2 : 1) /* (1.0.33.25) rats come as a pack of 3 (Pack Call: 6) */ : (U(w, k, 'pack') && ['rooster'].includes(b.id) ? 2 : 1) * (dome && !b.boss ? 2 : 1);
     const nMore = !b.crim && !b.boss && window.ZODIAC_MORE ? ZODIAC_MORE(w, b.id) : 0;   // (1.0.33.1) the per-animal +2 upgrades
     for (let i = 0; i < n + nMore; i++) {
       const ra = rnd(0, 6.283), rd = dome ? Math.sqrt(Math.random()) * dome.r * .85 : 0, q = dome ? inArena(dome.x + Math.cos(ra) * rd, dome.y + Math.sin(ra) * rd / 1.4) : inArena(w.x + Math.cos(a) * 34 + rnd(-12, 12), w.y + Math.sin(a) * 34 + rnd(-12, 12)), hp = S(w, k, 'hp') * b.hp * (w.czNow && !b.regent && U(w, 'crimsonzodiac', 'bloodmoon') ? 1.25 : 1) * (!b.crim && b.id === 'rabbit' ? .6 : 1);

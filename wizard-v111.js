@@ -25,7 +25,7 @@
   window.rwUpgrade = function (k) { const sp = PR.spells[k]; if (!sp || typeof canUp !== 'function' || !canUp(k)) { try { toast(sp && sp.cards >= (CARDS[sp.lvl] || 1) ? 'Not enough gold' : 'Not ready to upgrade'); } catch (e) {} return; }
     const cost = COST[sp.lvl], need = CARDS[sp.lvl]; PR.coins -= cost; sp.cards -= need; sp.lvl++; rwTipClose();
     try { sfx('ui_upgrade'); if (typeof flashScreen === 'function') flashScreen(); if (window.chaChing) chaChing(); } catch (e) {}
-    let lv = 0; try { lv = gainXp(25); } catch (e) {} try { save(); refreshMeta(); if ($('rewards').classList.contains('on')) renderRwCards(); } catch (e) {}
+    let lv = 0; try { lv = gainXp(10); } catch (e) {} try { save(); refreshMeta(); if ($('rewards').classList.contains('on')) renderRwCards(); } catch (e) {}
     try { queueModal(() => showSpellModal(k, sp.lvl - 1, sp.lvl)); if (lv) { delete PR._lvPending; queueModal(showLevelUp); } } catch (e) {} };
   window.rwTipClose = () => { const t = $('rwTip'); if (t) t.classList.remove('on'); };
   function showTip(card, k) { let t = $('rwTip'); if (!t) { document.querySelector('.phone').insertAdjacentHTML('beforeend', '<div id="rwTip"></div>'); t = $('rwTip'); }
