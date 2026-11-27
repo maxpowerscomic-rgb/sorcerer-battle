@@ -78,8 +78,17 @@
   const crashText = () => { const L = readC(); return L.map(c => `[${new Date(c.t).toISOString()}] v${c.v} ${c.kind}${c.n > 1 ? ' x' + c.n : ''}\n${c.msg}\n${c.where}\nscreen ${c.screen}, round ${c.round}\nme: ${c.me}\nfoe: ${c.foe}\nupgrades: ${c.ups}\n${c.stack}`).join('\n\n'); };
   window.openCrashLog = function () { const L = readC();
     $('sheetP').innerHTML = `<button class="xbtn" onclick="closeSheet()">✕</button><div class="sh">Crash log</div><div class="ssub" style="margin:0">${L.length ? `${L.length} error${L.length > 1 ? 's' : ''} recorded on this device. Nothing is sent unless you send it. The report holds the error, the game version and the two books in play: no name, no account.` : 'No errors recorded. Nice.'}</div>
-      ${L.length ? `<pre class="crlog">${crashText().replace(/</g, '&lt;')}</pre><button class="upbtn" onclick="sendCrashLog()">✉ Send to the developer</button><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050);margin-top:6px" onclick="clearCrashLog()">Clear the log</button>` : ''}`;
+      ${L.length ? `<pre class="crlog">${crashText().replace(/</g, '&lt;')}</pre><button class="upbtn" onclick="sendCrashLog()">✉ Send to the developer</button><button class="upbtn" id="crCopy" style="background:linear-gradient(#4a3a80,#2b2050);margin-top:6px" onclick="copyCrashLog()">📋 Copy the whole log</button><button class="upbtn" style="background:linear-gradient(#4a3a80,#2b2050);margin-top:6px" onclick="clearCrashLog()">Clear the log</button>` : ''}`;
     $('sheet').classList.add('on'); };
+  /* (1.0.33.33) copy the whole log to the clipboard. The app's own page (app://) may not offer navigator.clipboard,
+     so it falls back to selecting a hidden text box and copying that, which works in WebKit during a tap */
+  window.copyCrashLog = function () { const txt = 'Wizards vs Sorcerers crash log v' + (typeof GAME_VERSION !== 'undefined' ? GAME_VERSION : '?') + '\n' + navigator.userAgent + '\n\n' + crashText();
+    const done = ok => { try { sfx(ok ? 'ui_click' : 'ui_error'); } catch (e) {} toast(ok ? 'Crash log copied: ' + readC().length + ' errors' : 'Could not copy. Press and hold the log to select it.'); const b = $('crCopy'); if (b && ok) { b.textContent = '✓ Copied'; setTimeout(() => { if (b.isConnected) b.textContent = '📋 Copy the whole log'; }, 1800); } };
+    const legacy = () => { let ok = false; const ta = document.createElement('textarea'); ta.value = txt; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px'; document.body.appendChild(ta);
+      try { ta.focus(); ta.select(); ta.setSelectionRange(0, txt.length); ok = document.execCommand('copy'); } catch (e) {} ta.remove(); return ok; };
+    if (legacy()) return done(true);
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(() => done(true), () => done(false)); return; } } catch (e) {}
+    done(false); };
   window.clearCrashLog = function () { try { localStorage.removeItem(CKEY); } catch (e) {} closeSheet(); toast('Crash log cleared'); };
   window.sendCrashLog = function () { const to = window.FEEDBACK_TO; if (!to) return toast('Sending is not set up in this build. You can copy the text above.');
     const body = ('Crash log\n' + navigator.userAgent + '\n\n' + crashText()).slice(0, 5500);

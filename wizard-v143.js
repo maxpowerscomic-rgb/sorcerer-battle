@@ -44,7 +44,7 @@
   const tipOpen = () => { const t = document.getElementById('tipT'); return !!(t && t.style.display === 'block' && !t.classList.contains('hide')); };
   function tick() {
     try { if (!window.V133 || !window.TIP_TOURS || !V133.lessonHere) return; if (tipOpen() || window.ONB_ACTIVE || !(PR.onb && PR.onb.done)) return;
-      if (document.querySelector('#sheet.on') || document.querySelector('.screen.on#battle')) return;
+      if (document.querySelector('#sheet.on, #upm.on, #lvup.on, #chestOv.on, #rep.on') || document.querySelector('.screen.on#battle')) return;   /* (1.0.33.33) not over a reward or token pop-up either */
       const L = V133.lessonHere(); if (!L) return; const tr = PR.tours || {}; if (tr[L[0]] || tr.__off) return;
       if (window.LANDED && !window.LANDED()) return;
       TIP_TOURS.start(L[0]); try { V133.paintDot(); } catch (e) {} } catch (e) {} }

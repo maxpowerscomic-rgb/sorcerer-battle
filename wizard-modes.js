@@ -130,6 +130,11 @@
 
   /* ---------------- What's New ---------------- */
   const LOG = [
+    { v: '1.0.33.33', d: '27 Nov 2026', items: [
+      'Fixed: Rematch could crash the battle as soon as it started.',
+      'Large and Extra Large text: Hoot\'s lesson cards and the draft, synergy and reward tips now stay on the screen.',
+      'Options → Crash log has a new Copy button that copies the whole log, ready to paste into a message.',
+    ] },
     { v: '1.0.33.32', d: '26 Nov 2026', items: [
       'The opening splash: WIZARDS and SORCERERS now ride in on their curtains and meet in the middle.',
       'Fixed: menus and popups could stay hidden after a battle you played without touching the screen.',

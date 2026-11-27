@@ -12,7 +12,7 @@
   const can = () => typeof M !== 'undefined' && M && M.score.me < M.score.foe && !M.rematch && !M.ladder && !M.bounty && !M.practice && !window.ONB_ACTIVE && (M.mode === 'ranked' || M.mode === 'casual');
   window.rematch = function () { if (!can()) return; if ((PR.coins || 0) < COST) return toast(`A rematch costs ${COST} gold`);
     const old = M, hand = (old.handAt || PR.hand).slice(); PR.coins -= COST; PR.hand = hand; try { save(); sfx('ui_deal'); } catch (e) {}
-    newMatch({ name: old.foeName, look: old.foeLook, profile: old.profile, mode: old.mode, arena: old.arena });
+    newMatch({ name: old.foeName, look: old.foeLook, profile: old.profile, mode: old.mode, arena: old.arena, lv: old.foeLv });   /* (1.0.33.33) the rival keeps its ability levels: without them its first cast crashed */
     try { M.rematch = { ranked: old.mode === 'ranked' }; M.foeRank = old.foeRank; if (old.foe && old.foe.pool) M.foe.pool = old.foe.pool.slice(); if (typeof synergyOf === 'function') M.foeSyn = synergyOf(M.foe.pool); } catch (e) {} };
   if (typeof newMatch === 'function') { const _nm = newMatch; window.newMatch = newMatch = function () { const r = _nm.apply(this, arguments); try { if (M) M.handAt = (PR.hand || []).slice(); } catch (e) {} return r; }; }
   if (typeof showRewards === 'function') { const _sr = showRewards;
